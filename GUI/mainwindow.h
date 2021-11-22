@@ -161,8 +161,8 @@ public slots:
 //    void stopRecorderVTK();
 //    void startRecorderFACS();
 //    void stopRecorderFACS();
-    void startRecorderField();
-    void stopRecorderField();
+//    void startRecorderField();
+//    void stopRecorderField();
     bool getVideoFileInfo(int *nframes, QString *itemFormat, QString *itemCodec, QString *videoFileName);
 
     void buttonClick_cell_constituent(QAbstractButton* button);

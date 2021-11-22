@@ -435,7 +435,7 @@ void MainWindow:: stopRecorderFACS()
     Global::recordingFACS = false;
     LOG_QMSG("stopRecorderFACS");
 }
-*/
+
 
 //--------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------
@@ -466,6 +466,7 @@ void MainWindow:: stopRecorderField()
     Global::recordingField = false;
     LOG_QMSG("stopRecorderField");
 }
+*/
 
 //-------------------------------------------------------------
 // Loops through the workingParameterList and fills in the GUI.

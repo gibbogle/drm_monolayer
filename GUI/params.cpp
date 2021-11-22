@@ -1078,7 +1078,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 //    {"ECdrugBmet2",               0, 0,1,"","EC concentration of drug B metabolite 2 in the medium (bottom)"},
     {"ICoxygen",                  1, 0,1,"","IC concentration of oxygen"},
     {"ICglucose",                 1, 0,1,"","IC concentration of glucose"},
-//    {"IClactate",                 1, 0,1,"","IC concentration of lactate"},
+//    {"IClactate",                 1, 0,1,"","IC concentration of lactate "},
 //    {"ICglutamine",               1, 0,1,"","IC concentration of glutamine"},
 //    {"ICother",                   0, 0,1,"","IC concentration of other nutrient"},
 //    {"ICpyruvate",                1, 0,1,"","IC concentration of pyruvate"},
