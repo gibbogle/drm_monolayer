@@ -27,7 +27,7 @@ using namespace std;
 #include "graphs.h"
 #include "result_set.h"
 #include "log.h"
-#include "qvideooutput.h"
+//#include "qvideooutput.h"
 
 #include <qwt_plot.h>
 #include <qwt_plot_grid.h>
