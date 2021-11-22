@@ -8,7 +8,7 @@
 #include <QWaitCondition>
 
 #include "libdrm_monolayer.h"
-#include "SimpleView2DUI.h"
+//#include "SimpleView2DUI.h"
 
 class SocketHandler : public QThread
  {
