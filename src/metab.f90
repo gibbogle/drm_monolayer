@@ -3,7 +3,7 @@
 
 ! Units:
 !     time				s = seconds
-!     distance			cm
+!     distance			cm 
 !     volume			cm^3
 !     mass				micromole = 10^-6 mol = mumol
 !     flux				mumol/s

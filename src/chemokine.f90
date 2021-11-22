@@ -16,7 +16,7 @@ implicit none
 !	real(REAL_KIND) :: saturation_threshold
 !	real(REAL_KIND) :: refractory_time
 !end type
-!type(receptor_type), target :: receptor(MAX_RECEPTOR)
+!type(receptor_type), target :: receptor(MAX_RECEPTOR) 
 
 integer, parameter :: N1D = 20
 

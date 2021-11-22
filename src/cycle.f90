@@ -11,7 +11,7 @@ logical :: use_volume_based_transition = .false.
 real(REAL_KIND) :: starvation_arrest_threshold = 5
 real(REAL_KIND) :: max_arrest_time = 6*3600
 logical :: inhibit_misrepair = .false.
-logical :: use_rad_state = .true.   ! irradiation before G2 causes G2 checkpoint delay = dose*1 hours
+logical :: use_rad_state = .true.   ! irradiation before G2 causes G2 checkpoint delay = dose*1 hours 
 
 contains
 

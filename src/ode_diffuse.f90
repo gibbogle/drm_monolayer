@@ -1,6 +1,6 @@
 !----------------------------------------------------------------------------------
 ! Note: The value of spcrad was first determined by writing out the value computed in rkc.
-! Later it was just determined by trial, then made into a run parameter.
+! Later it was just determined by trial, then made into a run parameter. 
 !----------------------------------------------------------------------------------
 double precision function spcrad(neqn,t,y)
 !DEC$ ATTRIBUTES DLLEXPORT :: spcrad
