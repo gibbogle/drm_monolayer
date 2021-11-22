@@ -5,6 +5,8 @@
 build/**/*
 Docs/
 Docs/**/*
+backup/
+backup/**/*
 execution/
 execution/**/*
 build_drm_monolayer/**/*
