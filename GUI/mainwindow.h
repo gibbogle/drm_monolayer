@@ -408,7 +408,7 @@ private:
 
 //    QVideoOutput   *videoVTK;
 //    QVideoOutput   *videoFACS;
-    QVideoOutput   *videoField;
+//    QVideoOutput   *videoField;
 
     QStringList Drug_FilesList;
 
