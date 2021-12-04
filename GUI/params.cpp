@@ -649,6 +649,10 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
      "Lethal aberration rate parameter",
      "Lethal aberration rate parameter"},
 
+     {"KLETHAL", 1.65, 0, 0,
+     "MisrepRate scaling factor",
+     "MisrepRate scaling factor"},
+
      {"KATM_1", 2.0, 0, 0,
      "K_ATM(1) parameter",
      "K_ATM(1) parameter"},

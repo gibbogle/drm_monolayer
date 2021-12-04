@@ -4581,7 +4581,7 @@ padding: 8px
               <x>530</x>
               <y>10</y>
               <width>311</width>
-              <height>461</height>
+              <height>481</height>
              </rect>
             </property>
             <property name="title">
@@ -4593,7 +4593,7 @@ padding: 8px
                <x>10</x>
                <y>10</y>
                <width>291</width>
-               <height>441</height>
+               <height>461</height>
               </rect>
              </property>
              <layout class="QGridLayout" name="gridLayout_7">
@@ -4641,7 +4641,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="4" column="1">
+              <item row="5" column="1">
                <widget class="QLineEdit" name="line_KATM_1">
                 <property name="maximumSize">
                  <size>
@@ -4651,7 +4651,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="5" column="1">
+              <item row="6" column="1">
                <widget class="QLineEdit" name="line_KATM_2">
                 <property name="maximumSize">
                  <size>
@@ -4661,7 +4661,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="6" column="1">
+              <item row="7" column="1">
                <widget class="QLineEdit" name="line_KATM_3">
                 <property name="maximumSize">
                  <size>
@@ -4671,7 +4671,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="7" column="1">
+              <item row="8" column="1">
                <widget class="QLineEdit" name="line_KATM_4">
                 <property name="maximumSize">
                  <size>
@@ -4681,7 +4681,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="8" column="1">
+              <item row="9" column="1">
                <widget class="QLineEdit" name="line_KATR_1">
                 <property name="maximumSize">
                  <size>
@@ -4691,7 +4691,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="9" column="1">
+              <item row="10" column="1">
                <widget class="QLineEdit" name="line_KATR_2">
                 <property name="maximumSize">
                  <size>
@@ -4701,7 +4701,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="10" column="1">
+              <item row="11" column="1">
                <widget class="QLineEdit" name="line_KATR_3">
                 <property name="maximumSize">
                  <size>
@@ -4711,7 +4711,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="11" column="1">
+              <item row="12" column="1">
                <widget class="QLineEdit" name="line_KATR_4">
                 <property name="maximumSize">
                  <size>
@@ -4721,7 +4721,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="12" column="1">
+              <item row="13" column="1">
                <widget class="QLineEdit" name="line_PCOMPLEX">
                 <property name="maximumSize">
                  <size>
@@ -4731,7 +4731,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="13" column="1">
+              <item row="14" column="1">
                <widget class="QLineEdit" name="line_PHRSIMPLE">
                 <property name="maximumSize">
                  <size>
@@ -4741,7 +4741,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="14" column="1">
+              <item row="15" column="1">
                <widget class="QLineEdit" name="line_KMAXINHIBIT">
                 <property name="maximumSize">
                  <size>
@@ -4751,7 +4751,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="15" column="1">
+              <item row="16" column="1">
                <widget class="QLineEdit" name="line_B_EXP">
                 <property name="maximumSize">
                  <size>
@@ -4761,7 +4761,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="16" column="1">
+              <item row="17" column="1">
                <widget class="QLineEdit" name="line_B_HILL">
                 <property name="maximumSize">
                  <size>
@@ -4785,94 +4785,111 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="4" column="0">
+              <item row="5" column="0">
                <widget class="QMyLabel" name="label_KATM_1">
                 <property name="text">
                  <string>label_KATM_1</string>
                 </property>
                </widget>
               </item>
-              <item row="5" column="0">
+              <item row="6" column="0">
                <widget class="QMyLabel" name="label_KATM_2">
                 <property name="text">
                  <string>label_KATM_2</string>
                 </property>
                </widget>
               </item>
-              <item row="6" column="0">
+              <item row="7" column="0">
                <widget class="QMyLabel" name="label_KATM_3">
                 <property name="text">
                  <string>label_KATM_3</string>
                 </property>
                </widget>
               </item>
-              <item row="7" column="0">
+              <item row="8" column="0">
                <widget class="QMyLabel" name="label_KATM_4">
                 <property name="text">
                  <string>label_KATM_4</string>
                 </property>
                </widget>
               </item>
-              <item row="8" column="0">
+              <item row="9" column="0">
                <widget class="QMyLabel" name="label_KATR_1">
                 <property name="text">
                  <string>label_KATR_1</string>
                 </property>
                </widget>
               </item>
-              <item row="9" column="0">
+              <item row="10" column="0">
                <widget class="QMyLabel" name="label_KATR_2">
                 <property name="text">
                  <string>label_KATR_2</string>
                 </property>
                </widget>
               </item>
-              <item row="10" column="0">
+              <item row="11" column="0">
                <widget class="QMyLabel" name="label_KATR_3">
                 <property name="text">
                  <string>label_KATR_3</string>
                 </property>
                </widget>
               </item>
-              <item row="11" column="0">
+              <item row="12" column="0">
                <widget class="QMyLabel" name="label_KATR_4">
                 <property name="text">
                  <string>label_KATR_4</string>
                 </property>
                </widget>
               </item>
-              <item row="12" column="0">
+              <item row="13" column="0">
                <widget class="QMyLabel" name="label_PCOMPLEX">
                 <property name="text">
                  <string>label_PCOMPLEX</string>
                 </property>
                </widget>
               </item>
-              <item row="13" column="0">
+              <item row="14" column="0">
                <widget class="QMyLabel" name="label_PHRSIMPLE">
                 <property name="text">
                  <string>label_PHRSIMPLE</string>
                 </property>
                </widget>
               </item>
-              <item row="14" column="0">
+              <item row="15" column="0">
                <widget class="QMyLabel" name="label_KMAXINHIBIT">
                 <property name="text">
                  <string>label_KMAXINHIBIT</string>
                 </property>
                </widget>
               </item>
-              <item row="15" column="0">
+              <item row="16" column="0">
                <widget class="QMyLabel" name="label_B_EXP">
                 <property name="text">
                  <string>label_B_EXP</string>
                 </property>
                </widget>
               </item>
-              <item row="16" column="0">
+              <item row="17" column="0">
                <widget class="QMyLabel" name="label_B_HILL">
                 <property name="text">
                  <string>label_B_HILL</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QLineEdit" name="line_KLETHAL">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QMyLabel" name="label_KLETHAL">
+                <property name="text">
+                 <string>label_KLETHAL</string>
                 </property>
                </widget>
               </item>
@@ -4882,8 +4899,8 @@ padding: 8px
            <widget class="QMyCheckBox" name="cbox_USE_EXP">
             <property name="geometry">
              <rect>
-              <x>540</x>
-              <y>490</y>
+              <x>530</x>
+              <y>500</y>
               <width>151</width>
               <height>17</height>
              </rect>
@@ -4898,8 +4915,8 @@ padding: 8px
            <widget class="QMyCheckBox" name="cbox_USE_BASERATE">
             <property name="geometry">
              <rect>
-              <x>710</x>
-              <y>490</y>
+              <x>700</x>
+              <y>500</y>
               <width>121</width>
               <height>17</height>
              </rect>
@@ -4937,7 +4954,7 @@ padding: 8px
                <height>211</height>
               </rect>
              </property>
-             <layout class="QGridLayout" name="gridLayout_GL12" rowstretch="0,0,0,0,0,0,0,0,0">
+             <layout class="QGridLayout" name="gridLayout_GL12" rowstretch="0,0,0,0,0,0,0,0">
               <item row="2" column="0">
                <widget class="QMyLabel" name="infolabel_PARENT_CT1_0">
                 <property name="minimumSize">

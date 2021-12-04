@@ -15,18 +15,19 @@ implicit none
 real(8) :: eta = 0.0006506387875449218
 real(8) :: Pcomplex = 0.4337    ! fraction of created DSBs that are complex
 real(8) :: PHRsimple = 0.9      ! fraction of post-replication simple DSBs that are repaired by HR (slow) rather than NHEJ (fast)
-character*(2) :: phaseName(8) = ['G1','','S ','','G2','','M ','']
+!character*(2) :: phaseName(8) = ['G1','','S ','','G2','','M ','']
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.008462]   ! by pathway
 real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.2604, 0.008462]   ! by pathway  with HR simple
 real(8) :: misrepRate(8) = [0.18875,0,0.18247,0,0.14264,0,0.18875,0]        ! by phase, Nlethal = 0.5*misrepRate*Nmis 
 !real(8) :: fidRate(NP)  = [0.98537, 0.98537, 0.98537, 1.0, 0.4393]  ! by pathway
 real(8) :: fidRate(NP)  = [0.98537, 0.98537, 0.98537, 1.0, 1.0, 0.4393]  ! by pathway  with HR simple
 logical :: pathwayUsed(8,NP)
-real(8) :: apopRate = 0.01117   ! not used(?)
+real(8) :: apopRate = 0.01117
 real(8) :: baseRate = 0.000739
 real(8) :: mitRate  = 0.0141
-real(8) :: Msurvival = 0.5      ! has no effect since IR in M kills all cells
+real(8) :: Msurvival = 0.5
 real(8) :: Kaber = 1.0          ! added, McMahon has 1 
+real(8) :: Klethal = 1.65
 real(8) :: K_ATM(4) = [1.0, 0.01, 1.0, 10.0]
 real(8) :: K_ATR(4) = [1.0, 0.01, 0.1, 10.0]
 
@@ -47,6 +48,7 @@ integer :: iuse_baserate, iuse_exp
 read(nfin,*) baseRate
 read(nfin,*) mitRate
 read(nfin,*) Kaber
+read(nfin,*) Klethal
 read(nfin,*) K_ATM(1)
 read(nfin,*) K_ATM(2)
 read(nfin,*) K_ATM(3)
@@ -66,7 +68,6 @@ use_base_apop_rate = (iuse_baserate == 1)
 use_exp_inhibit = (iuse_exp == 1)
 end subroutine
 
-
 !--------------------------------------------------------------------------
 !--------------------------------------------------------------------------
 function finhibit(C) result(fin)
@@ -81,10 +82,9 @@ end function
 
 !--------------------------------------------------------------------------
 ! repRate:          depends on pathway
-! (pathwayFraction:  depends on phase, pathway)
 ! fidRate:          depends on phase, pathway
 ! misrepRate:       depends on phase (pathway?)
-! pathwayUsed:      depends pn phase, pathway
+! pathwayUsed:      depends on phase, pathway
 !--------------------------------------------------------------------------
 subroutine setupRadiation
 
@@ -92,6 +92,12 @@ pathwayUsed = .false.
 pathwayUsed(G1_phase,1:2) = .true.
 pathwayUsed(S_phase,1:5) = .true.
 pathwayUsed(G2_phase,3:5) = .true.
+
+if (use_inhibiter) then
+    pathwayUsed(G1_phase,6) = .true.
+    pathwayUsed(S_phase,6) = .true.
+    pathwayUsed(G2_phase,6) = .true.
+endif
 end subroutine
 
 !--------------------------------------------------------------------------
@@ -99,7 +105,7 @@ end subroutine
 ! DSB0[:] is the initial number of DSBs on each repair pathway
 ! totDSB0 is the total initial DSB count
 ! If the pathway is NHEJ, a fraction of the DSBs that would be on the NHEJ
-! pathway are instead switched to the ALTEJ pathway when the DNA-PK inhibitor
+! pathway are instead switched to the MMEJ pathway when the DNA-PK inhibitor
 ! drug is present.
 ! Let the inhibitor concentration = Cdrug. The fraction going to ALTEJ is finhibit(Cdrug).
 !--------------------------------------------------------------------------
@@ -142,7 +148,6 @@ endif
 fin = finhibit(Cdrug)
 DSB0(6) = fin*sum(DSB0(1:3))
 DSB0(1:3) = (1 - fin)*DSB0(1:3)
-!write(*,*) 'DSB0: ',DSB0
 cp%DSB = DSB0
 cp%totDSB0 = totDSB0
 cp%Nlethal = 0
@@ -161,7 +166,8 @@ end subroutine
 ! M(t) - r/k = A.exp(-kt)
 ! M(0) = r/k + A => A = M(0) - r/k
 ! M(t) = r/k + (M(0) - r/k)exp(-kt)
-! Note: parameters from mcradio assume time is hours - need to scale dt to h.
+! Note: parameters from mcradio assume time is hours, therefore the time
+! step passed to the subroutine, dth, has been converted to hours.
 !--------------------------------------------------------------------------
 subroutine updateATM(pATM,ATM_DSB,dth)
 real(8) :: pATM, ATM_DSB, dth
@@ -175,7 +181,8 @@ end subroutine
 
 !--------------------------------------------------------------------------
 ! Try making pATR production rate saturate, or limit pATR?
-! Note: parameters from mcradio assume time is hours
+! Note: parameters from mcradio assume time is hours, therefore the time
+! step passed to the subroutine, dth, has been converted to hours.
 !--------------------------------------------------------------------------
 subroutine updateATR(pATR,ATR_DSB,dth)
 real(8) :: pATR, ATR_DSB, dth
@@ -185,10 +192,7 @@ r = K_ATR(2)*ATR_DSB   ! rate of production of pATR
 k = K_ATR(3)  ! decay rate constant
 pATR = r/k + (pATR - r/k)*exp(-k*dth)
 if (kcell_now == -4) write(*,'(a,i4,5f8.4)') 'updateATR: r,k,r/k,ATR_DSB,pATR: ',kcell_now,r,k,r/k,ATR_DSB,pATR
-!pATR = min(pATR,2.5)
-!write(nflog,'(a,7f8.3)') 'updateATR: dt,r,k,r/k,pATR-r/k,exp(-k*dt),pATR: ',dt, r, k, r/k, pATR-r/k,exp(-k*dt),pATR
 end subroutine
-
 
 !------------------------------------------------------------------------
 ! Effect of pATM
@@ -218,15 +222,15 @@ end function
 
 !--------------------------------------------------------------------------
 ! To determine repair on a given pathway
-! Using parameters from mcradio, time in hours
+! Using parameters from mcradio, dth in hours
 !--------------------------------------------------------------------------
-subroutine pathwayRepair(path, time, N0, N)
+subroutine pathwayRepair(path, dth, N0, N)
 integer :: path
-real(8) :: time, N0, N
+real(8) :: dth, N0, N
 real(8) :: Kreduction = 1.0
 
-if (time >= 0) then
-    N = N0*exp(-repRate(path)*time*Kreduction)  !!!! TESTING reducing repair rate
+if (dth >= 0) then
+    N = N0*exp(-repRate(path)*dth*Kreduction)  !!!! TESTING reducing repair rate
 else
     N = 0
 endif
@@ -312,28 +316,26 @@ do k = 1,NP
     endif
 enddo
 cp%DSB = DSB
-dNlethal = 1.65*misrepRate(phase)*Nmis   ! was 0.5
+dNlethal = Klethal*misrepRate(phase)*Nmis   ! (was 0.5)  1.65 needs to be another parameter -> Klethal
 cp%Nlethal = cp%Nlethal + dNlethal
-!if (kcell_now == 1) then
-!    write(*,'(a,i6,8f8.4)') 'updateRepair: kcell, DSB: ',kcell_now,cp%DSB(1:4)
-!    write(*,'(a,8f8.4)') 'Pmis,Nmis,dNlethal: ',Pmis,Nmis,dNlethal
-!endif
 end subroutine
 
 !------------------------------------------------------------------------
 ! Clonogenic survival probability at first mitosis (McMahon, mcradio)
+! cp%phase0 is the cell's phase at IR
 !------------------------------------------------------------------------
 subroutine survivalProbability(cp)
 type(cell_type), pointer :: cp
 real(8) :: DSB(NP), totDSB, Nlethal,Paber, Pbase, Papop, Pmit, Psurv
 
-! cp%phase0 is the phase at IR
 DSB = cp%DSB
 totDSB = sum(DSB)
 Nlethal = cp%Nlethal
 if (cp%phase0 == G1_phase) then
     Paber = exp(-Kaber*Nlethal)
     Pbase = exp(-baseRate*cp%totDSB0)
+    ! The inclusion of Papop is dubious, probably wrong, but also irrelevant
+    ! because, for IR in G1, totDSB = 0 by mitosis.
     if (use_base_apop_rate) then
         Papop = exp(-baseRate*totDSB) ! no repair
     else

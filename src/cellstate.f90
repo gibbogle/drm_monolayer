@@ -26,7 +26,6 @@ integer :: kcell, idrug, ichemo
 type(cell_type),pointer :: cp
 
 !call logger('GrowCells: ')
-!tnow = istep*DELTA_T
 tnow = t_simulation		! now = time at the start of the timestep
 ok = .true.
 call new_grower(dt,changed,ok)
@@ -83,10 +82,10 @@ character :: pchar
 
 ok = .true.
 Nirradiated = Ncells
+t_irradiation = t_simulation
 write(logmsg,*) 'Irradiation: Nirradiated: ',Nirradiated
 call logger(logmsg)
 call setupRadiation
-!tnow = istep*DELTA_T	! seconds
 !if (use_volume_method) then
 !    do kcell = 1,nlist
 !        if (colony_simulation) then
@@ -657,8 +656,8 @@ do kcell = 1,nlist0
 
 	    endif
         if (cp%phase == M_phase) then
-            if (cp%phase /= dividing) then
-				cp%Iphase = .false.
+!            if (cp%phase /= dividing) then
+!				cp%Iphase = .false.
 				cp%mitosis = 0
 				cp%t_start_mitosis = tnow
 				ncells_mphase = ncells_mphase + 1
@@ -668,7 +667,7 @@ do kcell = 1,nlist0
 !				    ! compute survival probability (ala McMahon, mcradio)
 !				    call survivalProbability(cp)
 !				endif
-            endif
+!            endif
 !            in_mitosis = .true.
             cp%phase = dividing
         endif
@@ -690,7 +689,7 @@ do kcell = 1,nlist0
 			endif
 		enddo
 		if (drugkilled) cycle
-		cp%mitosis = (tnow - cp%t_start_mitosis)/mitosis_duration	
+		cp%mitosis = (tnow - cp%t_start_mitosis)/mitosis_duration
 !		if (kcell == 20) write(nflog,'(a,3f8.0,f8.3)') 'new_grower: ',tnow,cp%t_start_mitosis,mitosis_duration,cp%mitosis
 !    	if (colony_simulation) write(*,*) 'in_mitosis: mitosis: ',cp%mitosis
 !		if (use_volume_method) then
@@ -904,7 +903,6 @@ else
 	    endif
     endif
 endif
-!dVdt = dVdt/cp%fg    ! scale by %fg here rather than in cycle  moved to divider
 end function
 
 

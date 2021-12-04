@@ -299,6 +299,7 @@ summaryData(1:39) = [ rint(istep), rint(Ncells), rint(TNviable), rint(TNnonviabl
 	cmedium(OXYGEN:DRUG_A-1), cmedium(DRUG_A:DRUG_A+1), &
 	doubling_time, r_O, r_G, rint(ndivided), &
 	100*phase_fraction(1:7)]
+if (.not.use_PEST) then
 write(nfres,'(a,a,2a12,i8,e12.4,13i7,63e13.5)') trim(header),' ',gui_run_version, dll_run_version, &
 	istep, hour, Ncells_type(1:2), TNviable, TNnonviable, &
     Ndrug_dead(1,1:2), Nradiation_dead(1:2), TNdead, &
@@ -310,7 +311,7 @@ write(nfres,'(a,a,2a12,i8,e12.4,13i7,63e13.5)') trim(header),' ',gui_run_version
 	cmedium(OXYGEN:DRUG_A-1), cmedium(DRUG_A:DRUG_A+1), &
 	phase_fraction(1:7),  &	! note order change
 	doubling_time, r_O, r_G, real(ndivided)
-
+endif
 !call sum_dMdt(GLUCOSE)
 ndoublings = 0
 doubling_time_sum = 0

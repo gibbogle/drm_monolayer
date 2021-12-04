@@ -13,3 +13,5 @@ build_drm_monolayer/**/*
 ToDo/
 /GUI/drm_monolayer_GUI.pro.user
 /GUI/drm_monolayer_GUI.pro
+PEST/**/*
+

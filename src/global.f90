@@ -43,7 +43,7 @@ integer, parameter :: DIVIDE_USE_CLEAR_SITE  = 2
 integer, parameter :: DIVIDE_USE_CLEAR_SITE_RANDOM  = 3
 
 integer, parameter :: nfin=10, nfout=11, nflog=12, nfres=13, nfrun=14, nfcell=15, nftreatment=16, nfFACS=17, &
-					  nfpar=18, nftcp=20
+					  nfpar=18, nftcp=20, nfpest = 21
 integer, parameter :: neumann(3,6) = reshape((/ -1,0,0, 1,0,0, 0,-1,0, 0,1,0, 0,0,-1, 0,0,1 /), (/3,6/))
 
 integer, parameter :: CFSE = 0
@@ -512,10 +512,10 @@ character*(128) :: PEST_parfile, PEST_outputfile
 real(REAL_KIND) :: C_G_base = 10.359
 
 ! DNA-PK parameters (temporary)
-logical :: DRUG_A_inhibiter = .false.   ! set true if drug is in the input file
+!logical :: DRUG_A_inhibiter = .false.   ! set true if drug is in the input file
+!real(REAL_KIND) :: C_inhibiter
+!real(REAL_KIND) :: a_inhibit = 0.83, b_inhibit = 0.5
 logical :: use_inhibiter = .false.
-real(REAL_KIND) :: C_inhibiter
-real(REAL_KIND) :: a_inhibit = 0.83, b_inhibit = 0.5
 
 real(REAL_KIND) :: rad_dose
 integer :: rad_count(6)
@@ -530,6 +530,9 @@ integer :: N_checkpoint     ! number of cells in checkpoint - not growing
 integer :: ntphase(8)
 integer :: NPsurvive, Nirradiated
 real(8), allocatable :: Psurvive(:)
+logical, parameter :: phase_dist = .true.
+real(REAL_KIND) :: t_irradiation
+integer :: Phase_18h(8)    ! count of cells in each phase 18h after IR
 
 !integer :: icentral !extracellular variable index corresponding to a central site (NX/2,NY/2,NZ/2)
 

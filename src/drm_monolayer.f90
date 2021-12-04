@@ -173,6 +173,7 @@ call averages
 call GenerateSFlookup(1)
 use_permute = .true.
 rad_count = 0
+phase_18h = 0
 end subroutine
 
 !----------------------------------------------------------------------------------------- 
@@ -504,10 +505,6 @@ endif
 close(nfcell)
 call logger('Finished reading input data')
 
-!if (use_PEST) then
-!	call ReadPESTParameters
-!endif
-
 ! Rescale
 chemo(OXYGEN)%membrane_diff_in = chemo(OXYGEN)%membrane_diff_in*Vsite_cm3/60		! /min -> /sec
 chemo(OXYGEN)%membrane_diff_out = chemo(OXYGEN)%membrane_diff_out*Vsite_cm3/60		! /min -> /sec
@@ -660,11 +657,8 @@ if (.not.(use_PEST .and. simulate_colony)) then
 	    open(nfres,file=outputfile,status='replace')
 	    write(nflog,*) 'Opened ',trim(outputfile)
     endif
-!if (.not.(use_PEST .and. simulate_colony)) then
-!    write(*,*) 'use_PEST, simulate_colony: ',use_PEST, simulate_colony
-!	write(*,*) 'Opening: ',trim(outputfile)
-!	open(nfres,file=trim(outputfile),status='replace')
-!	write(*,*) 'Opened: ',trim(outputfile)
+    
+if (.not.use_PEST) then
 write(nfres,'(a)') 'date info GUI_version DLL_version &
 istep hour Ncells(1) Ncells(2) Nviable Nnonviable &
 NdrugA_dead(1) NdrugA_dead(2) &
@@ -680,6 +674,7 @@ doubling_time oxygen_rate glycolysis_rate Ndivided'
 
 write(logmsg,*) 'Wrote nfres header: '
 call logger(logmsg)
+endif
 endif
 
 Nsteps = days*24*60*60/DELTA_T		! DELTA_T in seconds
@@ -830,13 +825,16 @@ do idrug = 1,Ndrugs_used
 		endif
     enddo
     write(nflog,*) 'drug: ',idrug,drug(idrug)%classname,'  ',drug(idrug)%name
-    ! Repair inhibiting drg
-    if (drug(1)%SER_KO2(1,0) < 0) then      ! drug 1 is a DNA repair inhibiter
-        DRUG_A_inhibiter = .true.
-        a_inhibit = drug(1)%SER_max(1,0)
-        b_inhibit = drug(1)%SER_Km(1,0)
-        use_inhibiter = drug(1)%sensitises(1,0)
-    endif
+    ! Repair inhibiting drug
+    ! Now assume that any drug used is a DNA-PK inhibiter
+    use_inhibiter = .true.
+!    This is not needed now
+!    if (drug(1)%SER_KO2(1,0) < 0) then ! drug 1 is a DNA repair inhibiter
+!        DRUG_A_inhibiter = .true.
+!        a_inhibit = drug(1)%SER_max(1,0)
+!        b_inhibit = drug(1)%SER_Km(1,0)
+!        use_inhibiter = drug(1)%sensitises(1,0)
+!    endif
 enddo
 end subroutine
 
@@ -1636,7 +1634,7 @@ integer :: kcell, site(3), hour, nthour, kpar=0
 real(REAL_KIND) :: r(3), rmax, tstart, dt, dts, radiation_dose, diam_um, framp, area, diam
 !integer, parameter :: NT_CONC = 6
 integer :: i, ic, ichemo, ndt, iz, idrug, ityp, idiv, ndiv, Nmetabolisingcells
-integer :: nvars, ns, nphase(8)
+integer :: nvars, ns, nphase(8), ph
 real(REAL_KIND) :: dxc, ex_conc(120*CYCLE_PHASE+1)		! just for testing
 real(REAL_KIND) :: DELTA_T_save, t_sim_0, SFave
 real(REAL_KIND) :: C_O2, HIF1, PDK1
@@ -1648,6 +1646,7 @@ logical :: dbug
 mp => master_cell%metab
 
 t_simulation = istep*DELTA_T	! seconds
+
 !write(*,*) 'start simulate_step: t_simulation: ',istep,t_simulation
 !call testmetab2
 dbug = (istep < 0)
@@ -1683,12 +1682,13 @@ endif
 
 drug_gt_cthreshold = .false.
 
-if (medium_change_step .or. (chemo(DRUG_A)%present .and..not.DRUG_A_inhibiter)) then
+!if (medium_change_step .or. (chemo(DRUG_A)%present .and..not.DRUG_A_inhibiter)) then
+if (medium_change_step .or. (chemo(DRUG_A)%present .and..not.use_inhibiter)) then
     ndiv = 6
 else
     ndiv = 1
 endif
-if (DRUG_A_inhibiter) ndiv = 1
+!if (DRUG_A_inhibiter) ndiv = 1
 dt = DELTA_T/ndiv
 dts = dt/NT_CONC
 DELTA_T_save = DELTA_T
@@ -1788,7 +1788,6 @@ if (dbug .or. mod(istep,nthour) == 0) then
 !	write(logmsg,'(a,8f6.3)') 'ntphase: ',real(ntphase)/sum(ntphase)
 !	call logger(logmsg)
 	write(logmsg,'(a,i6,i4,a,i8,a,i8,a,i8,4f8.3,a,e12.3)') 'istep, hour: ',istep,istep/nthour,' Nlive: ',Ncells,' Nviable: ',sum(Nviable),' NPsurvive: ',NPsurvive    !, &
-!	    '  medium glu,lac,gln,ON: ',cmediumave(GLUCOSE:NUTS),' r_Gln: ',mp%Gln_rate
 	call logger(logmsg)
 endif
 ! write(nflog,'(a,f8.3)') 'did simulate_step: time: ',wtime()-start_wtime
@@ -1805,15 +1804,65 @@ write(nflog,'(a,i4,7e12.3)') 'step:   ',istep,cell_list(1)%Cin(GLUCOSE),cell_lis
 #endif
 !write(*,*) 'end simulate_step: t_simulation: ',t_simulation
 !call averages
+if (t_simulation - t_irradiation >= 18*3600 .and. phase_18h(1) == 0) then   ! count cells in each phase
+    do kcell = 1,Ncells
+        cp => cell_list(kcell)
+        if (cp%state == DEAD) cycle
+        if (cp%phase == G1_phase .or. cp%phase == G1_checkpoint) then
+            ph = 1
+        elseif (cp%phase == S_phase .or. cp%phase == S_checkpoint) then
+            ph = 2
+        elseif (cp%phase == G2_phase .or. cp%phase == G2_checkpoint) then
+            ph = 3
+        else
+            ph = 4
+        endif
+        phase_18h(ph) = phase_18h(ph) + 1
+!        phase_18h(cp%phase) = phase_18h(cp%phase) + 1   ! checking # in checkpoints
+    enddo
+endif 
 if (is_radiation .and. (NPsurvive == Nirradiated)) then
     write(logmsg,*) 'NPsurvive = Nirradiated: ',NPsurvive
     call logger(logmsg)
     SFave = sum(Psurvive(1:NPsurvive))/NPsurvive
     write(logmsg,'(a,e12.3,f8.4)') 'SFave,log10(SFave): ',SFave,log10(SFave)
     call logger(logmsg)
+    call completed(SFave)
     res = 1
 endif
 
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+subroutine completed(SFave)
+real(REAL_KIND) :: SFave
+real(REAL_KIND) :: fract(8)
+logical :: use_SF = .false.
+
+if (phase_dist) then
+    write(logmsg,'(a,8i6)') 'phase_18h: ',phase_18h(1:4)
+    call logger(logmsg)
+    fract(1:4) = phase_18h(1:4)/real(sum(phase_18h(1:4)))
+endif
+if (use_PEST) then
+    if (phase_dist) then
+        if (use_SF) then
+            write(nfres,'(5e15.6)') log10(SFave),fract(1:4)
+        else
+            write(nfres,'(5e15.6)') fract(1:4)
+        endif
+    else
+        write(nfres,'(e15.6)') log10(SFave)
+    endif
+    close(nfpest)
+else
+    if (phase_dist) then
+        write(nflog,'(5e15.6)') log10(SFave),fract(1:4)
+    else
+        write(nflog,'(e15.6)') log10(SFave)
+    endif
+endif
 end subroutine
 
 !-----------------------------------------------------------------------------------------
