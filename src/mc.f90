@@ -18,7 +18,7 @@ real(8) :: PHRsimple = 0.9      ! fraction of post-replication simple DSBs that 
 !character*(2) :: phaseName(8) = ['G1','','S ','','G2','','M ','']
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.008462]   ! by pathway
 real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.2604, 0.008462]   ! by pathway  with HR simple
-real(8) :: misrepRate(8) = [0.18875,0,0.18247,0,0.14264,0,0.18875,0]        ! by phase, Nlethal = 0.5*misrepRate*Nmis 
+real(8) :: misrepRate(8) = [0.18875,0.0,0.18247,0.0,0.14264,0.0,0.18875,0.0]        ! by phase, Nlethal = 0.5*misrepRate*Nmis 
 !real(8) :: fidRate(NP)  = [0.98537, 0.98537, 0.98537, 1.0, 0.4393]  ! by pathway
 real(8) :: fidRate(NP)  = [0.98537, 0.98537, 0.98537, 1.0, 1.0, 0.4393]  ! by pathway  with HR simple
 logical :: pathwayUsed(8,NP)
