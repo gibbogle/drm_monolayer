@@ -530,9 +530,10 @@ integer :: N_checkpoint     ! number of cells in checkpoint - not growing
 integer :: ntphase(8)
 integer :: NPsurvive, Nirradiated
 real(8), allocatable :: Psurvive(:)
-logical, parameter :: phase_dist = .true.
+!logical, parameter :: phase_dist = .true.
 real(REAL_KIND) :: t_irradiation
-integer :: Phase_18h(8)    ! count of cells in each phase 18h after IR
+real(REAL_KIND), parameter :: phase_hours = 24
+integer :: phase_dist(8)    ! count of cells in each phase phase_hours after IR
 
 !integer :: icentral !extracellular variable index corresponding to a central site (NX/2,NY/2,NZ/2)
 

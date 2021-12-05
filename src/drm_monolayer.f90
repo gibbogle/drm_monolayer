@@ -173,7 +173,7 @@ call averages
 call GenerateSFlookup(1)
 use_permute = .true.
 rad_count = 0
-phase_18h = 0
+phase_dist = 0
 end subroutine
 
 !----------------------------------------------------------------------------------------- 
@@ -1804,7 +1804,7 @@ write(nflog,'(a,i4,7e12.3)') 'step:   ',istep,cell_list(1)%Cin(GLUCOSE),cell_lis
 #endif
 !write(*,*) 'end simulate_step: t_simulation: ',t_simulation
 !call averages
-if (t_simulation - t_irradiation >= 18*3600 .and. phase_18h(1) == 0) then   ! count cells in each phase
+if (t_simulation - t_irradiation >= phase_hours*3600 .and. phase_dist(1) == 0) then   ! count cells in each phase
     do kcell = 1,Ncells
         cp => cell_list(kcell)
         if (cp%state == DEAD) cycle
@@ -1817,14 +1817,15 @@ if (t_simulation - t_irradiation >= 18*3600 .and. phase_18h(1) == 0) then   ! co
         else
             ph = 4
         endif
-        phase_18h(ph) = phase_18h(ph) + 1
-!        phase_18h(cp%phase) = phase_18h(cp%phase) + 1   ! checking # in checkpoints
+        phase_dist(ph) = phase_dist(ph) + 1
+!        phase_dist(cp%phase) = phase_dist(cp%phase) + 1   ! checking # in checkpoints
     enddo
-endif 
-if (is_radiation .and. (NPsurvive == Nirradiated)) then
+endif
+! Need the phase_dist check in case NPsurvive = Nirradiated before phase_hours
+if (is_radiation .and. (NPsurvive >= Nirradiated) .and. (phase_dist(1) > 0)) then
     write(logmsg,*) 'NPsurvive = Nirradiated: ',NPsurvive
     call logger(logmsg)
-    SFave = sum(Psurvive(1:NPsurvive))/NPsurvive
+    SFave = sum(Psurvive(1:Nirradiated))/Nirradiated
     write(logmsg,'(a,e12.3,f8.4)') 'SFave,log10(SFave): ',SFave,log10(SFave)
     call logger(logmsg)
     call completed(SFave)
@@ -1834,61 +1835,46 @@ endif
 end subroutine
 
 !-----------------------------------------------------------------------------------------
+! The selection of outputs needs to be made an input parameter.
+! Choices:
+! SF + distribution
+! SF only
+! distribution only
+!
+! The first two can be lumped together - if distribution is not wanted it will not be read.
+! I.e. need only use_SF
+! For now assume always use_SF = true, because fitting without SF is no good.
 !-----------------------------------------------------------------------------------------
 subroutine completed(SFave)
 real(REAL_KIND) :: SFave
 real(REAL_KIND) :: fract(8)
-logical :: use_SF = .false.
+logical :: use_SF = .true.
 
-if (phase_dist) then
-    write(logmsg,'(a,8i6)') 'phase_18h: ',phase_18h(1:4)
+!if (phase_dist) then
+    write(logmsg,'(a,8i6)') 'phase_dist: ',phase_dist(1:4)
     call logger(logmsg)
-    fract(1:4) = phase_18h(1:4)/real(sum(phase_18h(1:4)))
-endif
+    fract(1:4) = phase_dist(1:4)/real(sum(phase_dist(1:4)))
+!endif
 if (use_PEST) then
-    if (phase_dist) then
+!    if (phase_dist) then
         if (use_SF) then
             write(nfres,'(5e15.6)') log10(SFave),fract(1:4)
         else
             write(nfres,'(5e15.6)') fract(1:4)
         endif
-    else
-        write(nfres,'(e15.6)') log10(SFave)
-    endif
+!    else
+!        write(nfres,'(e15.6)') log10(SFave)
+!    endif
     close(nfpest)
 else
-    if (phase_dist) then
+!    if (phase_dist) then
         write(nflog,'(5e15.6)') log10(SFave),fract(1:4)
-    else
-        write(nflog,'(e15.6)') log10(SFave)
-    endif
+!    else
+!        write(nflog,'(e15.6)') log10(SFave)
+!    endif
 endif
 end subroutine
 
-!-----------------------------------------------------------------------------------------
-!-----------------------------------------------------------------------------------------
-subroutine GlutamineDecay
-integer :: kcell, i
-real(REAL_KIND) :: decay
-type(cell_type), pointer :: cp
-
-if (use_glutamine_decay) then
-    decay = exp(-k_glutamine_decay*DELTA_T)
-    ! Intracellular glutamine
-    do kcell = 1,nlist
-        cp => cell_list(kcell)
-        if (cp%state == DEAD) cycle
-        cp%Cin(GLUTAMINE) = decay*cp%Cin(GLUTAMINE)
-    enddo
-    Caverage(GLUTAMINE) = decay*Caverage(GLUTAMINE)
-    ! Medium glutamine
-    do i = 1,N1D
-        C_OGL(GLUTAMINE,i) = decay*C_OGL(GLUTAMINE,i)
-    enddo
-    Cmediumave(GLUTAMINE) = decay*Cmediumave(GLUTAMINE)
-    Caverage(MAX_CHEMO + GLUTAMINE) = decay*Caverage(MAX_CHEMO + GLUTAMINE)
-endif
-end subroutine
 
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
