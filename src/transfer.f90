@@ -562,15 +562,19 @@ end subroutine
 subroutine getNviable	!(Nviable, Nlive)
 !integer :: Nviable(:) 
 integer :: Nlive(MAX_CELLTYPES)
-integer :: kcell, ityp, idrug
+integer :: kcell, ityp, idrug, nd
 logical :: tag
 type(cell_type), pointer :: cp
 
 Nviable = 0
 Nlive = 0
+nd = 0
 do kcell = 1,nlist
 	cp => cell_list(kcell)
-	if (cp%state == DEAD) cycle
+	if (cp%state == DEAD) then
+	    nd = nd+1
+	    cycle
+	endif
     ityp = cp%celltype
     Nlive(ityp) = Nlive(ityp) + 1
 !    if (cp%state /= DYING) write(*,*) 'getNviable: ',kcell,cp%state
@@ -578,7 +582,7 @@ do kcell = 1,nlist
 	Nviable(ityp) = Nviable(ityp) + 1
 enddo
 if (Nlive(1) /= Ncells_type(1)) then
-	write(*,*) 'Error: getNviable: Nlive /= Ncells_type: ',Nlive(1),Ncells_type(1)
+	write(*,*) 'Error: getNviable: Nlive /= Ncells_type, nd, Napop: ',Nlive(1),Ncells_type(1),nd,Napop
 	stop
 endif
 if (Nviable(1) /= Ncells_type(1) - Ndying(1)) then

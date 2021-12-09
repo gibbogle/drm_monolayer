@@ -1636,7 +1636,7 @@ real(REAL_KIND) :: r(3), rmax, tstart, dt, dts, radiation_dose, diam_um, framp, 
 integer :: i, ic, ichemo, ndt, iz, idrug, ityp, idiv, ndiv, Nmetabolisingcells
 integer :: nvars, ns, nphase(8), ph
 real(REAL_KIND) :: dxc, ex_conc(120*CYCLE_PHASE+1)		! just for testing
-real(REAL_KIND) :: DELTA_T_save, t_sim_0, SFave
+real(REAL_KIND) :: DELTA_T_save, t_sim_0, SFlive, SFave
 real(REAL_KIND) :: C_O2, HIF1, PDK1
 type(metabolism_type), pointer :: mp
 type(cell_type), pointer :: cp
@@ -1777,7 +1777,7 @@ call getNviable
 
 if (dbug .or. mod(istep,nthour) == 0) then
     nphase = 0
-    do kcell = 1,Ncells
+    do kcell = 1,nlist
         cp => cell_list(kcell)
         i = cp%phase
         nphase(i) = nphase(i) + 1
@@ -1805,27 +1805,32 @@ write(nflog,'(a,i4,7e12.3)') 'step:   ',istep,cell_list(1)%Cin(GLUCOSE),cell_lis
 !write(*,*) 'end simulate_step: t_simulation: ',t_simulation
 !call averages
 if (t_simulation - t_irradiation >= phase_hours*3600 .and. phase_dist(1) == 0) then   ! count cells in each phase
-    do kcell = 1,Ncells
+    do kcell = 1,nlist
         cp => cell_list(kcell)
-        if (cp%state == DEAD) cycle
-        if (cp%phase == G1_phase .or. cp%phase == G1_checkpoint) then
+        if (cp%state == DEAD) then
+            ph = 0      ! 
+        elseif (cp%phase == G1_phase .or. cp%phase == G1_checkpoint) then
             ph = 1
         elseif (cp%phase == S_phase .or. cp%phase == S_checkpoint) then
             ph = 2
-        elseif (cp%phase == G2_phase .or. cp%phase == G2_checkpoint) then
+        elseif (cp%phase >= G2_phase) then
             ph = 3
-        else
-            ph = 4
         endif
         phase_dist(ph) = phase_dist(ph) + 1
 !        phase_dist(cp%phase) = phase_dist(cp%phase) + 1   ! checking # in checkpoints
     enddo
 endif
 ! Need the phase_dist check in case NPsurvive = Nirradiated before phase_hours
-if (is_radiation .and. (NPsurvive >= Nirradiated) .and. (phase_dist(1) > 0)) then
-    write(logmsg,*) 'NPsurvive = Nirradiated: ',NPsurvive
+if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. (phase_dist(1) > 0)) then
+    write(logmsg,*) 'NPsurvive = Nirradiated - Napop: ',NPsurvive,Nirradiated,Napop
     call logger(logmsg)
-    SFave = sum(Psurvive(1:Nirradiated))/Nirradiated
+    SFlive = getSFlive()
+!    SFlive = sum(Psurvive(1:Nirradiated))/(Nirradiated - Napop)
+    if (use_Napop) then
+        SFave = ((Nirradiated - Napop)/Nirradiated)*SFlive
+    else
+        SFave = SFlive
+    endif
     write(logmsg,'(a,e12.3,f8.4)') 'SFave,log10(SFave): ',SFave,log10(SFave)
     call logger(logmsg)
     call completed(SFave)
@@ -1833,6 +1838,25 @@ if (is_radiation .and. (NPsurvive >= Nirradiated) .and. (phase_dist(1) > 0)) the
 endif
 
 end subroutine
+
+!-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+function getSFlive result(SF)
+real(REAL_KIND) :: SF
+real(REAL_KIND) :: sfsum
+integer :: kcell, n
+type(cell_type), pointer :: cp
+
+n = 0
+sfsum = 0
+do kcell = 1,nlist
+    cp => cell_list(kcell)
+    if (cp%state == DEAD) cycle
+    n = n+1
+    sfsum = sfsum + Psurvive(kcell)
+enddo
+SF = sfsum/n
+end function
 
 !-----------------------------------------------------------------------------------------
 ! The selection of outputs needs to be made an input parameter.
@@ -1847,20 +1871,51 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine completed(SFave)
 real(REAL_KIND) :: SFave
-real(REAL_KIND) :: fract(8)
+real(REAL_KIND) :: fract(0:8)
 logical :: use_SF = .true.
+integer :: kcell, ph, nir(4), nsum
+real(REAL_KIND) :: sftot(4), sfsum
+type(cell_type), pointer :: cp
+
+! Look at average survival by IR phase
+nir = 0
+sftot = 0
+nsum = 0
+sfsum = 0
+do kcell = 1,nlist
+    cp => cell_list(kcell)
+    if (cp%state == DEAD) cycle
+    nsum = nsum + 1
+    sfsum = sfsum + Psurvive(kcell)
+    if (cp%phase0 <= G1_checkpoint) then
+        ph = 1
+    elseif (cp%phase0 <= S_checkpoint) then
+        ph = 2
+    elseif (cp%phase0 <= G2_checkpoint) then
+        ph = 3
+    else
+        ph = 4
+    endif
+    nir(ph) = nir(ph) + 1
+    sftot(ph) = sftot(ph) + Psurvive(kcell)
+enddo
+write(*,'(a,4f8.4)') 'Average SF by phase: ',sftot/nir
+write(*,'(a,4f8.4)') 'log10(SF) by phase: ',log10(sftot/nir)
+!write(*,'(a,2f8.4)') 'Average: ',sfsum/nsum,log10(sfsum/nsum)
 
 !if (phase_dist) then
-    write(logmsg,'(a,8i6)') 'phase_dist: ',phase_dist(1:4)
+    write(logmsg,'(a,8i6)') 'phase_dist: ',phase_dist(0:3)
     call logger(logmsg)
-    fract(1:4) = phase_dist(1:4)/real(sum(phase_dist(1:4)))
+    fract(0:3) = phase_dist(0:3)/real(sum(phase_dist(0:3)))
+    write(logmsg,'(a,8f6.3)') 'fract:      ',fract(0:3)
+    call logger(logmsg)
 !endif
 if (use_PEST) then
 !    if (phase_dist) then
         if (use_SF) then
-            write(nfres,'(5e15.6)') log10(SFave),fract(1:4)
+            write(nfres,'(5e15.6)') log10(SFave),fract(0:3)
         else
-            write(nfres,'(5e15.6)') fract(1:4)
+            write(nfres,'(5e15.6)') fract(0:3)
         endif
 !    else
 !        write(nfres,'(e15.6)') log10(SFave)
@@ -1868,7 +1923,7 @@ if (use_PEST) then
     close(nfpest)
 else
 !    if (phase_dist) then
-        write(nflog,'(5e15.6)') log10(SFave),fract(1:4)
+        write(nflog,'(5e15.6)') log10(SFave),fract(0:3)
 !    else
 !        write(nflog,'(e15.6)') log10(SFave)
 !    endif
@@ -1887,7 +1942,7 @@ ave_V = 0
 ave_dVdt = 0
 ave_fg = 0
 n = 0
-do kcell = 1,Ncells
+do kcell = 1,nlist
 	cp => cell_list(kcell)
 	if (cp%state == DEAD) continue
 	n = n+1

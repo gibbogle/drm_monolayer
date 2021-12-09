@@ -112,9 +112,11 @@ end subroutine
 subroutine cellIrradiation(cp, dose, Cdrug)
 type(cell_type), pointer :: cp
 real(8) :: dose, Cdrug
+integer :: ityp, kpar = 0
 integer :: phase
 real(8) :: DSB0(NP)
 real(8) :: totDSB0, baseDSB, fin, T_S, f
+real(8) :: Pbase, Pdie, R
 real(8) :: DSB_Gy = 35
 
 phase = cp%phase
@@ -133,6 +135,19 @@ if (phase <= G1_checkpoint) then
     totDSB0 = baseDSB
     DSB0(1) = (1 - Pcomplex)*totDSB0
     DSB0(2) = Pcomplex*totDSB0
+    Pbase = exp(-baseRate*totDSB0)   ! this is 1 - Pdie
+    Pdie = 1 - Pbase 
+    R = par_uni(kpar)
+    if (R < Pdie) then  ! cell dies of apoptosis
+        cp%state = DEAD
+        Napop = Napop + 1
+        Ncells = Ncells - 1
+        ityp = cp%celltype
+        Ncells_type(ityp) = Ncells_type(ityp) - 1
+        Nviable(ityp) = Ncells_type(ityp)
+        Ndead(ityp) = Ndead(ityp) + 1
+!        write(*,*) 'apoptotic death: ',kcell_now, phase
+    endif
 elseif (phase >= G2_phase) then
     totDSB0 = 2*baseDSB
     DSB0(3) = (1 - Pcomplex)*totDSB0
@@ -191,7 +206,8 @@ real(8) :: r, k, x, xmax, km, xf
 r = K_ATR(2)*ATR_DSB   ! rate of production of pATR
 k = K_ATR(3)  ! decay rate constant
 pATR = r/k + (pATR - r/k)*exp(-k*dth)
-if (kcell_now == -4) write(*,'(a,i4,5f8.4)') 'updateATR: r,k,r/k,ATR_DSB,pATR: ',kcell_now,r,k,r/k,ATR_DSB,pATR
+!if (kcell_now == 3) write(*,'(a,i4,5f8.4)') 'updateATR: r,k,r/k,ATR_DSB,pATR: ',kcell_now,r,k,r/k,ATR_DSB,pATR
+!if (pATR > 0) write(*,'(a,i4,5f8.4)') 'updateATR: r,k,r/k,ATR_DSB,pATR: ',kcell_now,r,k,r/k,ATR_DSB,pATR
 end subroutine
 
 !------------------------------------------------------------------------
@@ -213,10 +229,12 @@ end function
 !------------------------------------------------------------------------
 function G2_checkpoint_time(cp) result(t)
 type(cell_type), pointer :: cp
-real(REAL_KIND) :: t, th
+real(REAL_KIND) :: t, th, th_ATM, th_ATR
 
-th = K_ATM(4)*(1 - exp(-K_ATM(1)*cp%pATM)) + K_ATR(4)*(1 - exp(-K_ATR(1)*cp%pATR))
-if (kcell_now == -4) write(*,'(a,i6,f8.3)') 'G2_checkpoint_time (h): ',kcell_now,th
+th_ATM = K_ATM(4)*(1 - exp(-K_ATM(1)*cp%pATM))
+th_ATR = K_ATR(4)*(1 - exp(-K_ATR(1)*cp%pATR))
+th = th_ATM + th_ATR
+!if (kcell_now == 3) write(*,'(a,i6,2f8.3)') 'G2_checkpoint_time (ATM, ATR) (h): ',kcell_now,th_ATM,th_ATR
 t = 3600*th
 end function
 
@@ -332,17 +350,11 @@ DSB = cp%DSB
 totDSB = sum(DSB)
 Nlethal = cp%Nlethal
 if (cp%phase0 == G1_phase) then
+!    Pbase = exp(-baseRate*cp%totDSB0)   ! this is 1 - Pdie
     Paber = exp(-Kaber*Nlethal)
-    Pbase = exp(-baseRate*cp%totDSB0)
-    ! The inclusion of Papop is dubious, probably wrong, but also irrelevant
-    ! because, for IR in G1, totDSB = 0 by mitosis.
-    if (use_base_apop_rate) then
-        Papop = exp(-baseRate*totDSB) ! no repair
-    else
-        Papop = exp(-apopRate*totDSB)
-    endif
     Pmit = exp(-mitRate*totDSB)
-    cp%Psurvive = Paber*Pbase*Papop*Pmit
+!       cp%Psurvive = Paber*Pbase*Papop*Pmit
+    cp%Psurvive = Paber*Pmit
 elseif (cp%phase0 < M_phase) then
     Paber = exp(-Kaber*Nlethal)
     Pmit = exp(-mitRate*totDSB)

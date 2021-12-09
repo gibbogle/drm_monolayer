@@ -126,8 +126,9 @@ call setupRadiation
 !	    endif
 !    enddo
 !else
-    allocate(Psurvive(2*Ncells))
+    allocate(Psurvive(4*Ncells))
     NPsurvive = 0
+    Napop = 0
     tmin = 1.0      ! for now...
     n = 0
     do kcell = 1,nlist
@@ -724,6 +725,8 @@ do kcell = 1,nlist0
         if (cp%mitosis >= 1) then
 !            if (kcell == 20) write(nflog,*) 'new_grower: divide cell: ',kcell
 			divide = .true.
+			! Post-IR, and this cell has not previously had %Psurvive computed
+			! i.e. this is first mitosis post-IR
 			if (is_radiation .and. cp%Psurvive < 0) then
 			    ! compute survival probability (ala McMahon, mcradio)
 			    call survivalProbability(cp)
