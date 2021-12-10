@@ -19,14 +19,15 @@ real(8) :: PHRsimple = 0.9      ! fraction of post-replication simple DSBs that 
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.008462]   ! by pathway
 real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.2604, 0.008462]   ! by pathway  with HR simple
 real(8) :: misrepRate(8) = [0.18875,0.0,0.18247,0.0,0.14264,0.0,0.18875,0.0]        ! by phase, Nlethal = 0.5*misrepRate*Nmis 
+!real(8) :: misrepRate(8) = [0.18875,0.0,0.18247,0.0,0.44264,0.0,0.18875,0.0]        ! by phase, Nlethal = 0.5*misrepRate*Nmis 
 !real(8) :: fidRate(NP)  = [0.98537, 0.98537, 0.98537, 1.0, 0.4393]  ! by pathway
 real(8) :: fidRate(NP)  = [0.98537, 0.98537, 0.98537, 1.0, 1.0, 0.4393]  ! by pathway  with HR simple
 logical :: pathwayUsed(8,NP)
 real(8) :: apopRate = 0.01117
 real(8) :: baseRate = 0.000739
 real(8) :: mitRate  = 0.0141
-real(8) :: Msurvival = 0.5
-real(8) :: Kaber = 1.0          ! added, McMahon has 1 
+real(8) :: Msurvival = 0.05
+real(8) :: Kaber = 1.0          ! added, McMahon has 1.  
 real(8) :: Klethal = 1.65
 real(8) :: K_ATM(4) = [1.0, 0.01, 1.0, 10.0]
 real(8) :: K_ATR(4) = [1.0, 0.01, 0.1, 10.0]
@@ -66,6 +67,7 @@ read(nfin,*) iuse_exp
 read(nfin,*) iuse_baserate
 use_base_apop_rate = (iuse_baserate == 1)
 use_exp_inhibit = (iuse_exp == 1)
+!misrepRate(1) = Kaber*misrepRate(1)
 end subroutine
 
 !--------------------------------------------------------------------------
@@ -284,6 +286,8 @@ real(8) :: totDSB0, totDSB, Pmis, Nmis, totDSBinfid0, totDSBinfid, ATR_DSB, ATM_
 logical :: pathUsed(NP)
 integer :: k
 logical :: use_DSBinfid = .true.
+real(8) :: DSB_min = 1.0e-3
+logical :: dbug
 
 dth = dt/3600   ! hours
 phase = cp%phase
@@ -306,18 +310,22 @@ elseif (phase == G2_phase) then
 endif
 if (kcell_now == -4) write(*,'(a,2i6,2e12.3)') 'pATM, pATR: ',kcell_now,phase,cp%pATM,cp%pATR
 
-pathUsed = pathwayUsed(phase,:)
+!pathUsed = pathwayUsed(phase,:)
+dbug = (kcell_now == -3) .and. (cp%phase0 == G2_phase)
 DSB = 0
 do k = 1,NP
-    if (pathUsed(k)) then
+!    if (pathUsed(k)) then
+        if (dbug .and. DSB0(k) > 0) write(*,*) 'pathwayRepair: k,DSB0(k): ',kcell_now,k,DSB0(k)
         call pathwayRepair(k, dth, DSB0(k), DSB(k))
-    endif
+!    endif
+    if (DSB(k) < DSB_min) DSB(k) = 0
 enddo
 totDSB = sum(DSB)
 totDSBinfid0 = 0
 totDSBinfid = 0
 do k = 1,NP
-    if (pathUsed(k) .and. fidRate(k) < 1.0) then
+!    if (pathUsed(k) .and. fidRate(k) < 1.0) then
+    if (DSB0(k) > 0 .and. fidRate(k) < 1.0) then
         totDSBinfid0 = totDSBinfid0 + DSB0(k)
         totDSBinfid = totDSBinfid + DSB(k)
     endif
@@ -329,12 +337,14 @@ else
 endif
 Nmis = 0
 do k = 1,NP
-    if (pathUsed(k) .and. fidRate(k) < 1.0) then
+!    if (pathUsed(k) .and. fidRate(k) < 1.0) then
+    if (fidRate(k) < 1.0) then
         Nmis = Nmis + (DSB0(k) - DSB(k))*(1 - fidRate(k)*(1 - Pmis))
     endif
 enddo
 cp%DSB = DSB
 dNlethal = Klethal*misrepRate(phase)*Nmis   ! (was 0.5)  1.65 needs to be another parameter -> Klethal
+if (dbug) write(*,'(a,3e12.3)') 'Pmis,Nmis,dNlethal: ',Pmis,Nmis,dNlethal
 cp%Nlethal = cp%Nlethal + dNlethal
 end subroutine
 
@@ -345,6 +355,7 @@ end subroutine
 subroutine survivalProbability(cp)
 type(cell_type), pointer :: cp
 real(8) :: DSB(NP), totDSB, Nlethal,Paber, Pbase, Papop, Pmit, Psurv
+!real(8) :: zKaber = 1   ! using Kaber to scale msrepRate(1)
 
 DSB = cp%DSB
 totDSB = sum(DSB)
@@ -353,9 +364,11 @@ if (cp%phase0 == G1_phase) then
 !    Pbase = exp(-baseRate*cp%totDSB0)   ! this is 1 - Pdie
     Paber = exp(-Kaber*Nlethal)
     Pmit = exp(-mitRate*totDSB)
-!       cp%Psurvive = Paber*Pbase*Papop*Pmit
     cp%Psurvive = Paber*Pmit
-elseif (cp%phase0 < M_phase) then
+!    if (kcell_now < 40) write(*,'(a,i3,2f5.1,3e11.3)') 'G1: Nlethal,totDSB,Paber,Pmit: ',kcell_now,Nlethal,totDSB,Paber,Pmit,Paber*Pmit
+!       cp%Psurvive = Paber*Pbase*Papop*Pmit
+!    if (kcell_now == 35) write(*,*) 'cell #35 Psurvive: ',cp%Psurvive
+elseif (cp%phase0 < M_phase) then   ! S, G2
     Paber = exp(-Kaber*Nlethal)
     Pmit = exp(-mitRate*totDSB)
     cp%Psurvive = Pmit*Paber        

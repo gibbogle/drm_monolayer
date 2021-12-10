@@ -386,7 +386,7 @@ real(REAL_KIND) :: Clabel_threshold		! for labelling drug, e.g. EDU
 
 type(savedata_type) :: saveFACS	!, saveprofile, saveslice
 
-integer :: istep, nsteps, it_solve, NT_CONC, NT_GUI_OUT, show_progeny, ichemo_curr, NT_DISPLAY
+integer :: istep, ndays, nsteps, it_solve, NT_CONC, NT_GUI_OUT, show_progeny, ichemo_curr, NT_DISPLAY
 integer :: Mnodes, ncpu_input
 integer :: Nevents
 real(REAL_KIND) :: DELTA_T, DELTA_X, fluid_fraction, Vsite_cm3, Vextra_cm3, Vcell_pL, tnow, DT_DISPLAY
@@ -526,15 +526,16 @@ real(REAL_KIND) :: synch_fraction
 
 ! DRM section
 logical :: DRM = .true.
-logical, parameter :: use_Napop = .false.   ! use count of apoptosed cells in SFave calculation
+logical, parameter :: use_Napop = .false.   ! use count of apoptosed cells in SFave calculation - not with phase_hours >= 18
 integer :: N_checkpoint     ! number of cells in checkpoint - not growing
 integer :: ntphase(8)
 integer :: NPsurvive, Nirradiated, Napop
 real(8), allocatable :: Psurvive(:)
 !logical, parameter :: phase_dist = .true.
 real(REAL_KIND) :: t_irradiation
-real(REAL_KIND), parameter :: phase_hours = 24
+real(REAL_KIND), parameter :: phase_hours = 18
 integer :: phase_dist(0:8)    ! count of cells in each phase phase_hours after IR
+integer, allocatable :: nphase(:,:)
 
 !integer :: icentral !extracellular variable index corresponding to a central site (NX/2,NY/2,NZ/2)
 

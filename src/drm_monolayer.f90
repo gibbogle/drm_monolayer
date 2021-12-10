@@ -167,6 +167,7 @@ t_lastmediumchange = 0
 medium_change_step = .false.
 limit_stop = .false.
 kcell_dbug = 0
+allocate(nphase(0:ndays*24,8))
 write(logmsg,'(a,i6)') 'Startup procedures have been executed: initial T cell count: ',Ncells0
 call logger(logmsg)
 call averages
@@ -349,7 +350,7 @@ integer :: ictype, idisplay, isconstant, ioxygengrowth, iglucosegrowth, ilactate
 integer :: iuse_drop, iconstant, isaveprofiledata, isaveslicedata, iusecellcycle, iusemetabolism, ifullymixed, isynchronise
 logical :: use_metabolites
 integer :: isaveFACSdata
-real(REAL_KIND) :: days, bdry_conc, percent, d_n_limit
+real(REAL_KIND) :: bdry_conc, percent, d_n_limit
 real(REAL_KIND) :: sigma(2), DXmm, anoxia_tag_hours, anoxia_death_hours, aglucosia_tag_hours, aglucosia_death_hours
 character*(12) :: drug_name
 character*(1) :: numstr
@@ -379,7 +380,7 @@ read(nfcell,*) divide_time_median(2)
 read(nfcell,*) divide_time_shape(2)
 read(nfcell,*) iV_depend
 read(nfcell,*) iV_random
-read(nfcell,*) days							! number of days to simulate
+read(nfcell,*) ndays							! number of days to simulate
 !read(nfcell,*) d_n_limit					! possible limit on diameter or number of cells
 !diam_count_limit = d_n_limit
 read(nfcell,*) DELTA_T						! time step size (sec)
@@ -677,7 +678,7 @@ call logger(logmsg)
 endif
 endif
 
-Nsteps = days*24*60*60/DELTA_T		! DELTA_T in seconds
+Nsteps = ndays*24*60*60/DELTA_T		! DELTA_T in seconds
 NT_DISPLAY = 2						! This is the updating interval (calls to get_summary) in the GUI version.  Not used by command-line version.
 DT_DISPLAY = NT_DISPLAY*DELTA_T
 write(logmsg,'(a,2i6,f6.0)') 'nsteps, NT_CONC, DELTA_T: ',nsteps,NT_CONC,DELTA_T
@@ -1634,7 +1635,7 @@ integer :: kcell, site(3), hour, nthour, kpar=0
 real(REAL_KIND) :: r(3), rmax, tstart, dt, dts, radiation_dose, diam_um, framp, area, diam
 !integer, parameter :: NT_CONC = 6
 integer :: i, ic, ichemo, ndt, iz, idrug, ityp, idiv, ndiv, Nmetabolisingcells
-integer :: nvars, ns, nphase(8), ph
+integer :: nvars, ns, nphaseh(8), ph
 real(REAL_KIND) :: dxc, ex_conc(120*CYCLE_PHASE+1)		! just for testing
 real(REAL_KIND) :: DELTA_T_save, t_sim_0, SFlive, SFave
 real(REAL_KIND) :: C_O2, HIF1, PDK1
@@ -1776,15 +1777,16 @@ res = 0
 call getNviable
 
 if (dbug .or. mod(istep,nthour) == 0) then
-    nphase = 0
+    nphaseh = 0
     do kcell = 1,nlist
         cp => cell_list(kcell)
         i = cp%phase
-        nphase(i) = nphase(i) + 1
+        nphaseh(i) = nphaseh(i) + 1
     enddo
+    nphase(istep/nthour,:) = nphaseh
 !    write(logmsg,'(a,8i6,i8)') 'nphase: ',nphase,Ncells
 !	call logger(logmsg)
-	ntphase = nphase + ntphase
+	ntphase = nphaseh + ntphase
 !	write(logmsg,'(a,8f6.3)') 'ntphase: ',real(ntphase)/sum(ntphase)
 !	call logger(logmsg)
 	write(logmsg,'(a,i6,i4,a,i8,a,i8,a,i8,4f8.3,a,e12.3)') 'istep, hour: ',istep,istep/nthour,' Nlive: ',Ncells,' Nviable: ',sum(Nviable),' NPsurvive: ',NPsurvive    !, &
@@ -1813,8 +1815,10 @@ if (t_simulation - t_irradiation >= phase_hours*3600 .and. phase_dist(1) == 0) t
             ph = 1
         elseif (cp%phase == S_phase .or. cp%phase == S_checkpoint) then
             ph = 2
-        elseif (cp%phase >= G2_phase) then
+        elseif (cp%phase < M_phase) then
             ph = 3
+        else
+            ph = 4
         endif
         phase_dist(ph) = phase_dist(ph) + 1
 !        phase_dist(cp%phase) = phase_dist(cp%phase) + 1   ! checking # in checkpoints
@@ -1834,6 +1838,10 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. (phase_dist(1)
     write(logmsg,'(a,e12.3,f8.4)') 'SFave,log10(SFave): ',SFave,log10(SFave)
     call logger(logmsg)
     call completed(SFave)
+    write(nflog,'(a)') 'nphase:'
+    do hour = 0,istep/nthour
+        write(nflog,'(i3,8i8)') hour,nphase(hour,:)
+    enddo
     res = 1
 endif
 
@@ -1853,7 +1861,7 @@ do kcell = 1,nlist
     cp => cell_list(kcell)
     if (cp%state == DEAD) cycle
     n = n+1
-    sfsum = sfsum + Psurvive(kcell)
+    sfsum = sfsum + cp%Psurvive
 enddo
 SF = sfsum/n
 end function
@@ -1873,8 +1881,8 @@ subroutine completed(SFave)
 real(REAL_KIND) :: SFave
 real(REAL_KIND) :: fract(0:8)
 logical :: use_SF = .true.
-integer :: kcell, ph, nir(4), nsum
-real(REAL_KIND) :: sftot(4), sfsum
+integer :: kcell, ph, nir(4), nsum, kcellmax
+real(REAL_KIND) :: sftot(4), sfsum, sfmax
 type(cell_type), pointer :: cp
 
 ! Look at average survival by IR phase
@@ -1882,13 +1890,18 @@ nir = 0
 sftot = 0
 nsum = 0
 sfsum = 0
+sfmax = 0
 do kcell = 1,nlist
     cp => cell_list(kcell)
     if (cp%state == DEAD) cycle
     nsum = nsum + 1
-    sfsum = sfsum + Psurvive(kcell)
+    sfsum = sfsum + cp%Psurvive
     if (cp%phase0 <= G1_checkpoint) then
         ph = 1
+        if (cp%Psurvive > sfmax) then
+            sfmax = cp%Psurvive
+            kcellmax = kcell
+        endif
     elseif (cp%phase0 <= S_checkpoint) then
         ph = 2
     elseif (cp%phase0 <= G2_checkpoint) then
@@ -1897,15 +1910,18 @@ do kcell = 1,nlist
         ph = 4
     endif
     nir(ph) = nir(ph) + 1
-    sftot(ph) = sftot(ph) + Psurvive(kcell)
+    sftot(ph) = sftot(ph) + cp%Psurvive
 enddo
+
 write(*,'(a,4f8.4)') 'Average SF by phase: ',sftot/nir
 write(*,'(a,4f8.4)') 'log10(SF) by phase: ',log10(sftot/nir)
 !write(*,'(a,2f8.4)') 'Average: ',sfsum/nsum,log10(sfsum/nsum)
+write(*,*) 'max G1 SF: ',kcellmax,sfmax
 
 !if (phase_dist) then
-    write(logmsg,'(a,8i6)') 'phase_dist: ',phase_dist(0:3)
+    write(logmsg,'(a,8i6)') 'phase_dist(0:4): ',phase_dist(0:4)
     call logger(logmsg)
+    phase_dist(3) = phase_dist(3) + phase_dist(4)   ! lump G2 and M as G2
     fract(0:3) = phase_dist(0:3)/real(sum(phase_dist(0:3)))
     write(logmsg,'(a,8f6.3)') 'fract:      ',fract(0:3)
     call logger(logmsg)
