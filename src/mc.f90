@@ -38,6 +38,9 @@ real(8) :: b_exp = 1.0
 real(8) :: b_hill = 0.5
 logical :: use_exp_inhibit = .true.
 logical :: use_base_apop_rate = .true.
+
+!DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHRsimple, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR, KmaxInhibit, b_exp, b_hill
+
 contains
 
 !--------------------------------------------------------------------------
@@ -46,6 +49,7 @@ subroutine ReadMcParameters(nfin)
 integer :: nfin
 integer :: iuse_baserate, iuse_exp
 
+read(nfin,*) phase_hours
 read(nfin,*) baseRate
 read(nfin,*) mitRate
 read(nfin,*) Kaber

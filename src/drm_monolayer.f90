@@ -302,6 +302,8 @@ if (allocated(cell_list)) deallocate(cell_list)
 !if (allocated(ODEdiff%ivar)) deallocate(ODEdiff%ivar)
 if (allocated(gaplist)) deallocate(gaplist)
 !if (allocated(Cslice)) deallocate(Cslice)
+if (allocated(nphase)) deallocate(nphase)
+if (allocated(Psurvive)) deallocate(Psurvive)
 call logger('did deallocation')
 
 !nsteps_per_min = 1.0/DELTA_T
@@ -1637,7 +1639,7 @@ real(REAL_KIND) :: r(3), rmax, tstart, dt, dts, radiation_dose, diam_um, framp, 
 integer :: i, ic, ichemo, ndt, iz, idrug, ityp, idiv, ndiv, Nmetabolisingcells
 integer :: nvars, ns, nphaseh(8), ph
 real(REAL_KIND) :: dxc, ex_conc(120*CYCLE_PHASE+1)		! just for testing
-real(REAL_KIND) :: DELTA_T_save, t_sim_0, SFlive, SFave
+real(REAL_KIND) :: DELTA_T_save, t_sim_0, SFlive
 real(REAL_KIND) :: C_O2, HIF1, PDK1
 type(metabolism_type), pointer :: mp
 type(cell_type), pointer :: cp
@@ -1837,7 +1839,7 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. (phase_dist(1)
     endif
     write(logmsg,'(a,e12.3,f8.4)') 'SFave,log10(SFave): ',SFave,log10(SFave)
     call logger(logmsg)
-    call completed(SFave)
+    call completed
     write(nflog,'(a)') 'nphase:'
     do hour = 0,istep/nthour
         write(nflog,'(i3,8i8)') hour,nphase(hour,:)
@@ -1877,7 +1879,7 @@ end function
 ! I.e. need only use_SF
 ! For now assume always use_SF = true, because fitting without SF is no good.
 !-----------------------------------------------------------------------------------------
-subroutine completed(SFave)
+subroutine completed
 real(REAL_KIND) :: SFave
 real(REAL_KIND) :: fract(0:8)
 logical :: use_SF = .true.
@@ -1946,6 +1948,17 @@ else
 endif
 end subroutine
 
+!-----------------------------------------------------------------------------------------
+! This is for drm_monolayer_deriv.exe
+!-----------------------------------------------------------------------------------------
+subroutine getResults(SF, dist)
+!DEC$ ATTRIBUTES DLLEXPORT :: getResults
+real(REAL_KIND) :: SF
+integer :: dist(:)
+
+SF = SFave
+dist = phase_dist
+end subroutine
 
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------

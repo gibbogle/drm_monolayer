@@ -532,8 +532,8 @@ integer :: ntphase(8)
 integer :: NPsurvive, Nirradiated, Napop
 real(8), allocatable :: Psurvive(:)
 !logical, parameter :: phase_dist = .true.
-real(REAL_KIND) :: t_irradiation
-real(REAL_KIND), parameter :: phase_hours = 18
+real(REAL_KIND) :: t_irradiation, SFave
+real(REAL_KIND) :: phase_hours = 18
 integer :: phase_dist(0:8)    ! count of cells in each phase phase_hours after IR
 integer, allocatable :: nphase(:,:)
 
