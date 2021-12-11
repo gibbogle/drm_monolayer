@@ -1880,7 +1880,6 @@ end function
 ! For now assume always use_SF = true, because fitting without SF is no good.
 !-----------------------------------------------------------------------------------------
 subroutine completed
-real(REAL_KIND) :: SFave
 real(REAL_KIND) :: fract(0:8)
 logical :: use_SF = .true.
 integer :: kcell, ph, nir(4), nsum, kcellmax
