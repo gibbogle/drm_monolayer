@@ -17,10 +17,14 @@ real(8) :: t1, t2
 !logical :: simulate_colony
 integer :: idist, ndist = 40
 real(8) :: PE, colony_days, dist(40), ddist = 50
-real(8) :: SF, SF0, dSF, delta_p
+integer, parameter :: npvary = 12
+real(8) :: SF, SF0, dSF, delta_p, dSFave(npvary)
+character*(12) :: paramStr(npvary)
 integer :: phdist(0:8)
+integer :: iprun
 real(8) :: param
 
+paramStr = ['baseRate','mitRate','Kaber','Klethal','K_ATM(2)','K_ATM(3)','K_ATM(4)','K_ATR(2)','K_ATR(3)','K_ATR(4)','Pcomplex','PHRsimple']
 call disableTCP
 
 call get_command (b, nlen, status)
@@ -81,6 +85,7 @@ endif
 !call get_dimensions(NX,NY,NZ,nsteps,DELTA_T, MAX_CHEMO, cused);
 i_hypoxia_cutoff = 3
 i_growth_cutoff = 1
+do iprun = 1,npvary
 do irun = 1,2
 	write(*,*) 'irun: ',irun
 	inbuflen = len(infile)
@@ -97,9 +102,67 @@ do irun = 1,2
 	write(*,*) 'nsumm_interval: ',nsumm_interval
 !	call get_summary(summarydata,i_hypoxia_cutoff,i_growth_cutoff)
     if (irun == 2) then
+    if (iprun == 1) then
+        param = baseRate
+!        paramStr(iprun) = 'baseRate'
+        delta_p = 0.01*param
+        baseRate = param + delta_p
+    elseif (iprun == 2) then
+        param = mitRate
+!        paramStr(iprun) = 'mitRat'e
+        delta_p = 0.01*param
+        mitRate = param + delta_p
+    elseif (iprun == 3) then
+        param = Kaber
+!        paramStr(iprun) = 'Kaber'
+        delta_p = 0.01*param
+        Kaber = param + delta_p
+    elseif (iprun == 4) then
+        param = Klethal
+!        paramStr(iprun) = 'Klethal'
+        delta_p = 0.01*param
+        Klethal = param + delta_p
+    elseif (iprun == 5) then
+        param = K_ATM(2)
+        paramStr(iprun) = 'K_ATM(2)'
+        delta_p = 0.01*param
+        K_ATM(2) = param + delta_p
+    elseif (iprun == 6) then
+        param = K_ATM(3)
+!        paramStr(iprun) = 'K_ATM(3)'
+        delta_p = 0.01*param
+        K_ATM(3) = param + delta_p
+    elseif (iprun == 7) then
+        param = K_ATM(4)
+!        paramStr(irun-1) = 'K_ATM(4)'
+       delta_p = 0.01*param
+        K_ATM(4) = param + delta_p
+    elseif (iprun == 8) then
+        param = K_ATR(2)
+!        paramStr(irun-1) = 'K_ATR(2)'
+        delta_p = 0.01*param
+        K_ATR(2) = param + delta_p
+    elseif (iprun == 9) then
+        param = K_ATR(3)
+!        paramStr(irun-1) = 'K_ATR(3)'
+        delta_p = 0.01*param
+        K_ATR(3) = param + delta_p
+    elseif (iprun == 10) then
+        param = K_ATR(4)
+!        paramStr(irun-1) = 'K_ATR(4)'
+        delta_p = 0.01*param
+        K_ATR(4) = param + delta_p
+    elseif (iprun == 11) then
+        param = Pcomplex
+!        paramStr(irun-1) = 'Pcomplex'
+        delta_p = 0.01*param
+        Pcomplex = param + delta_p
+    elseif (iprun == 12) then
         param = PHRsimple
+!        paramStr(irun-1) = 'PHRsimple'
         delta_p = 0.01*param
         PHRsimple = param + delta_p
+    endif
     endif
 	do jstep = 1,Nsteps+1
 !		write(*,*) 'jstep: ',jstep
@@ -126,6 +189,7 @@ do irun = 1,2
 	    SF0 = SF
 	else
 	    dSF = SF - SF0
+	    dSFave(iprun) = dSF/SF0
 	endif
 	call terminate_run(res)
 	!call cpu_time(t2)
@@ -133,12 +197,18 @@ do irun = 1,2
 !	write(*,*) 'time: ',t2-t1
     write(*,'(a,2e12.3)') 'SFave: ',SF,log10(SF)
     write(*,'(a,9i6)') 'phase_dist: ',phdist(0:3)
-    if (irun == 2) then
-        write(*,*)
-        write(*,'(a,e12.3)') 'derivative: ',dSF/delta_p
-        write(*,'(a,e12.3)') 'fractional change: ',dSF/SF0
-    endif
+!    if (irun == 2) then
+!        write(*,*)
+!        write(*,'(a,e12.3)') 'derivative: ',dSF/delta_p
+!        write(*,'(a,e12.3)') 'fractional change: ',dSF/SF0
+!    endif
     write(*,*)
 enddo
+enddo
+open(10,file='dSFave.out',status='replace')
+do iprun = 1,npvary
+    write(10,'(i4,2x,a12,e12.3)') iprun,paramStr(iprun),dSFave(iprun)
+enddo
+close(10)
 end
 

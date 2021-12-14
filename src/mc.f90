@@ -27,10 +27,10 @@ real(8) :: apopRate = 0.01117
 real(8) :: baseRate = 0.000739
 real(8) :: mitRate  = 0.0141
 real(8) :: Msurvival = 0.05
-real(8) :: Kaber = 1.0          ! added, McMahon has 1.  
-real(8) :: Klethal = 1.65
-real(8) :: K_ATM(4) = [1.0, 0.01, 1.0, 10.0]
-real(8) :: K_ATR(4) = [1.0, 0.01, 0.1, 10.0]
+real(8) :: Kaber = 1.0          ! now fixed, McMahon has 1.  
+real(8) :: Klethal = 2.3
+real(8) :: K_ATM(4) = [1.0, 0.076, 0.3, 10.6]   ! Now fix K_ATM(1), K_ATR(1) at 1.0
+real(8) :: K_ATR(4) = [1.0, 0.005, 0.3, 3.4]
 
 ! DNA-PK inhibition parameters
 real(8) :: KmaxInhibit = 0.8
@@ -38,6 +38,9 @@ real(8) :: b_exp = 1.0
 real(8) :: b_hill = 0.5
 logical :: use_exp_inhibit = .true.
 logical :: use_base_apop_rate = .true.
+
+real(8) :: ATMsum, Sthsum, G2thsum
+integer :: NSth, NG2th
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHRsimple, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR, KmaxInhibit, b_exp, b_hill
 
@@ -52,13 +55,13 @@ integer :: iuse_baserate, iuse_exp
 read(nfin,*) phase_hours
 read(nfin,*) baseRate
 read(nfin,*) mitRate
-read(nfin,*) Kaber
+read(nfin,*) Msurvival
 read(nfin,*) Klethal
-read(nfin,*) K_ATM(1)
+!read(nfin,*) K_ATM(1)
 read(nfin,*) K_ATM(2)
 read(nfin,*) K_ATM(3)
 read(nfin,*) K_ATM(4)
-read(nfin,*) K_ATR(1)
+!read(nfin,*) K_ATR(1)
 read(nfin,*) K_ATR(2)
 read(nfin,*) K_ATR(3)
 read(nfin,*) K_ATR(4)
@@ -72,6 +75,12 @@ read(nfin,*) iuse_baserate
 use_base_apop_rate = (iuse_baserate == 1)
 use_exp_inhibit = (iuse_exp == 1)
 !misrepRate(1) = Kaber*misrepRate(1)
+
+ATMsum = 0  ! to investigate ATM dependence on parameters
+Sthsum = 0
+NSth = 0
+G2thsum = 0
+NG2th = 0
 end subroutine
 
 !--------------------------------------------------------------------------
@@ -227,6 +236,10 @@ real(REAL_KIND) :: t, th
 th = K_ATM(4)*(1 - exp(-K_ATM(1)*cp%pATM))
 if (kcell_now == -4) write(*,'(a,i6,f8.3)') 'S_checkpoint_time (h): ',kcell_now,th
 t = 3600*th
+if (is_radiation) then
+    Sthsum = Sthsum + th
+    NSth = NSth + 1
+endif
 end function
 
 !------------------------------------------------------------------------
@@ -242,6 +255,10 @@ th_ATR = K_ATR(4)*(1 - exp(-K_ATR(1)*cp%pATR))
 th = th_ATM + th_ATR
 !if (kcell_now == 3) write(*,'(a,i6,2f8.3)') 'G2_checkpoint_time (ATM, ATR) (h): ',kcell_now,th_ATM,th_ATR
 t = 3600*th
+if (is_radiation) then
+    G2thsum = G2thsum + th
+    NG2th = NG2th + 1
+endif
 end function
 
 !--------------------------------------------------------------------------
@@ -355,18 +372,19 @@ end subroutine
 !------------------------------------------------------------------------
 ! Clonogenic survival probability at first mitosis (McMahon, mcradio)
 ! cp%phase0 is the cell's phase at IR
+! Note that this assumes that cells died of apoptosis in G1 at baseRate
+! (see cellIrradiation())
 !------------------------------------------------------------------------
 subroutine survivalProbability(cp)
 type(cell_type), pointer :: cp
 real(8) :: DSB(NP), totDSB, Nlethal,Paber, Pbase, Papop, Pmit, Psurv
-!real(8) :: zKaber = 1   ! using Kaber to scale msrepRate(1)
 
 DSB = cp%DSB
 totDSB = sum(DSB)
 Nlethal = cp%Nlethal
 if (cp%phase0 == G1_phase) then
 !    Pbase = exp(-baseRate*cp%totDSB0)   ! this is 1 - Pdie
-    Paber = exp(-Kaber*Nlethal)
+    Paber = exp(-Kaber*Nlethal) ! Kaber = 1
     Pmit = exp(-mitRate*totDSB)
     cp%Psurvive = Paber*Pmit
 !    if (kcell_now < 40) write(*,'(a,i3,2f5.1,3e11.3)') 'G1: Nlethal,totDSB,Paber,Pmit: ',kcell_now,Nlethal,totDSB,Paber,Pmit,Paber*Pmit
@@ -382,6 +400,8 @@ else    ! M_phase or dividing
 endif
 NPsurvive = NPsurvive + 1
 Psurvive(NPsurvive) = cp%Psurvive
+
+ATMsum = ATMsum + cp%pATM
 
 end subroutine
 

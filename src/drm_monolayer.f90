@@ -1926,6 +1926,9 @@ write(*,*) 'max G1 SF: ',kcellmax,sfmax
     fract(0:3) = phase_dist(0:3)/real(sum(phase_dist(0:3)))
     write(logmsg,'(a,8f6.3)') 'fract:      ',fract(0:3)
     call logger(logmsg)
+    write(*,'(a,f8.3)') 'Average pATM: ',ATMsum/nirradiated
+    write(*,'(a,f8.3)') 'Average S delay: ',Sthsum/NSth
+    write(*,'(a,f8.3)') 'Average G2 delay: ',G2thsum/NG2th
 !endif
 if (use_PEST) then
 !    if (phase_dist) then
