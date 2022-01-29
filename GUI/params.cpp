@@ -68,7 +68,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 "The divide time will be a random variate from a log-normal distribution. \n\
  Otherwise checkpoint times are exponentially distributed and base phase times are fixed"},
 
-{"DIVIDE_TIME_1_MEDIAN", 19, 0, 0,
+{"DIVIDE_TIME_1_MEDIAN", 18.62, 0, 0,
 "Median (h)",
 "The time taken for tumour cell division has a lognormal distribution, described by the median and shape parameters. \n\
 [hours]"},
@@ -504,15 +504,15 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
      "Synchronise cell cycles?",
      "Synchronise initial cell phases to start of M phase"},
 
-     {"T_G1_1", 6, 0, 0,
+     {"T_G1_1", 5.03, 0, 0,
      "G1 phase base time (h)",
      "Deterministic component of time spent in phase G1"},
 
-     {"T_S_1", 8, 0, 0,
+     {"T_S_1", 7.69, 0, 0,
      "S phase base time (h)",
      "Time spent in phase S"},
 
-     {"T_G2_1", 1, 0, 0,
+     {"T_G2_1", 5.48, 0, 0,
      "G2 phase base time (h)",
      "Deterministic component of time spent in phase G2"},
 
@@ -637,6 +637,10 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
       "Apoptosis shape",
       "Shape parameter for log-normal apoptosis delay variate"},
 
+     {"PHASE_HOURS", 24, 0, 0,
+     "Phase distn save time",
+     "Phase distn save time"},
+
      {"BASERATE", 0.000739, 0, 0,
      "Base apoptosis rate parameter",
      "Base apoptosis rate parameter"},
@@ -665,7 +669,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
      "K_ATM(3) parameter",
      "K_ATM(3) parameter"},
 
-     {"KATM_4", 10.0, 0, 0,
+     {"KATM_4", 1.0, 0, 0,
      "K_ATM(4) parameter",
      "K_ATM(4) parameter"},
 
@@ -681,7 +685,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
      "K_ATR(3) parameter",
      "K_ATR(3) parameter"},
 
-     {"KATR_4", 10.0, 0, 0,
+     {"KATR_4", 1.0, 0, 0,
      "K_ATR(4) parameter",
      "K_ATR(4) parameter"},
 

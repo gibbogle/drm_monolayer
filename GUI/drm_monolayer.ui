@@ -82,7 +82,7 @@ padding: 8px
            <enum>QTabWidget::West</enum>
           </property>
           <property name="currentIndex">
-           <number>2</number>
+           <number>6</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideNone</enum>
@@ -8191,7 +8191,7 @@ padding: 8px
               <x>290</x>
               <y>20</y>
               <width>261</width>
-              <height>151</height>
+              <height>131</height>
              </rect>
             </property>
             <property name="title">
@@ -8203,7 +8203,7 @@ padding: 8px
                <x>10</x>
                <y>10</y>
                <width>250</width>
-               <height>131</height>
+               <height>111</height>
               </rect>
              </property>
              <layout class="QGridLayout" name="gridLayout_anoxia">
@@ -9389,7 +9389,7 @@ padding: 8px
             <property name="geometry">
              <rect>
               <x>290</x>
-              <y>170</y>
+              <y>160</y>
               <width>261</width>
               <height>71</height>
              </rect>
@@ -9403,7 +9403,7 @@ padding: 8px
                <x>10</x>
                <y>0</y>
                <width>241</width>
-               <height>71</height>
+               <height>61</height>
               </rect>
              </property>
              <layout class="QGridLayout" name="gridLayout_misc">
@@ -9639,6 +9639,32 @@ padding: 8px
             </property>
             <property name="text">
              <string>mM</string>
+            </property>
+           </widget>
+           <widget class="QLineEdit" name="line_PHASE_HOURS">
+            <property name="geometry">
+             <rect>
+              <x>390</x>
+              <y>250</y>
+              <width>31</width>
+              <height>20</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>24</string>
+            </property>
+           </widget>
+           <widget class="QMyLabel" name="label_PHASE_HOURS">
+            <property name="geometry">
+             <rect>
+              <x>430</x>
+              <y>250</y>
+              <width>161</width>
+              <height>21</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Phase hours</string>
             </property>
            </widget>
           </widget>

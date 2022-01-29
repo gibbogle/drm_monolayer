@@ -42,7 +42,7 @@ integer, parameter :: DIVIDE_ALWAYS_PUSH  = 1
 integer, parameter :: DIVIDE_USE_CLEAR_SITE  = 2
 integer, parameter :: DIVIDE_USE_CLEAR_SITE_RANDOM  = 3
 
-integer, parameter :: nfin=10, nfout=11, nflog=12, nfres=13, nfrun=14, nfcell=15, nftreatment=16, nfFACS=17, &
+integer, parameter :: nfin=10, nfout=11, nflog=12, nfres=13, nfrun=14, nfcell=15, nftreatment=16, nfphase=17, &
 					  nfpar=18, nftcp=20, nfpest = 21
 integer, parameter :: neumann(3,6) = reshape((/ -1,0,0, 1,0,0, 0,-1,0, 0,1,0, 0,0,-1, 0,0,1 /), (/3,6/))
 
@@ -533,9 +533,14 @@ integer :: NPsurvive, Nirradiated, Napop
 real(8), allocatable :: Psurvive(:)
 !logical, parameter :: phase_dist = .true.
 real(REAL_KIND) :: t_irradiation, SFave
-real(REAL_KIND) :: phase_hours = 18
-integer :: phase_dist(0:8)    ! count of cells in each phase phase_hours after IR
+logical :: use_SF = .true.
+integer :: phase_hour(8)
+integer :: nphase_hours, next_phase_hour
+real(REAL_KIND) :: phase_dist(0:8)    ! % of cells in each phase
+real(REAL_KIND) :: recorded_phase_dist(8,0:8)    ! % of cells in each phase phase_hour after IR
 integer, allocatable :: nphase(:,:)
+logical, parameter :: hourly_cycle_dist = .true.
+logical, parameter :: track_cell_phase = .false.
 
 !integer :: icentral !extracellular variable index corresponding to a central site (NX/2,NY/2,NZ/2)
 

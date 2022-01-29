@@ -1,0 +1,62 @@
+ PARAMETER STATISTICAL MATRICES: CASE drm_monolayer
+
+ OPTIMISATION ITERATION NUMBER  6
+
+
+ Parameter standard deviations ----->
+
+ Adjustable        Group           Current          Standard
+ parameter                         value            deviation
+ klethal           klethal          2.33995          9.87052    
+ mitrate           mitrate         1.000000E-02      2.01108    
+ msurvival         msurvival       4.173491E-03      87.4216    
+ pcomplex          pcomplex        0.651026          1.36103    
+ katm2             katm2           6.976888E-02     0.127911    
+ katm4             katm4            10.9025          1.92198    
+ katr4             katr4            4.00000          2.43586    
+
+ Note that if a parameter is log-transformed, the standard deviation in the 
+ above table refers to the log of the parameter. Note also that the objective
+ function used in the calculation of the covariance matrix (and eigenvalues
+ of the covariance matrix) was calculated at the end of the previous iteration.
+
+
+ Parameter covariance matrix ----->
+
+                klethal      mitrate     msurvival     pcomplex      katm2        katm4        katr4    
+ klethal         97.43        3.649        664.4        10.02      -0.8559       -9.469       -7.528    
+ mitrate         3.649        4.044        133.8        2.166      -0.2072      -0.5197      -0.2199    
+ msurvival       664.4        133.8        7643.        118.2       -10.73       -68.27       -48.64    
+ pcomplex        10.02        2.166        118.2        1.852      -0.1680       -1.081      -0.7729    
+ katm2         -0.8559      -0.2072       -10.73      -0.1680       1.6361E-02   5.4555E-02   6.1356E-02
+ katm4          -9.469      -0.5197       -68.27       -1.081       5.4555E-02    3.694        1.944    
+ katr4          -7.528      -0.2199       -48.64      -0.7729       6.1356E-02    1.944        5.933    
+
+
+ Parameter correlation coefficient matrix ----->
+
+                klethal      mitrate     msurvival     pcomplex      katm2        katm4        katr4    
+ klethal         1.000       0.1838       0.7699       0.7458      -0.6779      -0.4991      -0.3131    
+ mitrate        0.1838        1.000       0.7612       0.7912      -0.8055      -0.1344      -4.4897E-02
+ msurvival      0.7699       0.7612        1.000       0.9930      -0.9592      -0.4063      -0.2284    
+ pcomplex       0.7458       0.7912       0.9930        1.000      -0.9649      -0.4132      -0.2331    
+ katm2         -0.6779      -0.8055      -0.9592      -0.9649        1.000       0.2219       0.1969    
+ katm4         -0.4991      -0.1344      -0.4063      -0.4132       0.2219        1.000       0.4152    
+ katr4         -0.3131      -4.4897E-02  -0.2284      -0.2331       0.1969       0.4152        1.000    
+
+
+ Normalized eigenvectors of covariance matrix ----->
+
+               Vector_1     Vector_2     Vector_3     Vector_4     Vector_5     Vector_6     Vector_7   
+ klethal        2.3804E-03  -8.2208E-02   0.1813      -5.1102E-02   0.1196       0.9674      -8.7007E-02
+ mitrate        1.1802E-02  -0.4417       0.8740       2.0486E-02  -3.2114E-02  -0.1979      -1.7352E-02
+ msurvival     -8.9790E-05   1.1015E-03  -3.7847E-02  -2.0819E-03  -5.9497E-04  -8.2417E-02  -0.9959    
+ pcomplex      -0.1189       0.8864       0.4468       1.3592E-02  -1.0769E-02  -7.4656E-03  -1.5393E-02
+ katm2         -0.9927      -0.1117      -4.2944E-02   1.3803E-02  -1.9637E-03   2.0957E-03   1.3969E-03
+ katm4         -1.5364E-02   7.1229E-03   1.7359E-02  -0.9290       0.3567      -9.4989E-02   8.9397E-03
+ katr4          2.5318E-03   2.6323E-03   5.2806E-03   0.3654       0.9259      -9.5399E-02   6.3800E-03
+
+
+ Eigenvalues ----->
+
+                4.7364E-04   1.0184E-03   0.1118        2.282        5.757        41.67        7706.    

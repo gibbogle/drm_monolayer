@@ -1,0 +1,127 @@
+OS is Windows
+Executing with OpenMP
+ inputfile:  M04.inp
+ outputfile: M04_out.dat
+ReadCellParams new
+ ReadCellCycleParameters:
+ ityp:            1
+T_G1,T_S,T_G2,T_M, total:     5.03    7.69    5.48    0.50   18.70
+ ityp:            2
+T_G1,T_S,T_G2,T_M, total:     6.00    8.00    1.00    0.50   15.50
+ Ndrugs_used:            0
+ ReadProtocol
+RADIATION                                                       
+ nevents:            1
+Finished reading input data
+ Type 1 cells
+ divide_time_median:    18.7000000000000        19.0000000000000     
+ divide_time_shape:    1.10000000000000        1.10000000000000     
+shape, sigma:   0.1100E+01  0.1100E+01  0.9531E-01  0.9531E-01
+Median, mean divide time:   0.1870E+02  0.1900E+02  0.1879E+02  0.1909E+02
+ Vdivide0:   1.599999954748910E-009  medium_volume0:   0.200000000000000     
+ 
+GUI version: GUI2.2      
+DLL version: DLL2.2      
+ 
+ Opened M04_out.dat
+nsteps, NT_CONC, DELTA_T:   1152     1  600.
+NT_DISPLAY, DT_DISPLAY:      2 1200.
+did ReadCellParams
+ ncpu:            1
+OPENMP defined
+Requested Mnodes:  1
+Machine processors:  8
+Max threads available:  8
+ Threads, max:            1           1
+did omp_initialisation
+ npar =            1        1234        5678
+did deallocation
+ Initial count, max_nlist:         1000      200000
+did ArrayInitialisation
+ SetupChemo
+ ityp, Vdivide0, max_growthrate(ityp):            1  1.599999954748910E-009
+  1.215316651944145E-014
+ ityp, Vdivide0, max_growthrate(ityp):            2  1.599999954748910E-009
+  1.195611227841874E-014
+O2_maxrate, G_maxrate:    0.625E-10   0.130E-09
+ did PlaceCells: Ncells:         1000
+Startup procedures have been executed: initial T cell count:   1000
+averages: V,dVdt,fg:    0.114E-08   0.122E-13   0.100E+01
+ 
+ GenerateSFlookup: ityp:            1
+istep, hour:      0   0 Nlive:     1000 Nviable:     1000 NPsurvive:        0
+istep, hour:      6   1 Nlive:     1038 Nviable:     1038 NPsurvive:        0
+istep, hour:     12   2 Nlive:     1077 Nviable:     1077 NPsurvive:        0
+istep, hour:     18   3 Nlive:     1110 Nviable:     1110 NPsurvive:        0
+istep, hour:     24   4 Nlive:     1152 Nviable:     1152 NPsurvive:        0
+istep, hour:     30   5 Nlive:     1199 Nviable:     1199 NPsurvive:        0
+Event:   2  21600.  21600.  0    0.0000    0.0000
+RADIATION_EVENT: time, dose:   21600.   8.000
+Radiation dose:    8.0
+ Irradiation: Nirradiated:         1237
+istep, hour:     36   6 Nlive:     1175 Nviable:     1175 NPsurvive:        0
+istep, hour:     42   7 Nlive:     1209 Nviable:     1209 NPsurvive:       34
+istep, hour:     48   8 Nlive:     1209 Nviable:     1209 NPsurvive:       34
+istep, hour:     54   9 Nlive:     1241 Nviable:     1241 NPsurvive:       66
+istep, hour:     60  10 Nlive:     1280 Nviable:     1280 NPsurvive:      105
+istep, hour:     66  11 Nlive:     1334 Nviable:     1334 NPsurvive:      159
+istep, hour:     72  12 Nlive:     1395 Nviable:     1395 NPsurvive:      220
+istep, hour:     78  13 Nlive:     1449 Nviable:     1449 NPsurvive:      274
+istep, hour:     84  14 Nlive:     1503 Nviable:     1503 NPsurvive:      328
+istep, hour:     90  15 Nlive:     1545 Nviable:     1545 NPsurvive:      370
+istep, hour:     96  16 Nlive:     1595 Nviable:     1595 NPsurvive:      420
+istep, hour:    102  17 Nlive:     1655 Nviable:     1655 NPsurvive:      480
+istep, hour:    108  18 Nlive:     1714 Nviable:     1714 NPsurvive:      539
+istep, hour:    114  19 Nlive:     1783 Nviable:     1783 NPsurvive:      608
+istep, hour:    120  20 Nlive:     1846 Nviable:     1846 NPsurvive:      671
+istep, hour:    126  21 Nlive:     1926 Nviable:     1926 NPsurvive:      751
+istep, hour:    132  22 Nlive:     1993 Nviable:     1993 NPsurvive:      818
+istep, hour:    138  23 Nlive:     2054 Nviable:     2054 NPsurvive:      879
+istep, hour:    144  24 Nlive:     2123 Nviable:     2123 NPsurvive:      948
+istep, hour:    150  25 Nlive:     2194 Nviable:     2194 NPsurvive:     1018
+istep, hour:    156  26 Nlive:     2270 Nviable:     2270 NPsurvive:     1082
+istep, hour:    162  27 Nlive:     2322 Nviable:     2322 NPsurvive:     1118
+istep, hour:    168  28 Nlive:     2382 Nviable:     2382 NPsurvive:     1157
+istep, hour:    174  29 Nlive:     2431 Nviable:     2431 NPsurvive:     1169
+istep, hour:    180  30 Nlive:     2488 Nviable:     2488 NPsurvive:     1174
+ NPsurvive = Nirradiated - Napop:         1175        1237          62
+SFave,log10(SFave):    0.392E-02 -2.4070
+phase_dist:         2.4  23.9  45.6  28.0
+nphase:
+  0     319       0     436       0     228       0       0      17
+  1     333       0     455       0     230       0       0      20
+  2     358       0     443       0     258       0       0      18
+  3     360       0     460       0     271       0       0      19
+  4     377       0     465       0     294       0       0      16
+  5     407       0     476       0     297       0       0      19
+  6     412       0     489       0     312       0       0      24
+  7     417       0     474      64     278      38       0       0
+  8     353       0     487      51     277      90       0      13
+  9     354       0     492      58     280     105       0      14
+ 10     362       0     510      52     275     111       0      32
+ 11     384       0     535      61     270     120       0      26
+ 12     457       0     507      77     291      97       0      28
+ 13     534       0     479      59     327      81       0      31
+ 14     599       0     453      69     333      92       0      19
+ 15     611       0     473      52     352      94       0      25
+ 16     605       0     507      72     344     105       0      24
+ 17     605       0     558      69     357      94       0      34
+ 18     603       0     612      66     364      99       0      32
+ 19     637       0     653      63     365      99       0      28
+ 20     674       0     690      52     362      92       0      38
+ 21     735       0     749      40     356      72       0      36
+ 22     760       0     803      55     343      60       0      34
+ 23     758       0     839      88     330      70       0      31
+ 24     758       0     880      97     337      82       0      31
+ 25     773       0     889     118     374      56       0      46
+ 26     780       0     925     109     441      45       0      32
+ 27     741       0     958     110     494      48       0      33
+ 28     728       0     996      95     549      50       0      26
+ 29     711       0    1011     100     574      68       0      29
+ 30     672       0    1065      99     578      90       0      46
+terminate_run
+doing wrapup ...
+deallocated all arrays
+closed files
+freed par_zig
+Execution time (min):       0.00

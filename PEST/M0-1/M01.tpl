@@ -1,0 +1,161 @@
+ptf $
+24/11/21 User:_gib
+GUI2.2      GUI_VERSION_NAME                      GUI program version number.
+DLL2.2      DLL_VERSION_NAME                      DLL version number.
+1000        INITIAL_COUNT                         Initial number of tumour cells
+1           USE_LOGNORMAL_DIST                    Use lognormal distribution
+18.7          DIVIDE_TIME_1_MEDIAN                  Median (h)
+1.1         DIVIDE_TIME_1_SHAPE                   Shape parameter
+19          DIVIDE_TIME_2_MEDIAN                  Division time median parameter
+1.1         DIVIDE_TIME_2_SHAPE                   Division time shape parameter
+0           V_DEPENDENT_GROWTH_RATE               V-dependent growth rate
+1           RANDOMISE_INITIAL_V                   Randomise initial cell volumes
+8           NDAYS                                 Number of days
+600         DELTA_T                               Time step
+1           NT_CONC                               Number of ODE solver sub-steps.
+1           VCELL_PL                              Cell volume
+0.33        WELL_AREA                             Well area
+0.2         MEDIUM_VOLUME                         Medium volume
+0           FULLY_MIXED                           Medium is fully mixed?
+1.6         VDIVIDE0                              Nominal divide volume
+0.3         DVDIVIDE                              Divide volume variation
+0.1         MM_THRESHOLD                          Michaelis-Menten O2 threshold
+0.15        ANOXIA_THRESHOLD                      Tag threshold
+3           ANOXIA_TAG_TIME                       Tag time limit
+3           ANOXIA_DEATH_TIME                     Death delay time
+0.15        AGLUCOSIA_THRESHOLD                   Aglucosia threshold
+3           AGLUCOSIA_TAG_TIME                    Aglucosia time limit
+3           AGLUCOSIA_DEATH_TIME                  Aglucosia death delay time
+0           TEST_CASE                             Test case #
+1234        SEED1                                 First RNG seed
+5678        SEED2                                 Second RNG seed
+4           NCPU                                  Number of CPUs
+2           NCELLTYPES                            Number of cell types
+100         CELLPERCENT_1                         Percentage of cell type 1
+0           CELLPERCENT_2                         Percentage of cell type 2
+1           NT_ANIMATION                          Animation interval (timesteps)
+0           SHOW_PROGENY                          Show descendants of cell #
+1           USE_OXYGEN                            Use Oxygen?
+2e-05       OXYGEN_DIFF_COEF                      Spheroid diffusion coeff
+5e-05       OXYGEN_MEDIUM_DIFF                    Medium diffusion coeff
+600         OXYGEN_CELL_DIFF_IN                   Cell influx parameter Kin
+600         OXYGEN_CELL_DIFF_OUT                  Cell efflux parameter Kout
+0.18        OXYGEN_BDRY_CONC                      Boundary concentration
+0           OXYGEN_CONSTANT                       Constant concentration
+6.25e-17    OXYGEN_CONSUMPTION                    Max consumption rate
+1.33        OXYGEN_MM_KM                          Michaelis-Menten Km
+2           OXYGEN_HILL_N                         Hill function N
+1           USE_GLUCOSE                           Use Glucose?
+1           C_G_BASE                              C_G_base
+3e-07       GLUCOSE_DIFF_COEF                     Spheroid diffusion coeff
+8e-06       GLUCOSE_MEDIUM_DIFF                   Medium diffusion coeff
+100         GLUCOSE_CELL_DIFF_IN                  Membrane diff constant
+100         GLUCOSE_CELL_DIFF_OUT                 Membrane diff constant
+5.5         GLUCOSE_BDRY_CONC                     Boundary concentration
+0           GLUCOSE_CONSTANT                      Constant concentration
+1.3e-16     GLUCOSE_CONSUMPTION                   Max consumption rate
+300         GLUCOSE_MM_KM                         Michaelis-Menten Km
+2           GLUCOSE_HILL_N                        Hill function N
+0.0738      RADIATION_ALPHA_H_1                   Alpha (hypoxia)
+0.00725     RADIATION_BETA_H_1                    Beta (hypoxia)
+2.5         RADIATION_OER_ALPHA_1                 OER alpha
+2.5         RADIATION_OER_BETA_1                  OER beta
+0.0043      RADIATION_KM_1                        Km for radiosensitivity
+0.0473      RADIATION_ALPHA_H_2                   Alpha (hypoxia)
+0.0017      RADIATION_BETA_H_2                    Beta (hypoxia)
+2.5         RADIATION_OER_ALPHA_2                 OER alpha
+3           RADIATION_OER_BETA_2                  OER beta
+0.0043      RADIATION_KM_2                        Km for radiosensitivity
+1           USE_CELL_CYCLE                        Use cell cycle with G1, S, G2, M phases
+0           USE_SYNCHRONISE                       Synchronise cell cycles?
+5.03        T_G1_1                                G1 phase base time (h)
+7.69        T_S_1                                 S phase base time (h)
+5.48        T_G2_1                                G2 phase base time (h)
+0.5         T_M_1                                 M phase base time (h)
+4           APOPTOSIS_MEDIAN_1                    Apoptosis median (hr)
+1.5         APOPTOSIS_SHAPE_1                     Apoptosis shape
+6           T_G1_2                                G1 phase base time (h)
+8           T_S_2                                 S phase base time (h)
+1           T_G2_2                                G2 phase base time (h)
+0.5         T_M_2                                 M phase base time (h)
+4           APOPTOSIS_MEDIAN_2                    Apoptosis median (hr)
+1.5         APOPTOSIS_SHAPE_2                     Apoptosis shape
+24			PHASE_HOURS							  Time of recording phase distribution
+0.000739    BASERATE                              Base apoptosis rate parameter
+$ mitrate        $      MITRATE                               Mitosis rate parameter
+$ msurvival      $         MSURVIVAL                             Survival probability factor for IR in mitosis
+$ klethal        $         KLETHAL                               MisrepRate scaling factor
+0.076       KATM_2                                K_ATM(2) parameter
+0.3         KATM_3                                K_ATM(3) parameter
+1.0         KATM_4                                K_ATM(4) parameter
+0.005       KATR_2                                K_ATR(2) parameter
+0.3         KATR_3                                K_ATR(3) parameter
+1.0         KATR_4                                K_ATR(4) parameter
+$ pcomplex       $        PCOMPLEX                              PCOMPLEX parameter
+0.0         PHRSIMPLE                             PHRSIMPLE parameter
+0.8         KMAXINHIBIT                           KMAXINHIBIT parameter
+1           B_EXP                                 B_EXP parameter
+0.5         B_HILL                                B_HILL parameter
+1           USE_EXP                               Use exponential function
+1           USE_BASERATE                          Use baserate for apoptosis
+0.2         HYPOXIA_1                             Hypoxia threshold 1
+1           HYPOXIA_2                             Hypoxia threshold 2
+4           HYPOXIA_3                             Hypoxia threshold 3
+4           HYPOXIA_THRESHOLD                     Hypoxia threshold
+0.25        GROWTH_FRACTION_1                     Growth fraction threshold 1
+0.1         GROWTH_FRACTION_2                     Growth fraction threshold 2
+0.01        GROWTH_FRACTION_3                     Growth fraction threshold 3
+1e-6        DRUG_THRESHOLD                        Drug Threshold
+0           DRUG_LABEL_THRESHOLD                  Label Threshold
+200         SPCRAD                                Spectral radius
+0           NDRUGS_USED
+0           DUMMY_HYPOXIA_THRESHOLD               Hypoxia threshold
+0           DUMMY_GROWTH_FRACTION                 Growth fraction
+1           nlive                                 
+1           nviable                               
+1           nonviable                             
+1           ndrugAdead                            
+0           nradiationdead                        
+0           ndead                                 
+0           ndrugAtagged                          
+1           nradiationtagged                      
+0           viablefraction                        
+1           hypoxicfraction                       
+0           clonohypoxicfraction                  
+0           growthfraction                        
+0           nogrowfraction                        
+0           clonofraction                         
+0           platingefficiency                     
+0           ECoxygen                              
+0           ECglucose                             
+0           ECdrugA                               
+0           ECdrugAmet1                           
+0           ICoxygen                              
+1           ICglucose                             
+1           ICdrugA                               
+1           ICdrugAmet1                           
+1           Medoxygen                             
+0           Medglucose                            
+0           MeddrugA                              
+0           MeddrugAmet1                          
+0           doublingtime                          
+0           Orate                                 
+0           Grate                                 
+0           dividerate                            
+1           G1_phase                              
+1           G1_cp                                 
+1           S_phase                               
+1           S_cp                                  
+0           G2_phase                              
+1           G2_cp                                 
+1           M_phase                               
+0           MULTI                                 
+0           Oxygen                                
+0           Glucose                               
+0           Drug_A                                
+0           Drug_A_metab1                         
+PROTOCOL
+1
+RADIATION
+6
+2

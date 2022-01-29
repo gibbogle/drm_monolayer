@@ -1,0 +1,98 @@
+                    PARAMETER SENSITIVITIES: CASE drm_monolayer
+
+
+ OPTIMISATION ITERATION NO.  1 ----->
+ Parameter name    Group          Current value    Sensitivity
+   klethal         klethal          2.33000         0.174113    
+   mitrate         mitrate         1.300000E-02      7.78081    
+   pcomplex        pcomplex        0.680000          1.66407    
+   baserate        baserate        1.000000E-03      6.20388    
+
+
+ OPTIMISATION ITERATION NO.  2 ----->
+ Parameter name    Group          Current value    Sensitivity
+   klethal         klethal          2.33002         0.173481    
+   mitrate         mitrate         1.260069E-02      7.91859    
+   pcomplex        pcomplex        0.680345          1.66248    
+   baserate        baserate        8.000000E-04      0.00000    
+
+
+ OPTIMISATION ITERATION NO.  3 ----->
+ Parameter name    Group          Current value    Sensitivity
+   klethal         klethal          2.33031         0.168365    
+   mitrate         mitrate         1.000000E-02      8.97378    
+   pcomplex        pcomplex        0.681891          1.65788    
+   baserate        baserate        8.000000E-04      0.00000    
+
+
+ OPTIMISATION ITERATION NO.  4 ----->
+ Parameter name    Group          Current value    Sensitivity
+   klethal         klethal          2.33108         0.166388    
+   mitrate         mitrate         1.000000E-02      8.99495    
+   pcomplex        pcomplex        0.685733          1.65449    
+   baserate        baserate        8.000000E-04      2.83622    
+
+
+ OPTIMISATION ITERATION NO.  5 ----->
+ Parameter name    Group          Current value    Sensitivity
+   klethal         klethal          2.33917         0.165423    
+   mitrate         mitrate         1.019245E-02      8.91302    
+   pcomplex        pcomplex        0.687496          1.65869    
+   baserate        baserate        8.000000E-04      2.84709    
+
+
+
+                        COMPLETION OF OPTIMISATION PROCESS
+
+ Composite sensitivities for observation group "m01obgp" ----->
+
+ Number of observations with non-zero weight =     1
+ Parameter name    Group          Current value    Sensitivity
+   klethal         klethal          2.34015         0.200805    
+   mitrate         mitrate         1.011700E-02      9.48625    
+   pcomplex        pcomplex        0.687204         0.877577    
+   baserate        baserate        8.000000E-04     4.353675E-15
+
+
+
+ Composite sensitivities for observation group "m02obgp" ----->
+
+ Number of observations with non-zero weight =     1
+ Parameter name    Group          Current value    Sensitivity
+   klethal         klethal          2.34015         0.303032    
+   mitrate         mitrate         1.011700E-02      14.4934    
+   pcomplex        pcomplex        0.687204          2.20203    
+   baserate        baserate        8.000000E-04      7.90837    
+
+
+
+ Composite sensitivities for observation group "m03obgp" ----->
+
+ Number of observations with non-zero weight =     1
+ Parameter name    Group          Current value    Sensitivity
+   klethal         klethal          2.34015         0.373169    
+   mitrate         mitrate         1.011700E-02      20.6017    
+   pcomplex        pcomplex        0.687204          3.86310    
+   baserate        baserate        8.000000E-04      8.19466    
+
+
+
+ Composite sensitivities for observation group "m04obgp" ----->
+
+ Number of observations with non-zero weight =     1
+ Parameter name    Group          Current value    Sensitivity
+   klethal         klethal          2.34015         0.407958    
+   mitrate         mitrate         1.011700E-02      23.3793    
+   pcomplex        pcomplex        0.687204          4.84535    
+   baserate        baserate        8.000000E-04     4.521141E-15
+
+
+
+ Composite sensitivities for all observations/prior info ----->
+
+ Number of observations with non-zero weight =     4
+ Parameter name    Group          Current value    Sensitivity
+   klethal         klethal          2.34015         0.165423    
+   mitrate         mitrate         1.011700E-02      8.91302    
+   pcomplex        pcomplex        0.687204          1.65869    
+   baserate        baserate        8.000000E-04      2.84709    

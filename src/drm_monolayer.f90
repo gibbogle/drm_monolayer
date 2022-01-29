@@ -50,6 +50,8 @@ call ReadCellParams(ok)
 if (.not.ok) return
 call logger("did ReadCellParams")
 
+open(nfphase, file='phase.log',status='replace')
+
 start_wtime = wtime()
 
 if (ncpu == 0) then
@@ -174,7 +176,6 @@ call averages
 call GenerateSFlookup(1)
 use_permute = .true.
 rad_count = 0
-phase_dist = 0
 end subroutine
 
 !----------------------------------------------------------------------------------------- 
@@ -959,6 +960,9 @@ do itime = 1,ntimes
 		event(kevent)%ichemo = 0
 		event(kevent)%volume = 0
 		event(kevent)%conc = 0
+		if (use_PEST .and. nphase_hours > 0) then
+		    phase_hour(1:nphase_hours) = t + phase_hour(1:nphase_hours)
+		endif
 	endif
 enddo
 Nevents = kevent
@@ -1029,6 +1033,8 @@ subroutine PlaceCells(ok)
 logical :: ok
 integer :: kcell, k, ichemo, ityp, site(3)
 real(REAL_KIND) :: rsite(3)
+real(REAL_KIND) :: fract(0:8), total
+integer :: phase_count(0:8), hour
 
 lastID = 0
 kcell = 0
@@ -1054,6 +1060,7 @@ Ncells = nlist
 Ncells0 = Ncells
 Nviable = Ncells_type
 !Nreuse = 0	
+
 ok = .true.
 !write(logmsg,*) 'idbug: ',idbug
 !call logger(logmsg)
@@ -1213,6 +1220,7 @@ end subroutine
 ! fractional point in the phase.
 ! For the radiation dose to occur while the cells are synchronised requires the dose time
 ! to be very close to the start, i.e. close to 0.
+! NEED TO set initial cell volume!!!
 !--------------------------------------------------------------------------------------
 subroutine SetInitialCellCycleStatus(kcell,cp)
 integer :: kcell
@@ -1230,14 +1238,20 @@ ityp = cp%celltype
 ccp => cc_parameters(ityp)
 !Tc = divide_time_mean(1)    ! mean cycle time, seconds
 Tc = cp%divide_time         ! log-normal, implies %fg
-Tc = Tc - ccp%T_M           ! subtract mitosis time - no cells can start in mitosis
+!Tc = Tc - ccp%T_M           ! subtract mitosis time - no cells can start in mitosis
 fg = cp%fg
 T_G1 = fg*ccp%T_G1
 T_S = fg*ccp%T_S
 T_G2 = fg*ccp%T_G2
+!if (abs(T_G1 + T_S + T_G2 - Tc) > 0.001) then
+!    write(*,*) 'T_G1 + T_S + T_G2, Tc: ',T_G1 + T_S + T_G2, Tc
+!    stop
+!endif
+! These are all 0 for log-timestep
 G1_delay = fg*ccp%G1_mean_delay
 S_delay = fg*ccp%S_mean_delay
 G2_delay = fg*ccp%G2_mean_delay
+
 if (use_synchronise) then
     if (synch_phase == G1_phase) then
         t = synch_fraction*T_G1
@@ -1253,8 +1267,9 @@ if (use_synchronise) then
 else
     b = log(2.0)/Tc
     R = par_uni(kpar)
-    t = -(1/b)*log(1 - R/2)     ! cycle progression
+    t = -(1/b)*log(1 - R/2)     ! cycle progression, log-normal r.v. (t/Tc = fractional progression)
 endif
+if (kcell <= 10) write(*,*) 'kcell, t: ',kcell,t/Tc
 tswitch(1) = T_G1 
 tswitch(2) = tswitch(1) + G1_delay
 tswitch(3) = tswitch(2) + T_S
@@ -1277,7 +1292,7 @@ elseif (t < tswitch(2)) then
     cp%G1S_time = 0     ! no DSB, no checkpoint delay
 elseif (t < tswitch(3)) then
     cp%phase = S_phase
-    cp%S_time = t - tswitch(2)      ! time already spent in S!
+    cp%S_time = tswitch(3) - t      ! time left in S!
     cp%V = V0 + (t - G1_delay)*rVmax
 	cp%S_duration = T_S     ! assume 'normal' growth conditions, average cycle time here
 elseif (t < tswitch(4)) then
@@ -1294,12 +1309,18 @@ elseif (t < tswitch(6)) then
     cp%G2M_time = tswitch(6) - t
     cp%V = V0 + (tswitch(5) - (G1_delay + S_delay))*rVmax
 else
-    write(*,*) 'SetInitialCellCycleStatus: should not get here!'
-    stop
-    cp%phase = G2_checkpoint
-    cp%G2M_time = 0     ! starting mitosis
+! Gets here only if T_M is not subtracted from Tc.
+!    write(*,*) 'SetInitialCellCycleStatus: should not get here!'
+!    stop
+!    cp%phase = G2_checkpoint
+!    cp%G2M_time = 0     ! starting mitosis
+    cp%phase = dividing
+    R = par_uni(kpar)
+    cp%t_start_mitosis = -R*ccp%T_M
 endif
 cp%t_divide_last = -t
+! Cell volume should be a fraction t/Tc from V0 to 2*V0 = V0*(1 + t/Tc)
+if (kcell <= 10) write(*,'(a,i4,2f8.3)') 'kcell, V: ',kcell,cp%V/(2*V0),(1 + t/Tc)/2
 !write(nflog,'(a,i6,i2,f8.2,2f8.0)') 'kcell,cp%phase,th,t,Tdiv: ',kcell,cp%phase,t/3600,t,cp%divide_time
 !if (kcell == 20) then
 !    write(nflog,'(a,i4,6f8.2)') 'tswitch-t: ',kcell,(tswitch(1:6)-t)/3600
@@ -1643,6 +1664,9 @@ real(REAL_KIND) :: DELTA_T_save, t_sim_0, SFlive
 real(REAL_KIND) :: C_O2, HIF1, PDK1
 type(metabolism_type), pointer :: mp
 type(cell_type), pointer :: cp
+integer :: phase_count(0:8)
+real(REAL_KIND) :: total
+logical :: PEST_OK
 logical :: ok = .true.
 logical :: dbug
 	
@@ -1779,55 +1803,78 @@ res = 0
 call getNviable
 
 if (dbug .or. mod(istep,nthour) == 0) then
+    hour = istep/nthour
     nphaseh = 0
     do kcell = 1,nlist
         cp => cell_list(kcell)
         i = cp%phase
         nphaseh(i) = nphaseh(i) + 1
     enddo
-    nphase(istep/nthour,:) = nphaseh
+    nphase(hour,:) = nphaseh
 !    write(logmsg,'(a,8i6,i8)') 'nphase: ',nphase,Ncells
 !	call logger(logmsg)
 	ntphase = nphaseh + ntphase
 !	write(logmsg,'(a,8f6.3)') 'ntphase: ',real(ntphase)/sum(ntphase)
 !	call logger(logmsg)
-	write(logmsg,'(a,i6,i4,a,i8,a,i8,a,i8,4f8.3,a,e12.3)') 'istep, hour: ',istep,istep/nthour,' Nlive: ',Ncells,' Nviable: ',sum(Nviable),' NPsurvive: ',NPsurvive    !, &
+	write(logmsg,'(a,i6,i4,a,i8,a,i8,a,i8,4f8.3,a,e12.3)') 'istep, hour: ',istep,hour,' Nlive: ',Ncells,' Nviable: ',sum(Nviable),' NPsurvive: ',NPsurvive    !, &
 	call logger(logmsg)
+	if (hourly_cycle_dist) then     ! this should always be set true
+	    call get_phase_distribution(phase_count)
+	    total = sum(phase_count)
+	    phase_dist = 100*phase_count/total
+	    phase_dist(3) = phase_dist(3) + phase_dist(4)
+	    write(nfphase,'(i4,4f8.1)') hour,phase_dist(0:3)
+	endif
+	if (track_cell_phase) then
+	    kcell = 1
+        cp => cell_list(kcell)
+        write(nfphase,'(2i4,2f6.1,2f6.3)') hour,cp%phase,tnow/3600,cp%G2_time/3600,cp%V/Vdivide0,cp%divide_volume/Vdivide0
+    endif
+
+    if (use_PEST) then
+        if (next_phase_hour > 0) then  ! check if this is a phase_hour
+            if (hour == phase_hour(next_phase_hour)) then   ! record phase_dist
+                recorded_phase_dist(next_phase_hour,:) = phase_dist
+                next_phase_hour = next_phase_hour + 1
+                if (next_phase_hour > nphase_hours) next_phase_hour = 0
+            endif
+        endif
+    endif
+	    
 endif
 ! write(nflog,'(a,f8.3)') 'did simulate_step: time: ',wtime()-start_wtime
 
 istep = istep + 1
-#if 0
-! Checking against metab.xls
-if (istep == 1) then
-	write(nflog,*) 'nthour: ',nthour
-	write(nflog,'(8a12)') 'step','Cglucose','Coxygen','f_G','f_P','Grate','Irate','Cpyruvate'
-endif
-write(nflog,'(a,i4,7e12.3)') 'step:   ',istep,cell_list(1)%Cin(GLUCOSE),cell_list(1)%Cin(OXYGEN),mp%f_G,mp%f_P, &
-			mp%G_rate,mp%I_rate,mp%C_P
-#endif
 !write(*,*) 'end simulate_step: t_simulation: ',t_simulation
 !call averages
-if (t_simulation - t_irradiation >= phase_hours*3600 .and. phase_dist(1) == 0) then   ! count cells in each phase
-    do kcell = 1,nlist
-        cp => cell_list(kcell)
-        if (cp%state == DEAD) then
-            ph = 0      ! 
-        elseif (cp%phase == G1_phase .or. cp%phase == G1_checkpoint) then
-            ph = 1
-        elseif (cp%phase == S_phase .or. cp%phase == S_checkpoint) then
-            ph = 2
-        elseif (cp%phase < M_phase) then
-            ph = 3
-        else
-            ph = 4
-        endif
-        phase_dist(ph) = phase_dist(ph) + 1
-!        phase_dist(cp%phase) = phase_dist(cp%phase) + 1   ! checking # in checkpoints
-    enddo
-endif
+! No need for this here, since we are now caomputing phase_dist every hour
+!if (t_simulation - t_irradiation >= phase_hours*3600 .and. phase_dist(1) == 0) then   ! count cells in each phase
+!    call get_phase_distribution(phase_dist)
+!    do kcell = 1,nlist
+!        cp => cell_list(kcell)
+!        if (cp%state == DEAD) then
+!            ph = 0      ! 
+!        elseif (cp%phase == G1_phase .or. cp%phase == G1_checkpoint) then
+!            ph = 1
+!        elseif (cp%phase == S_phase .or. cp%phase == S_checkpoint) then
+!            ph = 2
+!        elseif (cp%phase < M_phase) then
+!            ph = 3
+!        else
+!            ph = 4
+!        endif
+!        phase_dist(ph) = phase_dist(ph) + 1
+!!        phase_dist(cp%phase) = phase_dist(cp%phase) + 1   ! checking # in checkpoints
+!    enddo
+!endif
 ! Need the phase_dist check in case NPsurvive = Nirradiated before phase_hours
-if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. (phase_dist(1) > 0)) then
+
+! Check for completion of the run
+PEST_OK = .true.
+if (use_PEST) then  ! check that all phase distributions have been estimated
+    PEST_OK = (next_phase_hour == 0)
+endif
+if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
     write(logmsg,*) 'NPsurvive = Nirradiated - Napop: ',NPsurvive,Nirradiated,Napop
     call logger(logmsg)
     SFlive = getSFlive()
@@ -1847,6 +1894,32 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. (phase_dist(1)
     res = 1
 endif
 
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+subroutine get_phase_distribution(phase_count)
+integer :: phase_count(0:8)
+integer :: kcell, ph
+type(cell_type), pointer :: cp
+
+phase_count = 0
+do kcell = 1,nlist
+    cp => cell_list(kcell)
+    if (cp%state == DEAD) then
+        ph = 0      ! 
+    elseif (cp%phase == G1_phase .or. cp%phase == G1_checkpoint) then
+        ph = 1
+    elseif (cp%phase == S_phase .or. cp%phase == S_checkpoint) then
+        ph = 2
+    elseif (cp%phase < M_phase) then
+        ph = 3
+    else
+        ph = 4
+    endif
+    phase_count(ph) = phase_count(ph) + 1
+enddo
+!write(*,'(5i6)') phase_count(0:4)
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -1878,11 +1951,11 @@ end function
 ! The first two can be lumped together - if distribution is not wanted it will not be read.
 ! I.e. need only use_SF
 ! For now assume always use_SF = true, because fitting without SF is no good.
+! For PEST runs, use_SF corresponds to 'M' fitting
 !-----------------------------------------------------------------------------------------
 subroutine completed
 real(REAL_KIND) :: fract(0:8)
-logical :: use_SF = .true.
-integer :: kcell, ph, nir(4), nsum, kcellmax
+integer :: kcell, ph, nir(4), nsum, kcellmax, i
 real(REAL_KIND) :: sftot(4), sfsum, sfmax
 type(cell_type), pointer :: cp
 
@@ -1919,34 +1992,23 @@ write(*,'(a,4f8.4)') 'log10(SF) by phase: ',log10(sftot/nir)
 !write(*,'(a,2f8.4)') 'Average: ',sfsum/nsum,log10(sfsum/nsum)
 write(*,*) 'max G1 SF: ',kcellmax,sfmax
 
-!if (phase_dist) then
-    write(logmsg,'(a,8i6)') 'phase_dist(0:4): ',phase_dist(0:4)
-    call logger(logmsg)
-    phase_dist(3) = phase_dist(3) + phase_dist(4)   ! lump G2 and M as G2
-    fract(0:3) = phase_dist(0:3)/real(sum(phase_dist(0:3)))
-    write(logmsg,'(a,8f6.3)') 'fract:      ',fract(0:3)
-    call logger(logmsg)
-    write(*,'(a,f8.3)') 'Average pATM: ',ATMsum/nirradiated
-    write(*,'(a,f8.3)') 'Average S delay: ',Sthsum/NSth
-    write(*,'(a,f8.3)') 'Average G2 delay: ',G2thsum/NG2th
-!endif
+!    phase_dist(3) = phase_dist(3) + phase_dist(4)   ! lump G2 and M as G2
+!    fract(0:3) = phase_dist(0:3)/real(sum(phase_dist(0:3)))
+write(logmsg,'(a,8f6.1)') 'phase_dist:      ',phase_dist(0:3)
+call logger(logmsg)
+write(*,'(a,f8.3)') 'Average pATM: ',ATMsum/nirradiated
+write(*,'(a,f8.3)') 'Average S delay: ',Sthsum/NSth
+write(*,'(a,f8.3)') 'Average G2 delay: ',G2thsum/NG2th
+
 if (use_PEST) then
-!    if (phase_dist) then
-        if (use_SF) then
-            write(nfres,'(5e15.6)') log10(SFave),fract(0:3)
-        else
-            write(nfres,'(5e15.6)') fract(0:3)
-        endif
-!    else
-!        write(nfres,'(e15.6)') log10(SFave)
-!    endif
-    close(nfpest)
-else
-!    if (phase_dist) then
-        write(nflog,'(5e15.6)') log10(SFave),fract(0:3)
-!    else
-!        write(nflog,'(e15.6)') log10(SFave)
-!    endif
+    if (use_SF) then
+        write(nfres,'(e15.6)') log10(SFave)
+    endif
+    if (nphase_hours > 0) then
+!        do i = 1,nphase_hours
+            write(nfres,'(16e15.6)') (recorded_phase_dist(i,0:3),i=1,4)
+!        enddo
+    endif
 endif
 end subroutine
 
@@ -2317,6 +2379,8 @@ if (isopen) then
 endif
 inquire(nfres,OPENED=isopen)
 if (isopen) close(nfres)
+inquire(nfphase,OPENED=isopen)
+if (isopen) close(nfphase)
 call logger('closed files')
 
 if (par_zig_init) then

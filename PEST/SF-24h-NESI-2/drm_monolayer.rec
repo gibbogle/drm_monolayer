@@ -1,0 +1,339 @@
+
+                   PEST RUN RECORD: CASE drm_monolayer
+
+
+PEST Version: 14.2
+
+
+PEST run mode:-
+
+   Parameter estimation mode
+
+
+Case dimensions:-
+
+   Number of parameters                           :     4
+   Number of adjustable parameters                :     4
+   Number of parameter groups                     :     4
+   Number of observations                         :     4
+   Number of prior estimates                      :     0
+
+
+Model command line(s):-
+
+   drm_monolayer.bat > nul
+
+
+Jacobian command line:-
+
+   na
+
+
+Model interface files:-
+
+   Templates:
+      E01.tpl
+      E02.tpl
+      E03.tpl
+      E04.tpl
+   for model input files:
+      E01.inp
+      E02.inp
+      E03.inp
+      E04.inp
+
+   (Parameter values written using double precision protocol.)
+   (Decimal point always included.)
+
+   Instruction files:
+      E01_out.ins
+      E02_out.ins
+      E03_out.ins
+      E04_out.ins
+   for reading model output files:
+      E01_out.dat
+      E02_out.dat
+      E03_out.dat
+      E04_out.dat
+
+
+PEST-to-model message file:-
+
+   na
+
+
+Derivatives calculation:-
+
+Param        Increment   Increment   Increment   Forward or   Multiplier  Method
+group        type                    low bound   central      (central)   (central)
+klethal      relative    1.0000E-02   none         switch       2.000     parabolic
+mitrate      relative    1.0000E-02   none         switch       2.000     parabolic
+msurvival    relative    1.0000E-02   none         switch       2.000     parabolic
+pcomplex     relative    1.0000E-02   none         switch       2.000     parabolic
+
+
+Parameter definitions:-
+
+Name         Trans-            Change       Initial        Lower          Upper
+             formation         limit        value          bound          bound
+klethal      none              factor      2.30000        1.50000        3.00000    
+mitrate      none              factor     1.130000E-02   5.000000E-03   1.500000E-02
+msurvival    none              factor     1.200000E-02    0.00000       3.000000E-02
+pcomplex     none              factor     0.650000       0.600000       0.700000    
+
+Name         Group          Scale         Offset        Model command number
+klethal      klethal       1.00000        0.00000            1
+mitrate      mitrate       1.00000        0.00000            1
+msurvival    msurvival     1.00000        0.00000            1
+pcomplex     pcomplex      1.00000        0.00000            1
+
+
+Prior information:-
+
+   No prior information supplied
+
+
+Observations:-
+
+Observation name        Observation       Weight       Group
+ e01logsf              -0.374568          1.634       e01obgp     
+ e02logsf              -0.991579          1.004       e02obgp     
+ e03logsf               -1.58368         0.7946       e03obgp     
+ e04logsf               -2.46993         0.6363       e04obgp     
+
+
+Control settings:-
+
+   Initial lambda                                               :  5.0000    
+   Lambda adjustment factor                                     :  2.0000    
+   Sufficient new/old phi ratio per optimisation iteration      : 0.30000    
+   Limiting relative phi reduction between lambdas              : 3.00000E-02
+   Maximum trial lambdas per iteration                          :  10
+   Forgive model run failure during lamda testing               : no
+   Forgive model run failure during Jacobian runs               : no
+
+   Perform Broyden's update of Jacobian matrix                  : no
+   Undertake observation re-referencing                         : no
+
+   Maximum  factor  parameter change (factor-limited changes)   :  1.3000
+   Maximum relative parameter change (relative-limited changes) : na
+   Fraction of initial parameter values used in computing
+   change limit for near-zero parameters                        : 1.00000E-03
+   Allow bending of parameter upgrade vector                    : no
+   Allow parameters to stick to their bounds                    : no
+
+   Relative phi reduction below which to begin use of
+   central derivatives                                          : 0.10000             
+   Iteration at which to first consider derivatives switch      :   1
+
+   Relative phi reduction indicating convergence                : 0.10000E-01
+   Number of phi values required within this range              :   3
+   Maximum number of consecutive failures to lower phi          :   3
+   Minimal relative parameter change indicating convergence     : 0.10000E-01
+   Number of consecutive iterations with minimal param change   :   3
+   Maximum number of optimisation iterations                    :  30
+
+   Attempt automatic user intervention                          : no
+
+   Attempt reuse of parameter sensitivities                     : no
+
+   Scale parameters by their bounds                             : no
+
+
+File saving options: -
+
+   Save best JCO file                                           : yes
+   Save multiple JCO files                                      : no
+   Save multiple REI files                                      : no
+   Save multiple PAR files                                      : no
+
+
+                            OPTIMISATION RECORD
+
+
+INITIAL CONDITIONS: 
+   Sum of squared weighted residuals (ie phi)               =  2.96769E-03
+   Contribution to phi from observation group "e01obgp"     =  6.52889E-06
+   Contribution to phi from observation group "e02obgp"     =  4.13655E-04
+   Contribution to phi from observation group "e03obgp"     =  1.95583E-03
+   Contribution to phi from observation group "e04obgp"     =  5.91682E-04
+
+      Current parameter values
+      klethal          2.30000    
+      mitrate         1.130000E-02
+      msurvival       1.200000E-02
+      pcomplex        0.650000    
+
+
+OPTIMISATION ITERATION NO.        : 1
+   Model calls so far             : 1
+   Starting phi for this iteration                          :  2.96769E-03
+   Contribution to phi from observation group "e01obgp"     :  6.52889E-06
+   Contribution to phi from observation group "e02obgp"     :  4.13655E-04
+   Contribution to phi from observation group "e03obgp"     :  1.95583E-03
+   Contribution to phi from observation group "e04obgp"     :  5.91682E-04
+
+       Lambda =   5.0000     ----->
+          Phi =  2.96937E-03  (  1.001 times starting phi)
+
+       Lambda =   2.5000     ----->
+          Phi =  2.96888E-03  (  1.000 times starting phi)
+
+   No more lambdas: relative phi reduction between lambdas less than 0.0300
+   Lowest phi this iteration:  2.96888E-03
+   Relative phi reduction between optimisation iterations less than 0.1000
+   Switch to higher order derivatives calculation
+   (restart from best parameters so far - these achieved at iteration    0)
+
+      Current parameter values
+      klethal          2.30000    
+      mitrate         1.130000E-02
+      msurvival       1.200000E-02
+      pcomplex        0.650000    
+
+
+OPTIMISATION ITERATION NO.        : 2
+   Model calls so far             : 7
+   Starting phi for this iteration                          :  2.96769E-03
+   Contribution to phi from observation group "e01obgp"     :  6.52889E-06
+   Contribution to phi from observation group "e02obgp"     :  4.13655E-04
+   Contribution to phi from observation group "e03obgp"     :  1.95583E-03
+   Contribution to phi from observation group "e04obgp"     :  5.91682E-04
+
+       Lambda =   5.0000     ----->
+          Phi =  2.96694E-03  (  1.000 of starting phi)
+
+       Lambda =   2.5000     ----->
+          Phi =  2.96670E-03  (  1.000 of starting phi)
+
+   No more lambdas: relative phi reduction between lambdas less than 0.0300
+   Lowest phi this iteration:  2.96670E-03
+
+      Current parameter values                 Previous parameter values
+      klethal          2.30079                 klethal           2.30000    
+      mitrate         1.112632E-02             mitrate          1.130000E-02
+      msurvival       9.230769E-03             msurvival        1.200000E-02
+      pcomplex        0.650003                 pcomplex         0.650000    
+   Maximum   factor change:  1.300     ["msurvival"]
+   Maximum relative change: 0.2308     ["msurvival"]
+
+   Optimisation complete: the  3 lowest phi's are within a relative distance
+                          of eachother of 1.000E-02
+   Total model calls:     17
+
+   The model has been run one final time using best parameters. 
+   Thus all model input files contain best parameter values, and model 
+   output files contain model results based on these parameters.
+
+
+                            OPTIMISATION RESULTS
+
+Covariance matrix and parameter confidence intervals cannot be determined:-
+No redundancy in non-zero-weighted observations plus prior information.
+
+
+Parameters ----->
+
+Parameter      Estimated value
+ klethal         2.30079    
+ mitrate        1.112632E-02
+ msurvival      9.230769E-03
+ pcomplex       0.650003    
+
+See file drm_monolayer.sen for parameter sensitivities.
+
+
+Observations ----->
+
+Observation            Measured       Calculated     Residual       Weight     Group
+                       value          value
+e01logsf             -0.374568      -0.376153       1.584814E-03    1.634      e01obgp     
+e02logsf             -0.991579      -0.971345      -2.023369E-02    1.004      e02obgp     
+e03logsf              -1.58368       -1.63932       5.564424E-02   0.7946      e03obgp     
+e04logsf              -2.46993       -2.43169      -3.823843E-02   0.6363      e04obgp     
+
+See file drm_monolayer.res for more details of residuals in graph-ready format.
+
+See file drm_monolayer.seo for composite observation sensitivities.
+
+
+Objective function ----->
+
+  Sum of squared weighted residuals (ie phi)                =  2.96670E-03
+  Contribution to phi from observation group "e01obgp"      =  6.70542E-06
+  Contribution to phi from observation group "e02obgp"      =  4.12879E-04
+  Contribution to phi from observation group "e03obgp"      =  1.95512E-03
+  Contribution to phi from observation group "e04obgp"      =  5.91992E-04
+
+
+Correlation Coefficient ----->
+
+  Correlation coefficient                                   =  0.99701    
+
+
+Analysis of residuals ----->
+
+  All residuals:-
+     Number of residuals with non-zero weight                       =     4
+     Mean value of non-zero weighted residuals                      =  5.3899E-04
+     Maximum weighted residual [observation "e03logsf"]             =  4.4217E-02
+     Minimum weighted residual [observation "e04logsf"]             = -2.4331E-02
+     Standard variance of weighted residuals                        =  7.4167E-04
+     Standard error of weighted residuals                           =  2.7234E-02
+
+     Note: the above variance was obtained by dividing the objective 
+     function by the number of system degrees of freedom (ie. number of 
+     observations with non-zero weight plus number of prior information 
+     articles with non-zero weight minus the number of adjustable parameters.)
+     If the degrees of freedom is negative the divisor becomes 
+     the number of observations with non-zero weight plus the number of 
+     prior information items with non-zero weight.
+
+  Residuals for observation group "e01obgp":-
+     Number of residuals with non-zero weight                       =     1
+     Mean value of non-zero weighted residuals                      =  2.5895E-03
+     Maximum weighted residual [observation "e01logsf"]             =  2.5895E-03
+     Minimum weighted residual [observation "e01logsf"]             =  2.5895E-03
+     "Variance" of weighted residuals                               =  6.7054E-06
+     "Standard error" of weighted residuals                         =  2.5895E-03
+
+     Note: the above "variance" was obtained by dividing the sum of squared 
+     residuals by the number of items with non-zero weight.
+
+  Residuals for observation group "e02obgp":-
+     Number of residuals with non-zero weight                       =     1
+     Mean value of non-zero weighted residuals                      = -2.0319E-02
+     Maximum weighted residual [observation "e02logsf"]             = -2.0319E-02
+     Minimum weighted residual [observation "e02logsf"]             = -2.0319E-02
+     "Variance" of weighted residuals                               =  4.1288E-04
+     "Standard error" of weighted residuals                         =  2.0319E-02
+
+     Note: the above "variance" was obtained by dividing the sum of squared 
+     residuals by the number of items with non-zero weight.
+
+  Residuals for observation group "e03obgp":-
+     Number of residuals with non-zero weight                       =     1
+     Mean value of non-zero weighted residuals                      =  4.4217E-02
+     Maximum weighted residual [observation "e03logsf"]             =  4.4217E-02
+     Minimum weighted residual [observation "e03logsf"]             =  4.4217E-02
+     "Variance" of weighted residuals                               =  1.9551E-03
+     "Standard error" of weighted residuals                         =  4.4217E-02
+
+     Note: the above "variance" was obtained by dividing the sum of squared 
+     residuals by the number of items with non-zero weight.
+
+  Residuals for observation group "e04obgp":-
+     Number of residuals with non-zero weight                       =     1
+     Mean value of non-zero weighted residuals                      = -2.4331E-02
+     Maximum weighted residual [observation "e04logsf"]             = -2.4331E-02
+     Minimum weighted residual [observation "e04logsf"]             = -2.4331E-02
+     "Variance" of weighted residuals                               =  5.9199E-04
+     "Standard error" of weighted residuals                         =  2.4331E-02
+
+     Note: the above "variance" was obtained by dividing the sum of squared 
+     residuals by the number of items with non-zero weight.
+
+
+Covariance and other statistical matrices cannot be determined:-
+No redundancy in non-zero-weighted observations plus prior information.
+

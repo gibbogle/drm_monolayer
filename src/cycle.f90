@@ -55,10 +55,17 @@ ityp = cp%celltype
 10 continue
 phase = cp%phase
 if (phase == G1_phase) then
-    switch = (tnow > cp%G1_time)
+    switch = (tnow > cp%G1_time)    ! G1_time = time to leave G1
     if (switch) then
-        if (.not.is_radiation) then
+        if (.not.is_radiation) then     ! before radiation, there is no G1 checkpoint
             cp%phase = S_phase
+            tfactor = (max_growthrate(ityp)/cp%dVdt)*cp%fg
+!            if (tfactor > 1.1) then
+!                write(*,'(a,i6,3e12.3)') 'tfactor: ',kcell_now,tfactor,(max_growthrate(ityp)/cp%dVdt),cp%fg
+!                stop
+!            endif
+		    cp%S_time = tnow + tfactor*ccp%T_S     ! restoring previous mode - no arrest
+!		    if (kcell_now < 10) write(*,'(3e12.3)') kcell_now,tnow,tfactor*ccp%T_S
             goto 10
         endif
         cp%phase = G1_checkpoint
@@ -74,14 +81,21 @@ elseif (phase == G1_checkpoint) then  ! this checkpoint combines the release fro
         cp%phase = S_phase
         tfactor = (max_growthrate(ityp)/cp%dVdt)*cp%fg
 		cp%S_time = tnow + tfactor*ccp%T_S     ! restoring previous mode - no arrest
+!		if (kcell_now == 1) write(*,'(3e12.3)') kcell_now,tnow,tfactor*ccp%T_S
         N_checkpoint = N_checkpoint - 1
         goto 10
     endif
 elseif (phase == S_phase) then
-    switch = (tnow >= cp%S_time)
+    switch = (tnow >= cp%S_time)    ! S_time = time to leave S
     if (switch) then
         if (.not.is_radiation) then
             cp%phase = G2_phase
+            tfactor = (max_growthrate(ityp)/cp%dVdt)*cp%fg
+!            if (kcell_now == 1) then
+!                write(nfphase,'(a,i4,2f6.3)') 'S_phase entry: V: ',kcell_now, cp%V/Vdivide0, (1 + (ccp%T_G1 + ccp%T_S)/cp%divide_time)/2
+!                write(nfphase,'(a,i4,f6.3,2e12.3,2f6.3)') 'tnow, tfactor: ',kcell_now,tnow/3600,max_growthrate(ityp),cp%dVdt,cp%fg,tfactor
+!            endif
+		    cp%G2_time = tnow + tfactor*ccp%T_G2
             goto 10
         endif
         cp%phase = S_checkpoint
@@ -100,11 +114,12 @@ elseif (phase == S_checkpoint) then
         goto 10
     endif
 elseif (phase == G2_phase) then
-	switch = (tnow > cp%G2_time .and. cp%V > cp%divide_volume) ! to prevent volumes decreasing 
+	switch = (tnow > cp%G2_time .and. cp%V > cp%divide_volume) ! G2_time = time to leave G2 (V check to prevent volumes decreasing) 
     if (switch) then
         cp%V = cp%divide_volume     ! correct for slight volume discrepancy here, to maintain correct cell volume
         if (.not.is_radiation) then
             cp%phase = M_phase
+            cp%M_time = tnow + ccp%T_M   
             goto 10
         endif
         cp%phase = G2_checkpoint

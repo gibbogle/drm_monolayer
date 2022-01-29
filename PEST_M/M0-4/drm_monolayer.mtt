@@ -1,0 +1,7 @@
+ PARAMETER STATISTICAL MATRICES: CASE drm_monolayer
+
+ OPTIMISATION ITERATION NUMBER  2
+
+ Cannot evaluate parameter covariance matrix as the number of observations
+ and prior information items does not exceed the number of adjustable 
+ parameters.

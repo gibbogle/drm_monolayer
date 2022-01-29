@@ -1,0 +1,139 @@
+                    PARAMETER SENSITIVITIES: CASE drm_monolayer
+
+
+ OPTIMISATION ITERATION NO.  1 ----->
+ Parameter name    Group          Current value    Sensitivity
+   klethal         klethal          2.30000         3.892906E-02
+   mitrate         mitrate         1.200000E-02     0.172706    
+   msurvival       msurvival       1.000000E-02     4.087251E-03
+   pcomplex        pcomplex        0.650000         0.401199    
+   katm2           katm2           7.600000E-02     0.673724    
+   katm4           katm4            10.6000         1.201093E-02
+   katr4           katr4            3.40000         1.478764E-02
+
+
+ OPTIMISATION ITERATION NO.  2 ----->
+ Parameter name    Group          Current value    Sensitivity
+   klethal         klethal          2.29892         3.875809E-02
+   mitrate         mitrate         1.000000E-02     0.221090    
+   msurvival       msurvival       2.000000E-02     2.811551E-03
+   pcomplex        pcomplex        0.644188         0.409898    
+   katm2           katm2           6.852403E-02     0.754981    
+   katm4           katm4            10.9851         1.266398E-02
+   katr4           katr4            3.60115         5.471982E-03
+
+
+ OPTIMISATION ITERATION NO.  3 ----->
+ Parameter name    Group          Current value    Sensitivity
+   klethal         klethal          2.29230         3.868527E-02
+   mitrate         mitrate         2.000000E-02     0.122337    
+   msurvival       msurvival       2.000000E-02     4.497929E-04
+   pcomplex        pcomplex        0.649554         0.413774    
+   katm2           katm2           6.785770E-02     0.799974    
+   katm4           katm4            11.0000         1.342596E-02
+   katr4           katr4            3.67024         5.206732E-03
+
+
+ OPTIMISATION ITERATION NO.  4 ----->
+ Parameter name    Group          Current value    Sensitivity
+   klethal         klethal          2.30466         3.848743E-02
+   mitrate         mitrate         1.617284E-02     0.134651    
+   msurvival       msurvival       1.000000E-02     6.621655E-04
+   pcomplex        pcomplex        0.649713         0.418187    
+   katm2           katm2           6.836879E-02     0.759151    
+   katm4           katm4            10.9788         1.220678E-02
+   katr4           katr4            3.74432         6.524753E-03
+
+
+ OPTIMISATION ITERATION NO.  5 ----->
+ Parameter name    Group          Current value    Sensitivity
+   klethal         klethal          2.34327         3.793853E-02
+   mitrate         mitrate         1.000000E-02     0.206111    
+   msurvival       msurvival       8.346982E-03     1.663332E-03
+   pcomplex        pcomplex        0.651435         0.408384    
+   katm2           katm2           6.990689E-02     0.678664    
+   katm4           katm4            10.8891         1.432572E-02
+   katr4           katr4            4.00000         1.056533E-02
+
+
+ OPTIMISATION ITERATION NO.  6 ----->
+ Parameter name    Group          Current value    Sensitivity
+   klethal         klethal          2.33995         3.801770E-02
+   mitrate         mitrate         1.000000E-02     0.202998    
+   msurvival       msurvival       4.173491E-03     1.723262E-03
+   pcomplex        pcomplex        0.651026         0.408132    
+   katm2           katm2           6.976888E-02     0.658856    
+   katm4           katm4            10.9025         1.404740E-02
+   katr4           katr4            4.00000         6.879915E-03
+
+
+
+                        COMPLETION OF OPTIMISATION PROCESS
+
+ Composite sensitivities for observation group "e01obgp" ----->
+
+ Number of observations with non-zero weight =     5
+ Parameter name    Group          Current value    Sensitivity
+   klethal         klethal          2.33995         4.663457E-02
+   mitrate         mitrate         1.000000E-02     0.238554    
+   msurvival       msurvival       4.173491E-03     4.893787E-03
+   pcomplex        pcomplex        0.651026         0.161201    
+   katm2           katm2           6.976888E-02     8.432817E-02
+   katm4           katm4            10.9025         2.574218E-02
+   katr4           katr4            4.00000         1.464979E-02
+
+
+
+ Composite sensitivities for observation group "e02obgp" ----->
+
+ Number of observations with non-zero weight =     5
+ Parameter name    Group          Current value    Sensitivity
+   klethal         klethal          2.33995         6.428643E-02
+   mitrate         mitrate         1.000000E-02     0.331900    
+   msurvival       msurvival       4.173491E-03     2.406229E-03
+   pcomplex        pcomplex        0.651026         0.506231    
+   katm2           katm2           6.976888E-02     3.655983E-02
+   katm4           katm4            10.9025         1.299785E-02
+   katr4           katr4            4.00000         3.615459E-02
+
+
+
+ Composite sensitivities for observation group "e03obgp" ----->
+
+ Number of observations with non-zero weight =     5
+ Parameter name    Group          Current value    Sensitivity
+   klethal         klethal          2.33995         8.242134E-02
+   mitrate         mitrate         1.000000E-02     0.421156    
+   msurvival       msurvival       4.173491E-03     3.342214E-17
+   pcomplex        pcomplex        0.651026         0.962531    
+   katm2           katm2           6.976888E-02      2.59842    
+   katm4           katm4            10.9025         3.295044E-02
+   katr4           katr4            4.00000         9.079758E-03
+
+
+
+ Composite sensitivities for observation group "e04obgp" ----->
+
+ Number of observations with non-zero weight =     5
+ Parameter name    Group          Current value    Sensitivity
+   klethal         klethal          2.33995         9.964188E-02
+   mitrate         mitrate         1.000000E-02     0.579028    
+   msurvival       msurvival       4.173491E-03     3.811521E-03
+   pcomplex        pcomplex        0.651026          1.20819    
+   katm2           katm2           6.976888E-02     0.780453    
+   katm4           katm4            10.9025         3.696328E-02
+   katr4           katr4            4.00000         1.348354E-02
+
+
+
+ Composite sensitivities for all observations/prior info ----->
+
+ Number of observations with non-zero weight =    20
+ Parameter name    Group          Current value    Sensitivity
+   klethal         klethal          2.33995         3.793853E-02
+   mitrate         mitrate         1.000000E-02     0.206111    
+   msurvival       msurvival       4.173491E-03     1.663332E-03
+   pcomplex        pcomplex        0.651026         0.408384    
+   katm2           katm2           6.976888E-02     0.678664    
+   katm4           katm4            10.9025         1.432572E-02
+   katr4           katr4            4.00000         1.056533E-02

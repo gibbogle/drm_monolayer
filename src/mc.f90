@@ -50,9 +50,9 @@ contains
 !--------------------------------------------------------------------------
 subroutine ReadMcParameters(nfin)
 integer :: nfin
-integer :: iuse_baserate, iuse_exp
+integer :: iuse_baserate, iuse_exp, iphase_hours
 
-read(nfin,*) phase_hours
+read(nfin,*) iphase_hours
 read(nfin,*) baseRate
 read(nfin,*) mitRate
 read(nfin,*) Msurvival
@@ -81,9 +81,28 @@ Sthsum = 0
 NSth = 0
 G2thsum = 0
 NG2th = 0
+
+! For PEST runs, phase_hours must be -1 (for M runs) or -2 (for C runs) or -3 (for MC runs)
+use_SF = .false.
+nphase_hours = 0
+next_phase_hour = 0
+if (iphase_hours == -1) then
+    use_SF = .true.     ! in this case SFave only is recorded
+elseif (iphase_hours == -2) then
+    use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
+    nphase_hours = 4
+    next_phase_hour = 1
+    phase_hour(1:4) = [8, 12, 18, 24]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+elseif (iphase_hours == -3) then
+    use_SF = .true.     ! in this case SFave is recorded and there are multiple phase distribution recording times
+    nphase_hours = 4
+    next_phase_hour = 1
+    phase_hour(1:4) = [8, 12, 18, 24]
+endif
 end subroutine
 
 !--------------------------------------------------------------------------
+! DNA-PK inhibition factor.  C is inhibitor drug concentration
 !--------------------------------------------------------------------------
 function finhibit(C) result(fin)
 real(8) :: C, fin
@@ -172,7 +191,7 @@ else    ! S_phase
     DSB0(2) = Pcomplex*(1-f)*baseDSB
     DSB0(3) = (1 - Pcomplex)*2*f*baseDSB*(1 - PHRsimple)
     DSB0(4) = Pcomplex*2*f*baseDSB
-    DSB0(5) = (1 - Pcomplex)*2*f*baseDSB*PHRsimple
+    DSB0(5) = (1 - Pcomplex)*2*f*baseDSB*PHRsimple  ! This pathway is not used if PHRsimple = 0
     totDSB0 = (1+f)*baseDSB
 endif
 fin = finhibit(Cdrug)
@@ -227,14 +246,14 @@ end subroutine
 
 !------------------------------------------------------------------------
 ! Effect of pATM
-! Using parameters from mcradio, time computed in hours, returned in secs
+! Using parameters from mcradio, time computed in hours, returned in secs 
 !------------------------------------------------------------------------
 function S_checkpoint_time(cp) result(t)
 type(cell_type), pointer :: cp
 real(REAL_KIND) :: t, th
 
 th = K_ATM(4)*(1 - exp(-K_ATM(1)*cp%pATM))
-if (kcell_now == -4) write(*,'(a,i6,f8.3)') 'S_checkpoint_time (h): ',kcell_now,th
+if (kcell_now == 1) write(*,'(a,i6,2f8.3)') 'S_checkpoint_time (h): ',kcell_now,cp%pATM,th
 t = 3600*th
 if (is_radiation) then
     Sthsum = Sthsum + th

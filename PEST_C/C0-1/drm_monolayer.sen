@@ -1,0 +1,218 @@
+                    PARAMETER SENSITIVITIES: CASE drm_monolayer
+
+
+ OPTIMISATION ITERATION NO.  1 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           7.600000E-02      3.68081    
+   katm3           katm3           0.300000          2.03599    
+   katr2           katr2           5.000000E-03      53.5844    
+   katr4           katr4            1.00000         0.376018    
+
+
+ OPTIMISATION ITERATION NO.  2 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           8.066257E-02      1.65527    
+   katm3           katm3           0.307048          1.20263    
+   katr2           katr2           5.552431E-03      82.5531    
+   katr4           katr4           0.999632         0.683874    
+
+
+ OPTIMISATION ITERATION NO.  3 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           7.295295E-02      1.84011    
+   katm3           katm3           0.316016         0.752025    
+   katr2           katr2           5.339919E-03      57.9929    
+   katr4           katr4            1.00060         0.486665    
+
+
+ OPTIMISATION ITERATION NO.  4 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           6.514487E-02      3.28925    
+   katm3           katm3           0.337520          1.22724    
+   katr2           katr2           5.499092E-03      67.0409    
+   katr4           katr4           0.990916         0.556731    
+
+
+ OPTIMISATION ITERATION NO.  5 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           6.087308E-02      2.60305    
+   katm3           katm3           0.358569         0.794545    
+   katr2           katr2           6.268019E-03      67.1662    
+   katr4           katr4           0.931322         0.886060    
+
+
+ OPTIMISATION ITERATION NO.  6 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           6.103996E-02      3.29596    
+   katm3           katm3           0.394451         0.843843    
+   katr2           katr2           6.297149E-03      69.6364    
+   katr4           katr4           0.929232         0.932556    
+
+
+ OPTIMISATION ITERATION NO.  7 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           6.030311E-02      4.97256    
+   katm3           katm3           0.406577          1.36332    
+   katr2           katr2           6.312113E-03      59.9053    
+   katr4           katr4           0.928172         0.889168    
+
+
+ OPTIMISATION ITERATION NO.  8 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           5.898513E-02      6.72003    
+   katm3           katm3           0.419590          1.28950    
+   katr2           katr2           6.222799E-03      79.1946    
+   katr4           katr4           0.927629         0.838242    
+
+
+ OPTIMISATION ITERATION NO.  9 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           5.680987E-02      6.21593    
+   katm3           katm3           0.418769          1.79800    
+   katr2           katr2           5.974231E-03      62.0793    
+   katr4           katr4           0.943288         0.799884    
+
+
+ OPTIMISATION ITERATION NO. 10 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           5.693093E-02      9.29465    
+   katm3           katm3           0.424708          1.71880    
+   katr2           katr2           5.801268E-03      48.2735    
+   katr4           katr4           0.949639         0.728534    
+
+
+ OPTIMISATION ITERATION NO. 11 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           5.570276E-02      9.70619    
+   katm3           katm3           0.422168          1.70412    
+   katr2           katr2           5.748032E-03      39.4508    
+   katr4           katr4           0.952216         0.703456    
+
+
+ OPTIMISATION ITERATION NO. 12 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           5.585173E-02      9.10738    
+   katm3           katm3           0.420575          1.77578    
+   katr2           katr2           5.756165E-03      34.8461    
+   katr4           katr4           0.953155         0.728546    
+
+
+ OPTIMISATION ITERATION NO. 13 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           5.409037E-02      9.64803    
+   katm3           katm3           0.415788          1.65938    
+   katr2           katr2           5.707591E-03      41.2849    
+   katr4           katr4           0.953576         0.708912    
+
+
+ OPTIMISATION ITERATION NO. 14 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           5.400236E-02      9.03741    
+   katm3           katm3           0.415131          1.66690    
+   katr2           katr2           5.636792E-03      40.9718    
+   katr4           katr4           0.956116         0.699974    
+
+
+ OPTIMISATION ITERATION NO. 15 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           5.418000E-02      9.66263    
+   katm3           katm3           0.416208          1.63661    
+   katr2           katr2           5.430745E-03      59.0594    
+   katr4           katr4           0.964855         0.631996    
+
+
+ OPTIMISATION ITERATION NO. 16 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           5.423975E-02      9.38608    
+   katm3           katm3           0.416852          1.64277    
+   katr2           katr2           5.351472E-03      37.5896    
+   katr4           katr4           0.976604         0.596580    
+
+
+ OPTIMISATION ITERATION NO. 17 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           5.435159E-02      9.02943    
+   katm3           katm3           0.414918          1.78277    
+   katr2           katr2           5.240183E-03      47.3106    
+   katr4           katr4           0.979737         0.698520    
+
+
+ OPTIMISATION ITERATION NO. 18 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           5.261777E-02      8.78961    
+   katm3           katm3           0.409918          1.72376    
+   katr2           katr2           5.199023E-03      36.8183    
+   katr4           katr4           0.985074         0.608168    
+
+
+ OPTIMISATION ITERATION NO. 19 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           5.222622E-02      8.66790    
+   katm3           katm3           0.408164          1.76727    
+   katr2           katr2           5.161668E-03      37.5678    
+   katr4           katr4           0.987467         0.593346    
+
+
+ OPTIMISATION ITERATION NO. 20 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           5.181848E-02      8.59696    
+   katm3           katm3           0.406347          2.00349    
+   katr2           katr2           5.120274E-03      39.5391    
+   katr4           katr4           0.989275         0.626232    
+
+
+
+                        COMPLETION OF OPTIMISATION PROCESS
+
+ Composite sensitivities for observation group "c01obgp" ----->
+
+ Number of observations with non-zero weight =    16
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           5.181848E-02      31.2091    
+   katm3           katm3           0.406347          5.96137    
+   katr2           katr2           5.120274E-03      31.1229    
+   katr4           katr4           0.989275         0.162685    
+
+
+
+ Composite sensitivities for observation group "c02obgp" ----->
+
+ Number of observations with non-zero weight =    16
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           5.181848E-02      12.2440    
+   katm3           katm3           0.406347          2.92111    
+   katr2           katr2           5.120274E-03      60.5544    
+   katr4           katr4           0.989275         0.712495    
+
+
+
+ Composite sensitivities for observation group "c03obgp" ----->
+
+ Number of observations with non-zero weight =    16
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           5.181848E-02      7.71450    
+   katm3           katm3           0.406347          1.49271    
+   katr2           katr2           5.120274E-03      95.0663    
+   katr4           katr4           0.989275          2.19241    
+
+
+
+ Composite sensitivities for observation group "c04obgp" ----->
+
+ Number of observations with non-zero weight =    16
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           5.181848E-02      4.32261    
+   katm3           katm3           0.406347          1.91646    
+   katr2           katr2           5.120274E-03      94.3840    
+   katr4           katr4           0.989275         0.540537    
+
+
+
+ Composite sensitivities for all observations/prior info ----->
+
+ Number of observations with non-zero weight =    64
+ Parameter name    Group          Current value    Sensitivity
+   katm2           katm2           5.181848E-02      8.66790    
+   katm3           katm3           0.406347          1.76727    
+   katr2           katr2           5.120274E-03      37.5678    
+   katr4           katr4           0.989275         0.593346    

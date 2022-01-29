@@ -1,0 +1,164 @@
+OS is Windows
+Executing with OpenMP
+ inputfile:  E04.inp
+ outputfile: E04_out.dat
+ReadCellParams new
+ ReadCellCycleParameters:
+ ityp:            1
+T_G1,T_S,T_G2,T_M, total:     6.44    9.66    2.10    0.50   18.70
+ ityp:            2
+T_G1,T_S,T_G2,T_M, total:     6.00    8.00    1.00    0.50   15.50
+ Ndrugs_used:            0
+ ReadProtocol
+RADIATION                                                       
+ nevents:            1
+Finished reading input data
+ Type 1 cells
+ divide_time_median:    18.7000000000000        19.0000000000000     
+ divide_time_shape:    1.10000000000000        1.10000000000000     
+shape, sigma:   0.1100E+01  0.1100E+01  0.9531E-01  0.9531E-01
+Median, mean divide time:   0.1870E+02  0.1900E+02  0.1879E+02  0.1909E+02
+ Vdivide0:   1.599999954748910E-009  medium_volume0:   0.200000000000000     
+ 
+GUI version: GUI2.2      
+DLL version: DLL2.2      
+ 
+ Opened E04_out.dat
+nsteps, NT_CONC, DELTA_T:   1152     1  600.
+NT_DISPLAY, DT_DISPLAY:      2 1200.
+did ReadCellParams
+ ncpu:            1
+OPENMP defined
+Requested Mnodes:  1
+Machine processors:  8
+Max threads available:  8
+ Threads, max:            1           1
+did omp_initialisation
+ npar =            1        1234        5678
+did deallocation
+ Initial count, max_nlist:         1000      200000
+did ArrayInitialisation
+ SetupChemo
+ ityp, Vdivide0, max_growthrate(ityp):            1  1.599999954748910E-009
+  1.215316651944145E-014
+ ityp, Vdivide0, max_growthrate(ityp):            2  1.599999954748910E-009
+  1.195611227841874E-014
+O2_maxrate, G_maxrate:    0.625E-10   0.130E-09
+ did PlaceCells: Ncells:         1000
+Startup procedures have been executed: initial T cell count:   1000
+averages: V,dVdt,fg:    0.116E-08   0.122E-13   0.100E+01
+ 
+ GenerateSFlookup: ityp:            1
+istep, hour:      0   0 Nlive:     1000 Nviable:     1000 NPsurvive:        0
+istep, hour:      6   1 Nlive:     1017 Nviable:     1017 NPsurvive:        0
+istep, hour:     12   2 Nlive:     1057 Nviable:     1057 NPsurvive:        0
+istep, hour:     18   3 Nlive:     1081 Nviable:     1081 NPsurvive:        0
+istep, hour:     24   4 Nlive:     1081 Nviable:     1081 NPsurvive:        0
+istep, hour:     30   5 Nlive:     1081 Nviable:     1081 NPsurvive:        0
+istep, hour:     36   6 Nlive:     1088 Nviable:     1088 NPsurvive:        0
+istep, hour:     42   7 Nlive:     1159 Nviable:     1159 NPsurvive:        0
+istep, hour:     48   8 Nlive:     1266 Nviable:     1266 NPsurvive:        0
+istep, hour:     54   9 Nlive:     1353 Nviable:     1353 NPsurvive:        0
+istep, hour:     60  10 Nlive:     1426 Nviable:     1426 NPsurvive:        0
+istep, hour:     66  11 Nlive:     1503 Nviable:     1503 NPsurvive:        0
+Event:   2  43200.  43200.  0    0.0000    0.0000
+RADIATION_EVENT: time, dose:   43200.   8.000
+Radiation dose:    8.0
+ Irradiation: Nirradiated:         1573
+istep, hour:     72  12 Nlive:     1385 Nviable:     1385 NPsurvive:        0
+istep, hour:     78  13 Nlive:     1425 Nviable:     1425 NPsurvive:       40
+istep, hour:     84  14 Nlive:     1425 Nviable:     1425 NPsurvive:       40
+istep, hour:     90  15 Nlive:     1425 Nviable:     1425 NPsurvive:       40
+istep, hour:     96  16 Nlive:     1425 Nviable:     1425 NPsurvive:       40
+istep, hour:    102  17 Nlive:     1425 Nviable:     1425 NPsurvive:       40
+istep, hour:    108  18 Nlive:     1425 Nviable:     1425 NPsurvive:       40
+istep, hour:    114  19 Nlive:     1425 Nviable:     1425 NPsurvive:       40
+istep, hour:    120  20 Nlive:     1425 Nviable:     1425 NPsurvive:       40
+istep, hour:    126  21 Nlive:     1425 Nviable:     1425 NPsurvive:       40
+istep, hour:    132  22 Nlive:     1425 Nviable:     1425 NPsurvive:       40
+istep, hour:    138  23 Nlive:     1425 Nviable:     1425 NPsurvive:       40
+istep, hour:    144  24 Nlive:     1425 Nviable:     1425 NPsurvive:       40
+istep, hour:    150  25 Nlive:     1436 Nviable:     1436 NPsurvive:       51
+istep, hour:    156  26 Nlive:     1446 Nviable:     1446 NPsurvive:       61
+istep, hour:    162  27 Nlive:     1463 Nviable:     1463 NPsurvive:       78
+istep, hour:    168  28 Nlive:     1492 Nviable:     1492 NPsurvive:      107
+istep, hour:    174  29 Nlive:     1538 Nviable:     1538 NPsurvive:      153
+istep, hour:    180  30 Nlive:     1594 Nviable:     1594 NPsurvive:      209
+istep, hour:    186  31 Nlive:     1656 Nviable:     1656 NPsurvive:      271
+istep, hour:    192  32 Nlive:     1709 Nviable:     1709 NPsurvive:      324
+istep, hour:    198  33 Nlive:     1768 Nviable:     1768 NPsurvive:      383
+istep, hour:    204  34 Nlive:     1833 Nviable:     1833 NPsurvive:      448
+istep, hour:    210  35 Nlive:     1887 Nviable:     1887 NPsurvive:      502
+istep, hour:    216  36 Nlive:     1934 Nviable:     1934 NPsurvive:      549
+istep, hour:    222  37 Nlive:     1971 Nviable:     1971 NPsurvive:      586
+istep, hour:    228  38 Nlive:     1983 Nviable:     1983 NPsurvive:      598
+istep, hour:    234  39 Nlive:     1984 Nviable:     1984 NPsurvive:      599
+istep, hour:    240  40 Nlive:     1984 Nviable:     1984 NPsurvive:      599
+istep, hour:    246  41 Nlive:     1984 Nviable:     1984 NPsurvive:      599
+istep, hour:    252  42 Nlive:     1984 Nviable:     1984 NPsurvive:      599
+istep, hour:    258  43 Nlive:     1984 Nviable:     1984 NPsurvive:      599
+istep, hour:    264  44 Nlive:     1985 Nviable:     1985 NPsurvive:      600
+istep, hour:    270  45 Nlive:     2000 Nviable:     2000 NPsurvive:      615
+istep, hour:    276  46 Nlive:     2062 Nviable:     2062 NPsurvive:      677
+istep, hour:    282  47 Nlive:     2276 Nviable:     2276 NPsurvive:      891
+istep, hour:    288  48 Nlive:     2705 Nviable:     2705 NPsurvive:     1317
+ NPsurvive = Nirradiated - Napop:         1385        1573         188
+SFave,log10(SFave):    0.374E-02 -2.4277
+phase_dist(0:4):    188   739   741   434    20
+fract:       0.089 0.348 0.349 0.214
+nphase:
+  0     424       0     495       0      81       0       0       0
+  1     381       0     441       0     176       0       0      19
+  2     408       0     377       0     256       0       0      16
+  3     392       0     328       0     361       0       0       0
+  4     322       0     268       0     491       0       0       0
+  5     264       0     222       0     594       0       0       1
+  6     218       0     167       0     675       0       0      28
+  7     313       0     113       0     690       0       0      43
+  8     464       0      62       0     694       0       0      46
+  9     577       0      32       0     708       0       0      36
+ 10     692       0      12       0     681       0       0      41
+ 11     843       0       3       0     623       0       0      34
+ 12     974       0       1       0     567       0       0      31
+ 13    1002       0      52       1     511      47       0       0
+ 14     872       0     182       1     445     113       0       0
+ 15     702       0     352       1     382     176       0       0
+ 16     568       0     486       1     316     242       0       0
+ 17     454       0     600       1     265     293       0       0
+ 18     333       0     721       1     215     343       0       0
+ 19     240       0     814       1     160     398       0       0
+ 20     195       0     859       1     112     446       0       0
+ 21     188       0     857      10      72     486       0       0
+ 22     188       0     825      42      40     518       0       0
+ 23     188       0     745     122      12     546       0       0
+ 24     188       0     639     227       2     557       0       0
+ 25     210       0     527     339       1     547       0       0
+ 26     230       0     369     497       1     528       0       9
+ 27     264       0     257     609       0     512       0       9
+ 28     322       0     157     709       0     468       0      24
+ 29     414       0      87     779       0     407       0      39
+ 30     525       0      41     826       0     362       0      28
+ 31     639       0      22     855       0     296       0      32
+ 32     723       0      40     850       9     236       0      39
+ 33     812       0      65     822      38     199       0      20
+ 34     898       0     106     745     111     130       0      31
+ 35     918       0     194     623     205     111       0      24
+ 36     927       0     279     462     294     140       0      20
+ 37     888       0     392     208     438     222       0      11
+ 38     794       0     509      67     447     354       0       0
+ 39     680       0     623      49     239     581       0       0
+ 40     562       0     733      19      91     767       0       0
+ 41     443       0     831      32      50     816       0       0
+ 42     348       0     904      54      25     841       0       0
+ 43     268       0     944      93       3     864       0       0
+ 44     206       0     955     136      11     860       0       5
+ 45     224       0     886     208      18     831       0      21
+ 46     344       0     795     295      18     714       0      84
+ 47     772       0     705     375      19     406       0     187
+ 48    1630       0     582     483      28      95       0      75
+terminate_run
+doing wrapup ...
+deallocated all arrays
+closed files
+freed par_zig
+Execution time (min):       0.00

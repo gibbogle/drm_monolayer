@@ -1,0 +1,5 @@
+OS is Windows
+Executing with OpenMP
+ inputfile:  C01.inp
+ outputfile: C01_out.dat
+ReadCellParams new
