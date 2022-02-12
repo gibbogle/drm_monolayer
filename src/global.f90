@@ -27,13 +27,13 @@ integer, parameter :: DYING = 2
 integer, parameter :: DEAD = 3
 
 integer, parameter :: G1_phase      = 1
-integer, parameter :: G1_checkpoint = 2
-integer, parameter :: S_phase       = 3
-integer, parameter :: S_checkpoint  = 4
-integer, parameter :: G2_phase      = 5
-integer, parameter :: G2_checkpoint = 6
-integer, parameter :: M_phase       = 7
-integer, parameter :: dividing      = 8
+integer, parameter :: G1_checkpoint = 0
+integer, parameter :: S_phase       = 2
+integer, parameter :: S_checkpoint  = 0
+integer, parameter :: G2_phase      = 3
+integer, parameter :: G2_checkpoint = 0
+integer, parameter :: M_phase       = 4
+integer, parameter :: dividing      = 5
 
 integer, parameter :: OUTSIDE_TAG  = -1
 integer, parameter :: UNREACHABLE_TAG  = -2
@@ -166,7 +166,7 @@ type cell_type
 	real(REAL_KIND) :: ATP_rate_factor	! to introduce some random variation 
 	real(REAL_KIND) :: divide_volume	! actual divide volume
 	real(REAL_KIND) :: divide_time      ! cycle time
-	real(REAL_KIND) :: fg				! to make sum(T_G1, T_S, T_G2) consistent with Tdivide
+	real(REAL_KIND) :: fg(4)			! to make sum(T_G1, T_S, T_G2, T_M) consistent with Tdivide
 	real(REAL_KIND) :: t_divide_last	! these two values are used for colony simulation
 	real(REAL_KIND) :: t_divide_next
 	real(REAL_KIND) :: birthtime
@@ -202,6 +202,7 @@ type cell_type
     real(REAL_KIND) :: doubling_time
 !    logical :: arrested ! for S-phase arrest
     real(REAL_KIND) :: S_start_time	    ! for PI labelling
+    real(REAL_KIND) :: progress, fp
     integer :: NL1, NL2(2)
     
 !    integer :: N_PL, N_IRL, N_Ch1, N_Ch2
@@ -725,20 +726,20 @@ end subroutine
 ! Changed from kcell argument to cp, because it can be a colony cell, in ccell_list.
 ! Assumes maximum growth rate.
 !-----------------------------------------------------------------------------------------
-!subroutine set_divide_volume(kcell,V0)
 subroutine set_divide_volume(cp,V0)
-!integer :: kcell
 real(REAL_KIND) :: V0
-real(REAL_KIND) :: Tdiv, fg, Tfixed, Tgrowth0, Tgrowth, rVmax
+real(REAL_KIND) :: Tdiv, fg(4), Tfixed, Tgrowth0, Tgrowth, rVmax, V
+real(REAL_KIND) :: T_G1, T_S, T_G2, T_M
 integer :: ityp, kpar=0
 type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
 
-!cp => cell_list(kcell)
 ityp = cp%celltype
 ccp => cc_parameters(ityp)
 
 rVmax = max_growthrate(ityp)
+!V0 = Vdivide0/2
+#if 0
 if (use_exponential_cycletime) then
     if (ccp%Pk_G1 > 0) then
         cp%G1ch_time = rv_exponential(ccp%Pk_G1,kpar)
@@ -760,22 +761,34 @@ if (use_exponential_cycletime) then
     Tdiv = Tgrowth + Tfixed
     fg = 1
 else
-    Tgrowth = ccp%T_G1 + ccp%T_S + ccp%T_G2
-!    Tfixed = ccp%T_M + ccp%G1_mean_delay + ccp%G2_mean_delay
-    Tfixed = ccp%T_M  ! no fixed checkpoint delays with lognormal time step
-	Tdiv = DivideTime(ityp)     ! log-normally distributed
-	! Try changing this
-	!Tgrowth = Tdiv - Tfixed
-	!fg = Tgrowth/Tgrowth0
-	fg = (Tdiv-Tfixed)/Tgrowth
-	! In get_dVdt(), dVdt is divided by cp%fg
-	! In cycle, need to multiply T_G1, T_S, T_G2 by cp%fg
-endif
-cp%divide_volume = V0 + Tgrowth*rVmax   ! this uses the average growth time, to generate the divide volume for all cells
+#endif
+! Now set both T_S and T_M fixed
+fg(S_phase) = 1.0
+fg(M_phase) = 1.0
+T_S = ccp%T_S
+T_M = ccp%T_M
+Tfixed = T_S + T_M
+Tdiv = DivideTime(ityp)     ! log-normally distributed
+!Tdiv = 26*3600
+Tgrowth = Tdiv - Tfixed
+T_G1 = Tgrowth*ccp%T_G1/(ccp%T_G1 + ccp%T_G2)
+T_G2 = Tgrowth*ccp%T_G2/(ccp%T_G1 + ccp%T_G2)
+fg(G1_phase) = T_G1/ccp%T_G1
+fg(G2_phase) = T_G2/ccp%T_G2
+V = V0 + rVmax*(T_G1/fg(G1_phase) + T_S/fg(S_phase) + T_G2/fg(G2_phase))
+cp%divide_volume = V
 cp%divide_time = Tdiv   ! cycle time, varies with cell
 cp%fg = fg
-!if (kcell == 1) then
-!    write(nflog,'(a,5e12.3)') 'set_divide_volume: V0,Tgrowth,Tdiv,div_vol,rVmax: ',V0,Tgrowth,Tdiv,cp%divide_volume,rVmax
+!if (kcell_now <= 20) then
+!    write(*,*)
+!    write(*,*) 'set_divide_volume: ',kcell_now
+!    write(*,'(a,2e12.3)') 'Total cycle volume: ',rVmax*(T_G1/fg(G1_phase) + T_S/fg(S_phase) + T_G2/fg(G2_phase)),Vdivide0/2
+!    write(*,'(a,3f8.2)') 'phase times: ',T_G1/3600,T_S/3600,T_G2/3600
+!    write(*,'(a,e12.3,3f8.3)') 'rVmax,fg: ',rVmax,fg(G1_phase),fg(S_phase),fg(G2_phase)
+!!    write(*,'(a,6f9.2)') 'T G1, S, G2, M: ',ccp%T_G1/3600,ccp%T_S/3600,ccp%T_G2/3600,ccp%T_M/3600,(ccp%T_G1+ccp%T_S+ccp%T_G2+ccp%T_M)/3600,divide_time_mean(1)/3600
+!    write(*,'(a,6f9.2)') 'T G1, S, G2, M, Tdiv: ',T_G1/3600,T_S/3600,T_G2/3600,T_M/3600,(T_G1+T_S+T_G2+T_M)/3600,Tdiv/3600
+!    write(*,'(a,5e14.5)') 'set_divide_volume: rVmax,Vdivide0,cp%divide_volume: ',rVmax,Vdivide0,cp%divide_volume
+!!    write(*,'(a,2e14.5)') 'growth at average growth rate: ',Vdivide0/2,(divide_time_mean(1) - ccp%T_M)*rVmax
 !endif
 end subroutine	
 
@@ -925,6 +938,7 @@ end function
 ! 1. Use Vdivide0 and dVdivide to generate a volume
 ! 2. Use the divide time log-normal distribution 
 !    (use_V_dependence = false)
+! NOT USED
 !-----------------------------------------------------------------------------------------
 function get_divide_volume(ityp,V0,Tdiv,fg) result(Vdiv)
 integer :: ityp
@@ -969,6 +983,7 @@ end function
 ! 2. Use the divide time log-normal distribution 
 !    (a) use_V_dependence = true
 !    (b) use_V_dependence = false
+! NOT USED
 !-----------------------------------------------------------------------------------------
 function get_divide_volume1(ityp,V0,Tdiv) result(Vdiv)
 integer :: ityp
@@ -995,6 +1010,23 @@ else
 	endif
 	Tdiv = Tmean
 endif
+end function	
+
+!--------------------------------------------------------------------------------------
+! For computing total exchange of nutrients with the medium, it is necessary to sum
+! the progress factor %fp over all live cells.
+!--------------------------------------------------------------------------------------
+function getEffectiveNcells() result(neff)
+real(REAL_KIND) :: neff
+type (cell_type), pointer :: cp
+integer :: kcell
+
+neff = 0
+do kcell = 1,nlist
+    cp => cell_list(kcell)
+    if (cp%state == DYING .or. cp%state == DEAD) cycle
+    neff = neff + cp%fp
+enddo
 end function	
 
 !--------------------------------------------------------------------------------------

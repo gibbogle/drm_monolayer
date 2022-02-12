@@ -68,9 +68,9 @@ DLL2.2      DLL_VERSION_NAME                      DLL version number.
 0.0043      RADIATION_KM_2                        Km for radiosensitivity
 1           USE_CELL_CYCLE                        Use cell cycle with G1, S, G2, M phases
 0           USE_SYNCHRONISE                       Synchronise cell cycles?
-5.03        T_G1_1                                G1 phase base time (h)
+5.53        T_G1_1                                G1 phase base time (h)
 7.69        T_S_1                                 S phase base time (h)
-5.48        T_G2_1                                G2 phase base time (h)
+4.98        T_G2_1                                G2 phase base time (h)
 0.5         T_M_1                                 M phase base time (h)
 4           APOPTOSIS_MEDIAN_1                    Apoptosis median (hr)
 1.5         APOPTOSIS_SHAPE_1                     Apoptosis shape

@@ -657,37 +657,37 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
      "MisrepRate scaling factor",
      "MisrepRate scaling factor"},
 
-     {"KATM_1", 2.0, 0, 0,
+     {"KATM_1", 0.076, 0, 0,
      "K_ATM(1) parameter",
-     "K_ATM(1) parameter"},
+     "pATM production rate parameter: rate = K_ATM(1)*ATM_DSB"},
 
-     {"KATM_2", 0.03, 0, 0,
+     {"KATM_2", 0.3, 0, 0,
      "K_ATM(2) parameter",
-     "K_ATM(2) parameter"},
+     "pATM decay rate constant"},
 
      {"KATM_3", 1.0, 0, 0,
      "K_ATM(3) parameter",
-     "K_ATM(3) parameter"},
+     "With k1=K_ATM(3), k2=K_ATM(4), x = pATM, ATM slowdown factor = 1 - k1*x/(k2+x)"},
 
      {"KATM_4", 1.0, 0, 0,
      "K_ATM(4) parameter",
-     "K_ATM(4) parameter"},
+     "With k1=K_ATM(3), k2=K_ATM(4), x = pATM, ATM slowdown factor = 1 - k1*x/(k2+x)"},
 
-     {"KATR_1", 1.0, 0, 0,
+     {"KATR_1", 0.005, 0, 0,
      "K_ATR(1) parameter",
-     "K_ATR(1) parameter"},
+     "pATR production rate parameter: rate = K_ATR(1)*ATR_DSB"},
 
-     {"KATR_2", 0.03, 0, 0,
+     {"KATR_2", 0.3, 0, 0,
      "K_ATR(2) parameter",
-     "K_ATR(2) parameter"},
+     "pATR decay rate constant"},
 
-     {"KATR_3", 0.05, 0, 0,
+     {"KATR_3", 1.0, 0, 0,
      "K_ATR(3) parameter",
-     "K_ATR(3) parameter"},
+     "With k1=K_ATR(3), k2=K_ATR(4), x = pATR, ATR slowdown factor = 1 - k1*x/(k2+x)"},
 
      {"KATR_4", 1.0, 0, 0,
      "K_ATR(4) parameter",
-     "K_ATR(4) parameter"},
+     "With k1=K_ATR(3), k2=K_ATR(4), x = pATR, ATR slowdown factor = 1 - k1*x/(k2+x)"},
 
      {"PCOMPLEX", 0.4337, 0, 0,
      "PCOMPLEX parameter",

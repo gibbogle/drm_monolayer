@@ -1,0 +1,81 @@
+                    PARAMETER SENSITIVITIES: CASE drm_monolayer
+
+
+ OPTIMISATION ITERATION NO.  1 ----->
+ Parameter name    Group          Current value    Sensitivity
+   mitrate         mitrate         4.000000E-02      5.30341    
+   pcomplex        pcomplex        0.670000         1.908326E-02
+   klethal         klethal         0.300000         0.794643    
+
+
+ OPTIMISATION ITERATION NO.  2 ----->
+ Parameter name    Group          Current value    Sensitivity
+   mitrate         mitrate         5.031428E-02      3.74643    
+   pcomplex        pcomplex        0.639700         4.605903E-02
+   klethal         klethal         0.230769          1.12133    
+
+
+ OPTIMISATION ITERATION NO.  3 ----->
+ Parameter name    Group          Current value    Sensitivity
+   mitrate         mitrate         5.954319E-02      3.16428    
+   pcomplex        pcomplex        0.637811         5.875122E-02
+   klethal         klethal         0.221291          1.26617    
+
+
+ OPTIMISATION ITERATION NO.  4 ----->
+ Parameter name    Group          Current value    Sensitivity
+   mitrate         mitrate         5.954319E-02      3.14983    
+   pcomplex        pcomplex        0.637811         5.877265E-02
+   klethal         klethal         0.221291          1.27093    
+
+
+
+                        COMPLETION OF OPTIMISATION PROCESS
+
+ Composite sensitivities for observation group "p01obgp" ----->
+
+ Number of observations with non-zero weight =     1
+ Parameter name    Group          Current value    Sensitivity
+   mitrate         mitrate         5.954319E-02      5.15046    
+   pcomplex        pcomplex        0.637811         0.116472    
+   klethal         klethal         0.221291          1.29925    
+
+
+
+ Composite sensitivities for observation group "p02obgp" ----->
+
+ Number of observations with non-zero weight =     1
+ Parameter name    Group          Current value    Sensitivity
+   mitrate         mitrate         5.954319E-02      5.29520    
+   pcomplex        pcomplex        0.637811         6.452113E-02
+   klethal         klethal         0.221291          2.29117    
+
+
+
+ Composite sensitivities for observation group "p03obgp" ----->
+
+ Number of observations with non-zero weight =     1
+ Parameter name    Group          Current value    Sensitivity
+   mitrate         mitrate         5.954319E-02      7.78614    
+   pcomplex        pcomplex        0.637811         7.950063E-02
+   klethal         klethal         0.221291          2.74440    
+
+
+
+ Composite sensitivities for observation group "p04obgp" ----->
+
+ Number of observations with non-zero weight =     1
+ Parameter name    Group          Current value    Sensitivity
+   mitrate         mitrate         5.954319E-02      10.4586    
+   pcomplex        pcomplex        0.637811         9.946757E-02
+   klethal         klethal         0.221291          2.37677    
+
+
+
+ Composite sensitivities for all observations/prior info ----->
+
+ Number of observations with non-zero weight =     4
+ Parameter name    Group          Current value    Sensitivity
+   mitrate         mitrate         5.954319E-02      3.74643    
+   pcomplex        pcomplex        0.637811         4.605903E-02
+   klethal         klethal         0.221291          1.12133    

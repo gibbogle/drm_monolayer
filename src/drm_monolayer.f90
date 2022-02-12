@@ -140,7 +140,7 @@ do ichemo = 1,NUTS
 enddo
 call UpdateChemomap
 call AdjustMM
-call SetInitialGrowthRate
+!call SetInitialGrowthRate
 NATP_tag = 0
 NGLN_tag = 0
 Nradiation_tag = 0
@@ -1093,8 +1093,9 @@ V0 = Vdivide0/2
 !cp%divide_time = Tdiv
 !cp%fg = gfactor
 !call set_divide_volume(kcell, V0)
+kcell_now = kcell
 call set_divide_volume(cp, V0)  ! sets %divide_volume and %divide_time
-cp%dVdt = max_growthrate(ityp)
+!cp%dVdt = max_growthrate(ityp)
 cp%metab = phase_metabolic(1)
 !cp%metab%I_rate = r_Iu	! this is just to ensure that initial growth rate is not 0
 cp%metab%C_GlnEx_prev = 0
@@ -1121,7 +1122,7 @@ cp%metab%C_GlnEx_prev = 0
     ! Need to assign phase, volume to complete phase, current volume
     call SetInitialCellCycleStatus(kcell,cp)
 !endif
-cp%dVdt = max_growthrate(ityp)
+!cp%dVdt = max_growthrate(ityp)
 !if (use_metabolism) then	! Fraction of I needed to divide = fraction of volume needed to divide
 !	cp%metab%I2Divide = get_I2Divide(cp)
 !	cp%metab%Itotal = cp%metab%I2Divide*(cp%V - V0)/(cp%divide_volume - V0)
@@ -1227,8 +1228,8 @@ integer :: kcell
 type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
 integer :: ityp, kpar = 0
-real(REAL_KIND) :: Tc, b, t, R, tswitch(6), rVmax, V0, fg
-real(REAL_KIND) :: T_G1, T_S, T_G2, G1_delay, S_delay, G2_delay
+real(REAL_KIND) :: Tc, b, t, R, tswitch(3), rVmax, V0, Vprev, fg(4), metab, f_CP, fp(4)
+real(REAL_KIND) :: T_G1, T_S, T_G2, T_M, tleft, Vleft, Vphase
 
 if (use_exponential_cycletime) then
     write(*,*) 'SetInitialCellCycleStatus: Must use log-normal cycle time!'
@@ -1236,21 +1237,23 @@ if (use_exponential_cycletime) then
 endif
 ityp = cp%celltype
 ccp => cc_parameters(ityp)
-!Tc = divide_time_mean(1)    ! mean cycle time, seconds
 Tc = cp%divide_time         ! log-normal, implies %fg
 !Tc = Tc - ccp%T_M           ! subtract mitosis time - no cells can start in mitosis
 fg = cp%fg
-T_G1 = fg*ccp%T_G1
-T_S = fg*ccp%T_S
-T_G2 = fg*ccp%T_G2
-!if (abs(T_G1 + T_S + T_G2 - Tc) > 0.001) then
-!    write(*,*) 'T_G1 + T_S + T_G2, Tc: ',T_G1 + T_S + T_G2, Tc
-!    stop
-!endif
-! These are all 0 for log-timestep
-G1_delay = fg*ccp%G1_mean_delay
-S_delay = fg*ccp%S_mean_delay
-G2_delay = fg*ccp%G2_mean_delay
+metab = 1.0
+f_CP = 1.0
+!fp(1) = metab*f_CP/fg(G1_phase)
+!fp(2) = metab*f_CP/fg(S_phase)
+!fp(3) = metab*f_CP/fg(G2_phase)
+fp(:) = metab*f_CP/fg(:)
+!T_G1 = ccp%T_G1*fg(G1_phase)
+!T_S = ccp%T_S*fg(S_phase)
+!T_G2 = ccp%T_G2*fg(G2_phase)
+!T_M = ccp%T_M*fg(M_phase)
+T_G1 = ccp%T_G1/fp(1)
+T_S = ccp%T_S/fp(2)
+T_G2 = ccp%T_G2/fp(3)
+T_M = ccp%T_M/fp(4)
 
 if (use_synchronise) then
     if (synch_phase == G1_phase) then
@@ -1269,67 +1272,64 @@ else
     R = par_uni(kpar)
     t = -(1/b)*log(1 - R/2)     ! cycle progression, log-normal r.v. (t/Tc = fractional progression)
 endif
+if (kcell == 1) t = 0
 if (kcell <= 10) write(*,*) 'kcell, t: ',kcell,t/Tc
 tswitch(1) = T_G1 
-tswitch(2) = tswitch(1) + G1_delay
-tswitch(3) = tswitch(2) + T_S
-tswitch(4) = tswitch(3) + S_delay
-tswitch(5) = tswitch(4) + T_G2
-tswitch(6) = tswitch(5) + G2_delay
+tswitch(2) = tswitch(1) + T_S
+tswitch(3) = tswitch(2) + T_G2
 
 V0 = Vdivide0/2
-rVmax = max_growthrate(ityp)/cp%fg
+rVmax = max_growthrate(ityp)
 
 if (t < tswitch(1)) then
     cp%phase = G1_phase
-    cp%G1_time = tswitch(1) - t     ! time to switch to G1 checkpoint
-    cp%V = V0 + t*rVmax
+    cp%fp = fp(1)
+    cp%dVdt = cp%fp*rVmax
+    cp%V = V0 + t*cp%dVdt
+    cp%progress = t/T_G1
 elseif (t < tswitch(2)) then
-    cp%phase = G1_checkpoint
-    cp%G1S_time = tswitch(2) - t    ! time to switch G1 to S
-    cp%V = V0 + tswitch(1)*rVmax
-    cp%G1_flag = .true.
-    cp%G1S_time = 0     ! no DSB, no checkpoint delay
-elseif (t < tswitch(3)) then
+    Vprev = V0 + fp(1)*rVmax*T_G1
     cp%phase = S_phase
-    cp%S_time = tswitch(3) - t      ! time left in S!
-    cp%V = V0 + (t - G1_delay)*rVmax
-	cp%S_duration = T_S     ! assume 'normal' growth conditions, average cycle time here
-elseif (t < tswitch(4)) then
-    cp%phase = S_checkpoint
-    cp%SG2_time = tswitch(4) - t    ! time to switch S-chkpt to G2
-    cp%V = V0 + (tswitch(3) - G1_delay)*rVmax
-    cp%S_flag = .true.
-elseif (t < tswitch(5)) then
+    cp%fp = fp(2)
+    cp%dVdt = cp%fp*rVmax
+    cp%V = Vprev + (t - tswitch(1))*cp%dVdt 
+    cp%progress = (t - tswitch(1))/T_S
+elseif (t < tswitch(3)) then
+    Vprev = V0 + fp(1)*rVmax*T_G1 + fp(2)*rVmax*T_S
     cp%phase = G2_phase
-    cp%G2_time = tswitch(5) - t
-    cp%V = V0 + (t - (G1_delay + S_delay))*rVmax
-elseif (t < tswitch(6)) then
-    cp%phase = G2_checkpoint
-    cp%G2M_time = tswitch(6) - t
-    cp%V = V0 + (tswitch(5) - (G1_delay + S_delay))*rVmax
+    cp%fp = fp(3)
+    cp%dVdt = cp%fp*rVmax
+    cp%V = Vprev + (t - tswitch(2))*cp%dVdt
+    cp%progress = (t - tswitch(2))/T_G2
+    tleft = tswitch(3) - t
+    Vleft = cp%dVdt*tleft
+    Vphase = rVmax*T_G2*fp(3)
+!    if (kcell <= 10) then
+!        write(*,*)
+!        write(*,*) 'SetInitialCellCycleStatus'
+!        write(*,'(a,2e12.3)') 'Total cycle volume: ',rVmax*(T_G1*fp(1) + T_S*fp(2) + T_G2*fp(3)),Vdivide0/2 
+!        write(*,'(a,3f8.2)') 'phase times: ',T_G1/3600,T_S/3600,T_G2/3600
+!        write(*,'(a,e12.3,3f8.3)') 'rVmax,fg: ',rVmax,fg(G1_phase),fg(S_phase),fg(G2_phase)
+!        write(*,'(a,i6,3f6.2,e12.3)') 'kcell, fp(3), Tdiv, tleft, dVdt: ',kcell,fp(3),cp%divide_time/3600,tleft/3600,cp%dVdt
+!        write(*,'(a,4e12.3,f6.3)') 'Vleft,Vphase,Vend,Vdivide0,progress: ',Vleft, Vphase, cp%V + Vleft, Vdivide0, cp%progress
+!        if (kcell == 4) stop
+!    endif
 else
-! Gets here only if T_M is not subtracted from Tc.
-!    write(*,*) 'SetInitialCellCycleStatus: should not get here!'
-!    stop
-!    cp%phase = G2_checkpoint
-!    cp%G2M_time = 0     ! starting mitosis
-    cp%phase = dividing
+    cp%phase = M_phase
+    cp%fp = metab*f_CP/fg(M_phase)      ! not used
+    cp%dVdt = 0
+    cp%V = 2*V0
     R = par_uni(kpar)
     cp%t_start_mitosis = -R*ccp%T_M
+    cp%progress = 1.0
 endif
 cp%t_divide_last = -t
-! Cell volume should be a fraction t/Tc from V0 to 2*V0 = V0*(1 + t/Tc)
 if (kcell <= 10) write(*,'(a,i4,2f8.3)') 'kcell, V: ',kcell,cp%V/(2*V0),(1 + t/Tc)/2
-!write(nflog,'(a,i6,i2,f8.2,2f8.0)') 'kcell,cp%phase,th,t,Tdiv: ',kcell,cp%phase,t/3600,t,cp%divide_time
-!if (kcell == 20) then
-!    write(nflog,'(a,i4,6f8.2)') 'tswitch-t: ',kcell,(tswitch(1:6)-t)/3600
-!    write(nflog,'(a,2f8.2)') 'divide_time, t: ',cp%divide_time/3600, t/3600
-!endif
 end subroutine
 
 
 !--------------------------------------------------------------------------------
+! Not USED
 !--------------------------------------------------------------------------------
 subroutine setTestCell(kcell)
 integer :: kcell
@@ -1351,9 +1351,9 @@ Tfixed = ccp%T_M + ccp%G1_mean_delay + ccp%G2_mean_delay
 write(nflog,'(a,3f8.0)') 'ccp%T_M, ccp%G1_mean_delay, ccp%G2_mean_delay: ',ccp%T_M, ccp%G1_mean_delay, ccp%G2_mean_delay
 Tgrowth = Tdiv - Tfixed
 write(nflog,'(a,4f8.0)') 'Tdiv, Tfixed, Tgrowth0, Tgrowth: ',Tdiv, Tfixed, Tgrowth0, Tgrowth
-cp%fg = Tgrowth/Tgrowth0
-cp%divide_volume = V0 + Tgrowth*rVmax
-phase_time1 = cp%fg*ccp%T_G1
+!cp%fg = Tgrowth/Tgrowth0
+!cp%divide_volume = V0 + Tgrowth*rVmax
+!phase_time1 = cp%fg*ccp%T_G1
 cp%phase = G1_phase
 cp%G1_time = phase_time1
 cp%V = V0
@@ -1363,8 +1363,8 @@ write(nflog,*) 'phase: ',cp%phase
 write(nflog,*) 'divide_time:', cp%divide_time
 write(nflog,*) 'V: ',cp%V
 write(nflog,*) 'divide_volume: ',cp%divide_volume
-write(nflog,*) 'fg: ',cp%fg
-write(nflog,*) 'G1_time: ',cp%G1_time
+!write(nflog,*) 'fg: ',cp%fg
+!write(nflog,*) 'G1_time: ',cp%G1_time
 end subroutine
 
 
@@ -1954,7 +1954,7 @@ end function
 ! For PEST runs, use_SF corresponds to 'M' fitting
 !-----------------------------------------------------------------------------------------
 subroutine completed
-real(REAL_KIND) :: fract(0:8)
+real(REAL_KIND) :: fract(0:4)
 integer :: kcell, ph, nir(4), nsum, kcellmax, i
 real(REAL_KIND) :: sftot(4), sfsum, sfmax
 type(cell_type), pointer :: cp
@@ -1970,15 +1970,28 @@ do kcell = 1,nlist
     if (cp%state == DEAD) cycle
     nsum = nsum + 1
     sfsum = sfsum + cp%Psurvive
-    if (cp%phase0 <= G1_checkpoint) then
+!    if (cp%phase0 <= G1_checkpoint) then
+!        ph = 1
+!        if (cp%Psurvive > sfmax) then
+!            sfmax = cp%Psurvive
+!            kcellmax = kcell
+!        endif
+!    elseif (cp%phase0 <= S_checkpoint) then
+!        ph = 2
+!    elseif (cp%phase0 <= G2_checkpoint) then
+!        ph = 3
+!    else
+!        ph = 4
+!    endif
+    if (cp%phase0 == G1_phase) then
         ph = 1
         if (cp%Psurvive > sfmax) then
             sfmax = cp%Psurvive
             kcellmax = kcell
         endif
-    elseif (cp%phase0 <= S_checkpoint) then
+    elseif (cp%phase0 == S_phase) then
         ph = 2
-    elseif (cp%phase0 <= G2_checkpoint) then
+    elseif (cp%phase0 == G2_phase) then
         ph = 3
     else
         ph = 4
@@ -1986,19 +1999,20 @@ do kcell = 1,nlist
     nir(ph) = nir(ph) + 1
     sftot(ph) = sftot(ph) + cp%Psurvive
 enddo
-
+write(*,'(a,4i6)') 'nir: ',nir
 write(*,'(a,4f8.4)') 'Average SF by phase: ',sftot/nir
 write(*,'(a,4f8.4)') 'log10(SF) by phase: ',log10(sftot/nir)
 !write(*,'(a,2f8.4)') 'Average: ',sfsum/nsum,log10(sfsum/nsum)
-write(*,*) 'max G1 SF: ',kcellmax,sfmax
+write(*,'(a,i6,e12.3)') 'max G1 SF: ',kcellmax,sfmax
 
 !    phase_dist(3) = phase_dist(3) + phase_dist(4)   ! lump G2 and M as G2
 !    fract(0:3) = phase_dist(0:3)/real(sum(phase_dist(0:3)))
 write(logmsg,'(a,8f6.1)') 'phase_dist:      ',phase_dist(0:3)
 call logger(logmsg)
-write(*,'(a,f8.3)') 'Average pATM: ',ATMsum/nirradiated
-write(*,'(a,f8.3)') 'Average S delay: ',Sthsum/NSth
-write(*,'(a,f8.3)') 'Average G2 delay: ',G2thsum/NG2th
+write(*,'(a,f8.3)') 'Final average pATM: ',ATMsum/nirradiated
+write(*,'(a,f8.3)') 'Final average pATR: ',ATRsum/nirradiated
+!write(*,'(a,f8.3)') 'Average S delay: ',Sthsum/NSth
+!write(*,'(a,f8.3)') 'Average G2 delay: ',G2thsum/NG2th
 
 if (use_PEST) then
     if (use_SF) then
@@ -2041,9 +2055,9 @@ do kcell = 1,nlist
 	n = n+1
 	ave_V = ave_V + cp%V
 	ave_dVdt = ave_dVdt + cp%dVdt
-	ave_fg = ave_fg + cp%fg
+!	ave_fg = ave_fg + cp%fg
 enddo
-write(nflog,'(a,3e12.3)') 'averages: V,dVdt,fg: ',ave_V/n,ave_dVdt/n, ave_fg/n
+write(nflog,'(a,3e12.3)') 'averages: V,dVdt,fg: ',ave_V/n,ave_dVdt/n
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -2196,6 +2210,7 @@ endif
 if (ok) then
 	res = 0
 else
+    write(nflog,*) 'Setup error'
 	res = 1
 endif
 execute_t1 = wtime()

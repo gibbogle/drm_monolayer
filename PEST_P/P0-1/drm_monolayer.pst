@@ -1,0 +1,44 @@
+pcf
+* control data
+restart estimation
+5 4 5 0 4
+4 4 double point 1 0 0
+ 5.0   2.0   0.3  0.03    10
+ 3.0 1.5 0.001
+ 0.1
+  30  0.01     3     3  0.01     3
+   1     1     1
+* parameter groups
+katm3 relative 0.01  0.0  switch  2.0 parabolic
+katm4 relative 0.01  0.0  switch  2.0 parabolic
+katr3 relative 0.01  0.0  switch  2.0 parabolic
+katr4 relative 0.01  0.0  switch  2.0 parabolic
+phr relative 0.01  0.0  switch  2.0 parabolic
+* parameter data
+katm3 none factor 0.5 0.1 0.9 katm3 1.0      0.0000      1
+katm4 none factor 0.7 0.5 2 katm4 1.0      0.0000      1
+katr3 none factor 0.9 0.6 0.95 katr3 1.0      0.0000      1
+katr4 none factor 0.05 0.01 0.1 katr4 1.0      0.0000      1
+phr none factor 0.51 0.3 0.95 phr 1.0      0.0000      1
+* observation groups
+P01obgp
+P02obgp
+P03obgp
+P04obgp
+* observation data
+P01logSF -0.374568185917101 1.63393417387739 P01obgp
+P02logSF -0.991578692205152 1.00423743632562 P02obgp
+P03logSF -1.58367576086359 0.794633491184259 P03obgp
+P04logSF -2.46992843116262 0.636293981427268 P04obgp
+* model command line
+drm_monolayer.bat > nul
+* model input/output
+P01.tpl P01.inp
+P02.tpl P02.inp
+P03.tpl P03.inp
+P04.tpl P04.inp
+P01_out.ins P01_out.dat
+P02_out.ins P02_out.dat
+P03_out.ins P03_out.dat
+P04_out.ins P04_out.dat
+* prior information

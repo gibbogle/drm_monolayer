@@ -15,6 +15,74 @@ contains
 ! Each individual cell is randomly assigned a cycle time, initially and after
 ! cell division.  The cycle time is a random variate drawn from a lognormal
 ! distribution. This is done in subroutine set_divide_volume().
+! At the same time, multiplying factors fg(:) are computed.  These are the basic
+! factors multiplying the phase times for G1, S, G2, and M. 
+! assuming unconstrained growth, i.e. growth rate = max_growthrate.
+! Tgrowth = average growth time = ccp%T_G1 + ccp%T_S + ccp%T_G2
+! Tdiv = generated cycle time for the cell (lognormal RV)
+! then cp%fg = (Tdiv-ccp%T_M)/Tgrowth
+! The rate of volume growth computed for the cell not taking into account
+! the cycle time, cp%dVdt, must be divided by this factor cp%fg.
+! Immediately before entering a phase, the time to be spent in the phase is
+! determined (for example) by: 
+! cp%G1_time = ccp%T_G1*max_growthrate/(cp%dVdt/cp%fg))
+! and the growth of the cell in a time step dt is given by:
+! dV = dt*(cp%dVdt/cp%fg)
+! Note that cp%dVdt is computed from the levels of oxygen and glucose:
+! cp%dVdt = metab*max_growthrate
+! where metab is the product of oxygen and glucose metabolism factors.
+! This formulation ensures that the cell grows at a rate that results in
+! (approximately) a constant volume = Vdiv at mitosis:
+! Vdiv = Vdiv/2 + Tgrowth*max_growthrate,
+! Vdiv/2 = Tgrowth*max_growthrate
+!--------------------------------------------------------------------------
+subroutine log_timestep(cp, ccp, dt)
+type(cell_type), pointer :: cp
+type(cycle_parameters_type), pointer :: ccp
+real(REAL_KIND) :: dt
+
+if (cp%dVdt == 0) then
+	write(nflog,*) 'dVdt=0, kcell: ',kcell_now,cp%phase
+	stop
+endif
+if (kcell_now == 1) write(nflog,'(a,2i4,8f7.2)') 'kcell, phase, DSB: ',kcell_now,cp%phase,cp%DSB
+10 continue
+if (cp%phase == G1_phase) then
+    cp%progress = cp%progress + cp%fp*dt/ccp%T_G1
+    if (cp%progress >= 1) then
+        cp%phase = S_phase
+        cp%progress = 0
+!        goto 10    ! could continue in next phase with the remainder of the time step
+    endif
+elseif (cp%phase == S_phase) then
+    cp%progress = cp%progress + cp%fp*dt/ccp%T_S
+    if (cp%progress >= 1) then
+        cp%phase = G2_phase
+        cp%progress = 0
+    endif
+elseif (cp%phase == G2_phase) then
+    cp%progress = cp%progress + cp%fp*dt/ccp%T_G2
+!    if (kcell_now == 1) write(nflog,*) 'progress: ',kcell_now, cp%progress
+    if (cp%progress >= 1) then
+!        if (kcell_now <= 100) write(nflog,'(a,i6,2e12.3)') 'To M_phase, V, divide_volume: ',kcell_now, cp%V, cp%divide_volume
+        cp%phase = M_phase
+        cp%progress = 0
+        cp%V = cp%divide_volume     ! correct for slight volume discrepancy here, to maintain correct cell volume
+    endif
+elseif (cp%phase == M_phase) then
+    ! do nothing - in new_growcells the phase is immediately changed to cp%dividing, and the mitosis timer starts
+endif
+call updateRepair(cp, dt)
+end subroutine
+
+!--------------------------------------------------------------------------
+! Average phase durations have been computed to sum to the average
+! cycle time, assuming no checkpoint delays.
+! The average phase times are stored in ccp:
+! ccp%T_G1, ccp%T_S, ccp%T_G2, ccp%T_M
+! Each individual cell is randomly assigned a cycle time, initially and after
+! cell division.  The cycle time is a random variate drawn from a lognormal
+! distribution. This is done in subroutine set_divide_volume().
 ! At the same time, a multiplying factor fg is computed.  This is the basic
 ! factor multiplying the phase times for G1, S and G2 (T_M is fixed.), 
 ! assuming unconstrained growth, i.e. growth rate = max_growthrate.
@@ -36,7 +104,7 @@ contains
 ! Vdiv = Vdiv/2 + Tgrowth*max_growthrate,
 ! Vdiv/2 = Tgrowth*max_growthrate
 !--------------------------------------------------------------------------
-subroutine log_timestep(cp, ccp, dt, dies)
+subroutine zlog_timestep(cp, ccp, dt, dies)
 type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
 real(REAL_KIND) :: dt
@@ -51,6 +119,7 @@ if (cp%dVdt == 0) then
 	write(nflog,*) 'dVdt=0, kcell: ',kcell_now,cp%phase
 	stop
 endif
+if (kcell_now == 1) write(nflog,'(a,2i4,2f6.3)') 'kcell, phase, progress, fp: ',kcell_now,cp%phase,cp%progress,cp%fp
 ityp = cp%celltype
 10 continue
 phase = cp%phase
@@ -59,7 +128,7 @@ if (phase == G1_phase) then
     if (switch) then
         if (.not.is_radiation) then     ! before radiation, there is no G1 checkpoint
             cp%phase = S_phase
-            tfactor = (max_growthrate(ityp)/cp%dVdt)*cp%fg
+            tfactor = (max_growthrate(ityp)/cp%dVdt)*cp%fg(G1_phase)
 !            if (tfactor > 1.1) then
 !                write(*,'(a,i6,3e12.3)') 'tfactor: ',kcell_now,tfactor,(max_growthrate(ityp)/cp%dVdt),cp%fg
 !                stop
@@ -79,7 +148,7 @@ elseif (phase == G1_checkpoint) then  ! this checkpoint combines the release fro
     if (cp%G1_flag .and. cp%G1S_flag) then  ! switch to S-phase
         S_switch = .true.
         cp%phase = S_phase
-        tfactor = (max_growthrate(ityp)/cp%dVdt)*cp%fg
+        tfactor = (max_growthrate(ityp)/cp%dVdt)*cp%fg(G1_phase)
 		cp%S_time = tnow + tfactor*ccp%T_S     ! restoring previous mode - no arrest
 !		if (kcell_now == 1) write(*,'(3e12.3)') kcell_now,tnow,tfactor*ccp%T_S
         N_checkpoint = N_checkpoint - 1
@@ -90,7 +159,7 @@ elseif (phase == S_phase) then
     if (switch) then
         if (.not.is_radiation) then
             cp%phase = G2_phase
-            tfactor = (max_growthrate(ityp)/cp%dVdt)*cp%fg
+            tfactor = (max_growthrate(ityp)/cp%dVdt)*cp%fg(S_phase)
 !            if (kcell_now == 1) then
 !                write(nfphase,'(a,i4,2f6.3)') 'S_phase entry: V: ',kcell_now, cp%V/Vdivide0, (1 + (ccp%T_G1 + ccp%T_S)/cp%divide_time)/2
 !                write(nfphase,'(a,i4,f6.3,2e12.3,2f6.3)') 'tnow, tfactor: ',kcell_now,tnow/3600,max_growthrate(ityp),cp%dVdt,cp%fg,tfactor
@@ -108,7 +177,7 @@ elseif (phase == S_checkpoint) then
     cp%SG2_flag = (tnow > cp%SG2_time)
     if (cp%S_flag .and. cp%SG2_flag) then
         cp%phase = G2_phase
-        tfactor = (max_growthrate(ityp)/cp%dVdt)*cp%fg
+        tfactor = (max_growthrate(ityp)/cp%dVdt)*cp%fg(S_phase)
 		cp%G2_time = tnow + tfactor*ccp%T_G2
         N_checkpoint = N_checkpoint - 1
         goto 10

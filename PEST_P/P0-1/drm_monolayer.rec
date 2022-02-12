@@ -1,0 +1,361 @@
+
+                   PEST RUN RECORD: CASE drm_monolayer
+
+
+PEST Version: 14.2
+
+
+PEST run mode:-
+
+   Parameter estimation mode
+
+
+Case dimensions:-
+
+   Number of parameters                           :     5
+   Number of adjustable parameters                :     5
+   Number of parameter groups                     :     5
+   Number of observations                         :     4
+   Number of prior estimates                      :     0
+
+
+Model command line(s):-
+
+   drm_monolayer.bat > nul
+
+
+Jacobian command line:-
+
+   na
+
+
+Model interface files:-
+
+   Templates:
+      P01.tpl
+      P02.tpl
+      P03.tpl
+      P04.tpl
+   for model input files:
+      P01.inp
+      P02.inp
+      P03.inp
+      P04.inp
+
+   (Parameter values written using double precision protocol.)
+   (Decimal point always included.)
+
+   Instruction files:
+      P01_out.ins
+      P02_out.ins
+      P03_out.ins
+      P04_out.ins
+   for reading model output files:
+      P01_out.dat
+      P02_out.dat
+      P03_out.dat
+      P04_out.dat
+
+
+PEST-to-model message file:-
+
+   na
+
+
+Derivatives calculation:-
+
+Param        Increment   Increment   Increment   Forward or   Multiplier  Method
+group        type                    low bound   central      (central)   (central)
+katm3        relative    1.0000E-02   none         switch       2.000     parabolic
+katm4        relative    1.0000E-02   none         switch       2.000     parabolic
+katr3        relative    1.0000E-02   none         switch       2.000     parabolic
+katr4        relative    1.0000E-02   none         switch       2.000     parabolic
+phr          relative    1.0000E-02   none         switch       2.000     parabolic
+
+
+Parameter definitions:-
+
+Name         Trans-            Change       Initial        Lower          Upper
+             formation         limit        value          bound          bound
+katm3        none              factor     0.500000       0.100000       0.900000    
+katm4        none              factor      1.00000       0.500000        2.00000    
+katr3        none              factor     0.500000       0.100000       0.900000    
+katr4        none              factor     0.100000       5.000000E-02   0.300000    
+phr          none              factor     0.500000       0.300000       0.950000    
+
+Name         Group          Scale         Offset        Model command number
+katm3        katm3         1.00000        0.00000            1
+katm4        katm4         1.00000        0.00000            1
+katr3        katr3         1.00000        0.00000            1
+katr4        katr4         1.00000        0.00000            1
+phr          phr           1.00000        0.00000            1
+
+
+Prior information:-
+
+   No prior information supplied
+
+
+Observations:-
+
+Observation name        Observation       Weight       Group
+ p01logsf              -0.374568          1.634       p01obgp     
+ p02logsf              -0.991579          1.004       p02obgp     
+ p03logsf               -1.58368         0.7946       p03obgp     
+ p04logsf               -2.46993         0.6363       p04obgp     
+
+
+Control settings:-
+
+   Initial lambda                                               :  5.0000    
+   Lambda adjustment factor                                     :  2.0000    
+   Sufficient new/old phi ratio per optimisation iteration      : 0.30000    
+   Limiting relative phi reduction between lambdas              : 3.00000E-02
+   Maximum trial lambdas per iteration                          :  10
+   Forgive model run failure during lamda testing               : no
+   Forgive model run failure during Jacobian runs               : no
+
+   Perform Broyden's update of Jacobian matrix                  : no
+   Undertake observation re-referencing                         : no
+
+   Maximum  factor  parameter change (factor-limited changes)   :  1.5000
+   Maximum relative parameter change (relative-limited changes) : na
+   Fraction of initial parameter values used in computing
+   change limit for near-zero parameters                        : 1.00000E-03
+   Allow bending of parameter upgrade vector                    : no
+   Allow parameters to stick to their bounds                    : no
+
+   Relative phi reduction below which to begin use of
+   central derivatives                                          : 0.10000             
+   Iteration at which to first consider derivatives switch      :   1
+
+   Relative phi reduction indicating convergence                : 0.10000E-01
+   Number of phi values required within this range              :   3
+   Maximum number of consecutive failures to lower phi          :   3
+   Minimal relative parameter change indicating convergence     : 0.10000E-01
+   Number of consecutive iterations with minimal param change   :   3
+   Maximum number of optimisation iterations                    :  30
+
+   Attempt automatic user intervention                          : no
+
+   Attempt reuse of parameter sensitivities                     : no
+
+   Scale parameters by their bounds                             : no
+
+
+File saving options: -
+
+   Save best JCO file                                           : yes
+   Save multiple JCO files                                      : no
+   Save multiple REI files                                      : no
+   Save multiple PAR files                                      : no
+
+
+                            OPTIMISATION RECORD
+
+
+INITIAL CONDITIONS: 
+   Sum of squared weighted residuals (ie phi)               =   2.2921    
+   Contribution to phi from observation group "p01obgp"     =  0.85261    
+   Contribution to phi from observation group "p02obgp"     =  0.76025    
+   Contribution to phi from observation group "p03obgp"     =  0.38696    
+   Contribution to phi from observation group "p04obgp"     =  0.29228    
+
+      Current parameter values
+      katm3           0.500000    
+      katm4            1.00000    
+      katr3           0.500000    
+      katr4           0.100000    
+      phr             0.500000    
+
+
+OPTIMISATION ITERATION NO.        : 1
+   Model calls so far             : 1
+   Starting phi for this iteration                          :   2.2921    
+   Contribution to phi from observation group "p01obgp"     :  0.85261    
+   Contribution to phi from observation group "p02obgp"     :  0.76025    
+   Contribution to phi from observation group "p03obgp"     :  0.38696    
+   Contribution to phi from observation group "p04obgp"     :  0.29228    
+
+       Lambda =   5.0000     ----->
+          Phi =   2.2536      (  0.983 of starting phi)
+
+       Lambda =   2.5000     ----->
+          Phi =   2.2615      (  0.987 of starting phi)
+
+       Lambda =   10.000     ----->
+          Phi =   2.2403      (  0.977 of starting phi)
+
+   No more lambdas: relative phi reduction between lambdas less than 0.0300
+   Lowest phi this iteration:   2.2403    
+   Relative phi reduction between optimisation iterations less than 0.1000
+   Switch to higher order derivatives calculation
+
+      Current parameter values                 Previous parameter values
+      katm3           0.570186                 katm3            0.500000    
+      katm4            1.02338                 katm4             1.00000    
+      katr3           0.531323                 katr3            0.500000    
+      katr4           6.666667E-02             katr4            0.100000    
+      phr             0.501221                 phr              0.500000    
+   Maximum   factor change:  1.500     ["katr4"]
+   Maximum relative change: 0.3333     ["katr4"]
+
+
+OPTIMISATION ITERATION NO.        : 2
+   Model calls so far             : 9
+   Starting phi for this iteration                          :   2.2403    
+   Contribution to phi from observation group "p01obgp"     :  0.82572    
+   Contribution to phi from observation group "p02obgp"     :  0.73680    
+   Contribution to phi from observation group "p03obgp"     :  0.37045    
+   Contribution to phi from observation group "p04obgp"     :  0.30735    
+
+       Lambda =   10.000     ----->
+          Phi =   2.2211      (  0.991 of starting phi)
+
+       Lambda =   5.0000     ----->
+          Phi =   2.2247      (  0.993 of starting phi)
+
+       Lambda =   20.000     ----->
+          Phi =   2.2163      (  0.989 of starting phi)
+
+   No more lambdas: relative phi reduction between lambdas less than 0.0300
+   Lowest phi this iteration:   2.2163    
+
+      Current parameter values                 Previous parameter values
+      katm3           0.585489                 katm3            0.570186    
+      katm4            1.02728                 katm4             1.02338    
+      katr3           0.549452                 katr3            0.531323    
+      katr4           5.000000E-02             katr4            6.666667E-02
+      phr             0.501453                 phr              0.501221    
+   Maximum   factor change:  1.333     ["katr4"]
+   Maximum relative change: 0.2500     ["katr4"]
+
+
+OPTIMISATION ITERATION NO.        : 3
+   Model calls so far             : 22
+   Starting phi for this iteration                          :   2.2163    
+   Contribution to phi from observation group "p01obgp"     :  0.81296    
+   Contribution to phi from observation group "p02obgp"     :  0.72758    
+   Contribution to phi from observation group "p03obgp"     :  0.36449    
+   Contribution to phi from observation group "p04obgp"     :  0.31125    
+
+       Lambda =   20.000     ----->
+          Phi =   2.1839      (  0.985 of starting phi)
+
+       Lambda =   10.000     ----->
+          Phi =   2.1674      (  0.978 of starting phi)
+
+   No more lambdas: relative phi reduction between lambdas less than 0.0300
+   Lowest phi this iteration:   2.1674    
+
+      Current parameter values                 Previous parameter values
+      katm3           0.698795                 katm3            0.585489    
+      katm4            1.03101                 katm4             1.02728    
+      katr3           0.824178                 katr3            0.549452    
+      katr4           7.185031E-02             katr4            5.000000E-02
+      phr             0.502362                 phr              0.501453    
+   Maximum   factor change:  1.500     ["katr3"]
+   Maximum relative change: 0.5000     ["katr3"]
+
+
+OPTIMISATION ITERATION NO.        : 4
+   Model calls so far             : 34
+   Starting phi for this iteration                          :   2.1674    
+   Contribution to phi from observation group "p01obgp"     :  0.78196    
+   Contribution to phi from observation group "p02obgp"     :  0.70941    
+   Contribution to phi from observation group "p03obgp"     :  0.35435    
+   Contribution to phi from observation group "p04obgp"     :  0.32164    
+
+       Lambda =   5.0000     ----->
+          Phi =   2.1657      (  0.999 of starting phi)
+
+       Lambda =   2.5000     ----->
+          Phi =   2.1660      (  0.999 of starting phi)
+
+       Lambda =   10.000     ----->
+          Phi =   2.1656      (  0.999 of starting phi)
+
+   No more lambdas: relative phi reduction between lambdas less than 0.0300
+   Lowest phi this iteration:   2.1656    
+
+      Current parameter values                 Previous parameter values
+      katm3           0.697224                 katm3            0.698795    
+      katm4            1.02964                 katm4             1.03101    
+      katr3           0.823238                 katr3            0.824178    
+      katr4           5.000000E-02             katr4            7.185031E-02
+      phr             0.502556                 phr              0.502362    
+   Maximum   factor change:  1.437     ["katr4"]
+   Maximum relative change: 0.3041     ["katr4"]
+
+
+OPTIMISATION ITERATION NO.        : 5
+   Model calls so far             : 47
+   Starting phi for this iteration                          :   2.1656    
+   Contribution to phi from observation group "p01obgp"     :  0.77960    
+   Contribution to phi from observation group "p02obgp"     :  0.70977    
+   Contribution to phi from observation group "p03obgp"     :  0.35423    
+   Contribution to phi from observation group "p04obgp"     :  0.32200    
+       param "katr4" frozen: gradient and update vectors out of bounds
+
+       Lambda =   10.000     ----->
+          Phi =   2.1347      (  0.986 of starting phi)
+
+       Lambda =   5.0000     ----->
+          Phi =   2.1529      (  0.994 of starting phi)
+
+       Lambda =   20.000     ----->
+          Phi =   2.0972      (  0.968 of starting phi)
+
+   No more lambdas: relative phi reduction between lambdas less than 0.0300
+   Lowest phi this iteration:   2.0972    
+
+      Current parameter values                 Previous parameter values
+      katm3           0.477506                 katm3            0.697224    
+      katm4           0.705793                 katm4             1.02964    
+      katr3           0.900000                 katr3            0.823238    
+      katr4           5.000000E-02             katr4            5.000000E-02
+      phr             0.510319                 phr              0.502556    
+   Maximum   factor change:  1.460     ["katm3"]
+   Maximum relative change: 0.3151     ["katm3"]
+
+
+OPTIMISATION ITERATION NO.        : 6
+   Model calls so far             : 60
+   Starting phi for this iteration                          :   2.0972    
+   Contribution to phi from observation group "p01obgp"     :  0.75186    
+   Contribution to phi from observation group "p02obgp"     :  0.65486    
+   Contribution to phi from observation group "p03obgp"     :  0.30374    
+   Contribution to phi from observation group "p04obgp"     :  0.38670    
+   All frozen parameters freed.
+       param "katr4" frozen: gradient and update vectors out of bounds
+
+       Lambda =   20.000     ----->
+          Phi =   2.0805      (  0.992 of starting phi)
+
+       Lambda =   10.000     ----->
+          Phi =   2.0868      (  0.995 of starting phi)
+
+       Lambda =   40.000     ----->
+          Phi =   2.0671      (  0.986 of starting phi)
+
+   No more lambdas: relative phi reduction between lambdas less than 0.0300
+   Lowest phi this iteration:   2.0671    
+
+      Current parameter values                 Previous parameter values
+      katm3           0.716260                 katm3            0.477506    
+      katm4           0.673140                 katm4            0.705793    
+      katr3           0.665030                 katr3            0.900000    
+      katr4           5.000000E-02             katr4            5.000000E-02
+      phr             0.514068                 phr              0.510319    
+   Maximum   factor change:  1.500     ["katm3"]
+   Maximum relative change: 0.5000     ["katm3"]
+
+
+OPTIMISATION ITERATION NO.        : 7
+   Model calls so far             : 73
+   Starting phi for this iteration                          :   2.0671    
+   Contribution to phi from observation group "p01obgp"     :  0.74098    
+   Contribution to phi from observation group "p02obgp"     :  0.62523    
+   Contribution to phi from observation group "p03obgp"     :  0.27841    
+   Contribution to phi from observation group "p04obgp"     :  0.42252    
+   All frozen parameters freed.

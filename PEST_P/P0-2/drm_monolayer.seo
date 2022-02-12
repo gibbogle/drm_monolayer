@@ -1,0 +1,5 @@
+ Observation           Group         Measured          Modelled        Sensitivity
+ p01logsf              p01obgp      -0.3745682        -0.4609850          1.771029    
+ p02logsf              p02obgp      -0.9915787        -0.9856500          1.923329    
+ p03logsf              p03obgp       -1.583676         -1.633250          2.752011    
+ p04logsf              p04obgp       -2.469928         -2.300740          3.575231    

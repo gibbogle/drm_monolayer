@@ -18,7 +18,7 @@ real(8) :: PHRsimple = 0.9      ! fraction of post-replication simple DSBs that 
 !character*(2) :: phaseName(8) = ['G1','','S ','','G2','','M ','']
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.008462]   ! by pathway
 real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.2604, 0.008462]   ! by pathway  with HR simple
-real(8) :: misrepRate(8) = [0.18875,0.0,0.18247,0.0,0.14264,0.0,0.18875,0.0]        ! by phase, Nlethal = 0.5*misrepRate*Nmis 
+!real(8) :: misrepRate(8) = [0.18875,0.18875,0.18247,0.18247,0.14264,0.14264,0.18875,0.18875]        ! by phase, Nlethal = 0.5*misrepRate*Nmis 
 !real(8) :: misrepRate(8) = [0.18875,0.0,0.18247,0.0,0.44264,0.0,0.18875,0.0]        ! by phase, Nlethal = 0.5*misrepRate*Nmis 
 !real(8) :: fidRate(NP)  = [0.98537, 0.98537, 0.98537, 1.0, 0.4393]  ! by pathway
 real(8) :: fidRate(NP)  = [0.98537, 0.98537, 0.98537, 1.0, 1.0, 0.4393]  ! by pathway  with HR simple
@@ -28,9 +28,11 @@ real(8) :: baseRate = 0.000739
 real(8) :: mitRate  = 0.0141
 real(8) :: Msurvival = 0.05
 real(8) :: Kaber = 1.0          ! now fixed, McMahon has 1.  
-real(8) :: Klethal = 2.3
-real(8) :: K_ATM(4) = [1.0, 0.076, 0.3, 10.6]   ! Now fix K_ATM(1), K_ATR(1) at 1.0
-real(8) :: K_ATR(4) = [1.0, 0.005, 0.3, 3.4]
+real(8) :: Klethal = 0.4
+!real(8) :: K_ATM(4) = [1.0, 0.076, 0.3, 10.6]   ! Now fix K_ATM(1), K_ATR(1) at 1.0
+!real(8) :: K_ATR(4) = [1.0, 0.005, 0.3, 3.4]
+real(8) :: K_ATM(4) = [0.076, 0.3, 1.0, 1.0]    ! (1) and (2) are the parameters of kinase kinetics, (3) and (4) are CP slowdown parameters
+real(8) :: K_ATR(4) = [0.005, 0.3, 1.0, 1.0]
 
 ! DNA-PK inhibition parameters
 real(8) :: KmaxInhibit = 0.8
@@ -39,7 +41,7 @@ real(8) :: b_hill = 0.5
 logical :: use_exp_inhibit = .true.
 logical :: use_base_apop_rate = .true.
 
-real(8) :: ATMsum, Sthsum, G2thsum
+real(8) :: ATMsum, ATRsum, Sthsum, G2thsum
 integer :: NSth, NG2th
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHRsimple, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR, KmaxInhibit, b_exp, b_hill
@@ -57,11 +59,11 @@ read(nfin,*) baseRate
 read(nfin,*) mitRate
 read(nfin,*) Msurvival
 read(nfin,*) Klethal
-!read(nfin,*) K_ATM(1)
+read(nfin,*) K_ATM(1)
 read(nfin,*) K_ATM(2)
 read(nfin,*) K_ATM(3)
 read(nfin,*) K_ATM(4)
-!read(nfin,*) K_ATR(1)
+read(nfin,*) K_ATR(1)
 read(nfin,*) K_ATR(2)
 read(nfin,*) K_ATR(3)
 read(nfin,*) K_ATR(4)
@@ -77,9 +79,10 @@ use_exp_inhibit = (iuse_exp == 1)
 !misrepRate(1) = Kaber*misrepRate(1)
 
 ATMsum = 0  ! to investigate ATM dependence on parameters
-Sthsum = 0
+ATRsum = 0  ! to investigate ATR dependence on parameters
+!Sthsum = 0
 NSth = 0
-G2thsum = 0
+!G2thsum = 0
 NG2th = 0
 
 ! For PEST runs, phase_hours must be -1 (for M runs) or -2 (for C runs) or -3 (for MC runs)
@@ -156,16 +159,19 @@ real(8) :: DSB_Gy = 35
 phase = cp%phase
 cp%phase0 = phase
 f = 0
-if (phase == S_checkpoint) then
+if (phase == G2_phase) then
     f = 1.0
 elseif (phase == S_phase) then
-    T_S = cp%S_time - cp%G1S_time     ! duration of S_phase for this cell, which entered S at G1S_time
-    f = (tnow - cp%G1S_time)/T_S
+!    T_S = cp%S_time - cp%G1S_time     ! duration of S_phase for this cell, which entered S at G1S_time
+!    f = (tnow - cp%G1S_time)/T_S
+    f = cp%progress
 endif
 
 baseDSB = DSB_Gy*dose
+if (kcell_now == 1) write(nflog,'(a,i4,2f8.3)') 'IR: phase,tnow,f: ',phase,tnow/3600,f
 DSB0 = 0
-if (phase <= G1_checkpoint) then
+!if (phase <= G1_checkpoint) then
+if (phase == G1_phase) then
     totDSB0 = baseDSB
     DSB0(1) = (1 - Pcomplex)*totDSB0
     DSB0(2) = Pcomplex*totDSB0
@@ -187,6 +193,7 @@ elseif (phase >= G2_phase) then
     DSB0(3) = (1 - Pcomplex)*totDSB0
     DSB0(4) = Pcomplex*totDSB0
 else    ! S_phase
+    if (kcell_now == 1) write(nflog,*) 'in S_phase'
     DSB0(1) = (1 - Pcomplex)*(1-f)*baseDSB
     DSB0(2) = Pcomplex*(1-f)*baseDSB
     DSB0(3) = (1 - Pcomplex)*2*f*baseDSB*(1 - PHRsimple)
@@ -200,7 +207,7 @@ DSB0(1:3) = (1 - fin)*DSB0(1:3)
 cp%DSB = DSB0
 cp%totDSB0 = totDSB0
 cp%Nlethal = 0
-if (kcell_now == -4) write(*,'(a,2i6,8f6.1)') 'IR: kcell, phase,DSB: ',kcell_now,phase,cp%DSB
+!if (kcell_now == 3) write(*,'(a,2i6,8f6.2)') 'IR: kcell, phase,DSB,f: ',kcell_now,phase,cp%DSB,f
 
 end subroutine
 
@@ -217,13 +224,14 @@ end subroutine
 ! M(t) = r/k + (M(0) - r/k)exp(-kt)
 ! Note: parameters from mcradio assume time is hours, therefore the time
 ! step passed to the subroutine, dth, has been converted to hours.
+! 11/02/22 changed K_ATM(2) & (3) to (1) & (2)
 !--------------------------------------------------------------------------
 subroutine updateATM(pATM,ATM_DSB,dth)
 real(8) :: pATM, ATM_DSB, dth
 real(8) :: r, k
 
-r = K_ATM(2)*ATM_DSB   ! rate of production of pATM
-k = K_ATM(3)  ! decay rate constant
+r = K_ATM(1)*ATM_DSB   ! rate of production of pATM
+k = K_ATM(2)  ! decay rate constant
 pATM = r/k + (pATM - r/k)*exp(-k*dth)
 if (kcell_now == -4) write(*,'(a,i4,5f8.4)') 'updateATM: r,k,r/k,ATM_DSB,pATM: ',kcell_now,r,k,r/k,ATM_DSB,pATM
 end subroutine
@@ -232,13 +240,14 @@ end subroutine
 ! Try making pATR production rate saturate, or limit pATR?
 ! Note: parameters from mcradio assume time is hours, therefore the time
 ! step passed to the subroutine, dth, has been converted to hours.
+! 11/02/22 changed K_ATR(2) & (3) to (1) & (2)
 !--------------------------------------------------------------------------
 subroutine updateATR(pATR,ATR_DSB,dth)
 real(8) :: pATR, ATR_DSB, dth
 real(8) :: r, k, x, xmax, km, xf
 
-r = K_ATR(2)*ATR_DSB   ! rate of production of pATR
-k = K_ATR(3)  ! decay rate constant
+r = K_ATR(1)*ATR_DSB   ! rate of production of pATR
+k = K_ATR(2)  ! decay rate constant
 pATR = r/k + (pATR - r/k)*exp(-k*dth)
 !if (kcell_now == 3) write(*,'(a,i4,5f8.4)') 'updateATR: r,k,r/k,ATR_DSB,pATR: ',kcell_now,r,k,r/k,ATR_DSB,pATR
 !if (pATR > 0) write(*,'(a,i4,5f8.4)') 'updateATR: r,k,r/k,ATR_DSB,pATR: ',kcell_now,r,k,r/k,ATR_DSB,pATR
@@ -247,6 +256,7 @@ end subroutine
 !------------------------------------------------------------------------
 ! Effect of pATM
 ! Using parameters from mcradio, time computed in hours, returned in secs 
+! NOT USED NOW
 !------------------------------------------------------------------------
 function S_checkpoint_time(cp) result(t)
 type(cell_type), pointer :: cp
@@ -264,6 +274,7 @@ end function
 !------------------------------------------------------------------------
 ! Effect of pATM and pATR
 ! Using parameters from mcradio, time computed in hours, returned in secs
+! NOT USED NOW
 !------------------------------------------------------------------------
 function G2_checkpoint_time(cp) result(t)
 type(cell_type), pointer :: cp
@@ -272,12 +283,39 @@ real(REAL_KIND) :: t, th, th_ATM, th_ATR
 th_ATM = K_ATM(4)*(1 - exp(-K_ATM(1)*cp%pATM))
 th_ATR = K_ATR(4)*(1 - exp(-K_ATR(1)*cp%pATR))
 th = th_ATM + th_ATR
-!if (kcell_now == 3) write(*,'(a,i6,2f8.3)') 'G2_checkpoint_time (ATM, ATR) (h): ',kcell_now,th_ATM,th_ATR
+!if (kcell_now == 3) write(*,'(a,i6,2f8.3)') 'G2_checkpoint_time (ATM, ATR) (h): ',kcell_now,th_ATM,th_ATR 
 t = 3600*th
 if (is_radiation) then
     G2thsum = G2thsum + th
     NG2th = NG2th + 1
 endif
+end function
+
+!------------------------------------------------------------------------
+!------------------------------------------------------------------------
+function slowdown(cp) result(fslow)
+type(cell_type), pointer :: cp
+integer :: phase
+real(REAL_KIND) :: pATM, pATR, k1, k2, fATM, fATR, fslow
+
+fslow = 1.0
+if (cp%phase == S_phase) then
+    pATM = cp%pATM
+    k1 = K_ATM(3)
+    k2 = K_ATM(4)
+    fslow = 1 - k1*pATM/(k2 + pATM)
+elseif (cp%phase == G2_phase) then
+    pATM = cp%pATM
+    k1 = K_ATM(3)
+    k2 = K_ATM(4)
+    fATM = 1 - k1*pATM/(k2 + pATM) 
+    pATR = cp%pATR
+    k1 = K_ATR(3)
+    k2 = K_ATR(4)
+    fATR = 1 - k1*pATR/(k2 + pATR)
+    fslow = fATM*fATR
+endif
+if (kcell_now == -1) write(*,'(a,2i6,f6.3)') 'kcell, phase, fslow: ',kcell_now, cp%phase, fslow
 end function
 
 !--------------------------------------------------------------------------
@@ -315,6 +353,7 @@ end function
 
 !------------------------------------------------------------------------
 ! To use parameters from mcradio, need to convert time from secs to hours
+! 
 !------------------------------------------------------------------------
 subroutine updateRepair(cp,dt)
 type(cell_type), pointer :: cp
@@ -322,7 +361,7 @@ real(8) :: dt
 integer :: phase
 real(8) :: DSB(NP), dNlethal
 real(8) :: DSB0(NP)
-real(8) :: totDSB0, totDSB, Pmis, Nmis, totDSBinfid0, totDSBinfid, ATR_DSB, ATM_DSB, dth
+real(8) :: totDSB0, totDSB, Pcorrect, Nmis, totDSBinfid0, totDSBinfid, ATR_DSB, ATM_DSB, dth
 logical :: pathUsed(NP)
 integer :: k
 logical :: use_DSBinfid = .true.
@@ -339,12 +378,12 @@ if (totDSB0 == 0) return
 !if (kcell_now == 1) write(*,'(a,2i6,8f6.2)') 'updateRepair: kcell, phase, DSB0, Nlethal: ',kcell_now,cp%phase,cp%DSB,cp%Nlethal
 ATM_DSB = DSB(2) + DSB(4)   ! complex DSB
 ATR_DSB = DSB(4) + DSB(5)
-if (phase == G1_phase) then
+if (phase <= G1_checkpoint) then
     call updateATR(cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth
-elseif (phase == S_phase) then
+elseif (phase <= S_checkpoint) then
     call updateATM(cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth
     call updateATR(cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth
-elseif (phase == G2_phase) then
+else
     call updateATM(cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth
     call updateATR(cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth
 endif
@@ -371,20 +410,27 @@ do k = 1,NP
     endif
 enddo
 if (use_DSBinfid) then
-    Pmis = misrepairRate(totDSBinfid0, totDSBinfid, eta)
+    Pcorrect = misrepairRate(totDSBinfid0, totDSBinfid, eta)
 else
-    Pmis = misrepairRate(totDSB0, totDSB, eta)
+    Pcorrect = misrepairRate(totDSB0, totDSB, eta)
 endif
+!if (kcell_now == 3) write(*,'(a,5e12.3)') 'Pcorrect,DSB: ',Pcorrect,DSB
 Nmis = 0
 do k = 1,NP
 !    if (pathUsed(k) .and. fidRate(k) < 1.0) then
     if (fidRate(k) < 1.0) then
-        Nmis = Nmis + (DSB0(k) - DSB(k))*(1 - fidRate(k)*(1 - Pmis))
+        Nmis = Nmis + (DSB0(k) - DSB(k))*(1 - fidRate(k)*(1 - Pcorrect))
     endif
 enddo
+if (isnan(Nmis)) then
+    write(*,*) 'updateRepair: Nmis isnan'
+    stop
+endif
 cp%DSB = DSB
-dNlethal = Klethal*misrepRate(phase)*Nmis   ! (was 0.5)  1.65 needs to be another parameter -> Klethal
-if (dbug) write(*,'(a,3e12.3)') 'Pmis,Nmis,dNlethal: ',Pmis,Nmis,dNlethal
+!dNlethal = Klethal*misrepRate(phase)*Nmis   ! (was 0.5)  1.65 needs to be another parameter -> Klethal
+dNlethal = Klethal*Nmis   ! Here Klethal ~ 2.1*0.19 = 0.4, i.e. using a single average misreprate
+!if (kcell_now == 3) write(*,'(a,3e12.3)') 'Klethal,Nmis,dNlethal: ',Klethal,Nmis,dNlethal
+if (dbug) write(*,'(a,3e12.3)') 'Pcorrect,Nmis,dNlethal: ',Pcorrect,Nmis,dNlethal
 cp%Nlethal = cp%Nlethal + dNlethal
 end subroutine
 
@@ -401,6 +447,7 @@ real(8) :: DSB(NP), totDSB, Nlethal,Paber, Pbase, Papop, Pmit, Psurv
 DSB = cp%DSB
 totDSB = sum(DSB)
 Nlethal = cp%Nlethal
+if (kcell_now == 1) write(nflog,'(a,2i4,2e12.3)') 'kcell, phase, totDSB, Nlethal: ',kcell_now, cp%phase, totDSB, Nlethal
 if (cp%phase0 == G1_phase) then
 !    Pbase = exp(-baseRate*cp%totDSB0)   ! this is 1 - Pdie
     Paber = exp(-Kaber*Nlethal) ! Kaber = 1
@@ -421,6 +468,7 @@ NPsurvive = NPsurvive + 1
 Psurvive(NPsurvive) = cp%Psurvive
 
 ATMsum = ATMsum + cp%pATM
+ATRsum = ATRsum + cp%pATR
 
 end subroutine
 

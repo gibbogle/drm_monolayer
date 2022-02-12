@@ -75,6 +75,9 @@ end subroutine
 ! Cells in checkpoint are excluded from Nmetabolisingcells(?) Check with Bill!
 ! Note: it is assumed that no cells are dying or dead.
 ! Note: O2 consumption resulting from drug metabolism is ignored!
+! No drug metabolism no reactions, no O2 dependence when simulating the inhibiter
+! (not the HAP).
+! Only solving for the parent drug, membrane flux, decay, and medium diffusion.
 !----------------------------------------------------------------------------------
 subroutine f_rkc_drug(neqn,t,y,dydt,icase)
 integer :: neqn, icase
@@ -106,15 +109,14 @@ if (use_average_volume) then
     vol_cm3 = Vcell_cm3*average_volume	  ! not accounting for cell volume change
     area_factor = (average_volume)**(2./3.)
 endif
-!Nmetabolisingcells = Ncells - (Ndying(1) + Ndying(2))
-Nmetabolisingcells = Ncells - N_checkpoint
+Nmetabolisingcells = Ncells
 iparent = DRUG_A + 2*(idrug-1)
 dp => drug(idrug)
-metabolised(:,:) = (dp%Kmet0(:,:) > 0)
+metabolised(:,:) = (dp%Kmet0(:,:) > 0)  ! all false for the DNA-PK inhibiter
 n_O2(:) = dp%n_O2(ict,:)
 
 k = 0
-do im = 0,1
+do im = 0,0     ! parent inhibiter drug only
 	! First process IC reactions
 	k = k+1
 	C = y(k)
@@ -126,8 +128,8 @@ do im = 0,1
     membrane_kout = chemo(ichemo)%membrane_diff_out
 	membrane_flux = area_factor*(membrane_kin*Cex - membrane_kout*C)
 	dCreact = 0
-    if (im == 0) then
-        if (metabolised(ict,0) .and. C > 0) then
+    if (im == 0) then   ! parent drug
+        if (metabolised(ict,0) .and. C > 0) then    ! inhibiter drug is not metabolised
 		    KmetC = dp%Kmet0(ict,0)*C
 		    if (dp%Vmax(ict,0) > 0) then
 			    KmetC = KmetC + dp%Vmax(ict,0)*C/(dp%Km(ict,0) + C)
@@ -136,15 +138,15 @@ do im = 0,1
 	    endif
 !		write(nflog,'(a,3e12.3)') 'dCreact, flux, decay: ',dCreact,membrane_flux/vol_cm3,-C*decay_rate
 	    dCreact = dCreact + membrane_flux/vol_cm3
-    elseif (im == 1) then	! kk=1 is the PARENT drug
-		kk = 1
-	    if (metabolised(ict,0) .and. y(kk) > 0) then
-		    dCreact = (1 - dp%C2(ict,0) + dp%C2(ict,0)*dp%KO2(ict,0)**n_O2(0)/(dp%KO2(ict,0)**n_O2(0) + CO2**n_O2(0)))*dp%Kmet0(ict,0)*y(kk)
-	    endif
-	    if (metabolised(ict,1) .and. C > 0) then
-		    dCreact = dCreact - (1 - dp%C2(ict,1) + dp%C2(ict,1)*dp%KO2(ict,1)**n_O2(1)/(dp%KO2(ict,1)**n_O2(1) + CO2**n_O2(1)))*dp%Kmet0(ict,1)*C
-	    endif
-	    dCreact = dCreact + membrane_flux/vol_cm3
+!    elseif (im == 1) then	! kk=1 is the PARENT drug
+!		kk = 1
+!	    if (metabolised(ict,0) .and. y(kk) > 0) then
+!		    dCreact = (1 - dp%C2(ict,0) + dp%C2(ict,0)*dp%KO2(ict,0)**n_O2(0)/(dp%KO2(ict,0)**n_O2(0) + CO2**n_O2(0)))*dp%Kmet0(ict,0)*y(kk)
+!	    endif
+!	    if (metabolised(ict,1) .and. C > 0) then
+!		    dCreact = dCreact - (1 - dp%C2(ict,1) + dp%C2(ict,1)*dp%KO2(ict,1)**n_O2(1)/(dp%KO2(ict,1)**n_O2(1) + CO2**n_O2(1)))*dp%Kmet0(ict,1)*C
+!	    endif
+!	    dCreact = dCreact + membrane_flux/vol_cm3
 !    elseif (im == 2) then	! kk=N1D+2 is the METAB1
 !		kk = N1D+2
 !	    if (metabolised(ict,1) .and. y(kk) > 0) then
@@ -189,7 +191,7 @@ end subroutine
 
 !----------------------------------------------------------------------------------
 ! This version assumes a single metabolism solution for all cells (all phases)
-! Cells in checkpoint are excluded from Nmetabolisingcells.
+! SHOULD BE modified to account for cp%fp
 ! Note: it is assumed that no cells are dying or dead.
 !----------------------------------------------------------------------------------
 subroutine f_rkc_OG(neqn,t,y,dydt,icase)
@@ -219,7 +221,8 @@ if (use_average_volume) then
     area_factor = (average_volume)**(2./3.)
 endif
 !Nmetabolisingcells = Ncells - (Ndying(1) + Ndying(2))
-Nmetabolisingcells = Ncells - N_checkpoint
+!Nmetabolisingcells = Ncells - N_checkpoint
+Nmetabolisingcells = getEffectiveNcells()
 do ichemo = 1,NUTS
     Cin(ichemo) = y((ichemo-1)*(N1D+1) + 1)
 enddo
@@ -339,6 +342,7 @@ integer :: ichemo, k, ict, neqn, i, kcell, im
 real(REAL_KIND) :: t, tend
 real(REAL_KIND) :: C(3*N1D+3), Csum
 real(REAL_KIND) :: timer1, timer2
+integer :: nmetabolites = 0     ! inhibiter drug
 ! Variables for RKC
 integer :: info(4), idid
 real(REAL_KIND) :: rtol, atol(1)
@@ -355,7 +359,7 @@ idrug_rkc = idrug
 CO2_rkc = Caverage(OXYGEN)
 
 k = 0
-do im = 0,1
+do im = 0,nmetabolites     ! parent inhibiter drug only
 	ichemo = iparent + im
 	if (.not.chemo(ichemo)%present) cycle
 	k = k+1
@@ -398,7 +402,7 @@ endif
 ! Now put the concentrations into the cells 
 
 k = 0
-do im = 0,1
+do im = 0,nmetabolites
 	ichemo = iparent + im
 	if (.not.chemo(ichemo)%present) cycle
 	k = k+1
@@ -417,25 +421,6 @@ do im = 0,1
     enddo
 enddo
 !write(*,'(a,5f12.8)') 'EC: ',(Caverage(MAX_CHEMO+iparent+i),i=0,1)
-
-!do im = 0,1
-!    ichemo = iparent + im
-!	if (.not.chemo(ichemo)%present) cycle
-!    k = im*(N1D+1) + 1
-!    Caverage(ichemo) = C(k)
-!	Csum = 0
-!    do i = 1,N1D
-!		Csum = Csum + C(k+i)
-!	enddo
-!	Cmediumave(ichemo) = Csum/N1D
-!    do kcell = 1,nlist
-!        if (cell_list(kcell)%state == DEAD) cycle
-!        cell_list(kcell)%Cin(ichemo) = Caverage(ichemo)
-!    enddo
-!    Caverage(MAX_CHEMO + ichemo) = C(k+1)	! not really average, this is medium at the cell layer, i.e. EC
-!!	write(nflog,'(a,i3,5e12.3)') 'Cdrug: im: ',im,Cdrug(im,1:5)
-!enddo
-!write(*,'(a,3e12.3)') 'Cell drug conc: ',(Caverage(DRUG_A+k),k=0,2)
 
 end subroutine
 
@@ -461,6 +446,8 @@ logical :: use_explicit = .false.		! The explicit approach is hopelessly unstabl
 ! Checking
 real(REAL_KIND) :: dC_Pdt, vol_cm3, K1, K2
 real(REAL_KIND) :: average_volume = 1.2
+
+return  ! for Cho's DNA-PK experiments, do not solve for oxygen & glucose
 
 !write(nflog,*)
 !write(nflog,*) 'OGSolver: ',istep

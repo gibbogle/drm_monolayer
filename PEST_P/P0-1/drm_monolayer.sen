@@ -1,0 +1,19 @@
+                    PARAMETER SENSITIVITIES: CASE drm_monolayer
+
+
+ OPTIMISATION ITERATION NO.  1 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm3           katm3           0.500000         3.174237E-02
+   katm4           katm4           0.700000         1.068008E-02
+   katr3           katr3           0.900000         2.913537E-02
+   katr4           katr4           5.000000E-02     0.157958    
+   phr             phr             0.510000          2.41984    
+
+
+ OPTIMISATION ITERATION NO.  2 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm3           katm3           0.500000         1.895771E-02
+   katm4           katm4           0.700000         6.692132E-03
+   katr3           katr3           0.900000         1.206795E-02
+   katr4           katr4           5.000000E-02     0.106542    
+   phr             phr             0.510000          2.44395    

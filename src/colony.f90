@@ -321,7 +321,7 @@ iday = 1
 t0 = tnow
 do while (tnow < tend)
 	tnow = tnow + dt
-    call new_grower(dt,changed,ok)
+    call grower(dt,changed,ok)
     call CellDeath(dt,ok)
     if (tnow >= t0 + iday*24*3600) then
 !        if (cp%ID == 1) write(*,*) 'ID=1: nlist: ',nlist

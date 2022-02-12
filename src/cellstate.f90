@@ -28,16 +28,10 @@ type(cell_type),pointer :: cp
 !call logger('GrowCells: ')
 tnow = t_simulation		! now = time at the start of the timestep
 ok = .true.
-call new_grower(dt,changed,ok)
+call grower(dt,changed,ok)
 if (.not.ok) return
-!if (dose > 0) then
-!	call Irradiation(dose, ok)
-!	if (.not.ok) return
-!endif
 call CellDeath(dt,ok)
 if (.not.ok) return
-!cp => cell_list(kcell_test)
-!write(nflog,'(a,2i6,2f8.3,e12.3)') 'kcell_test: ',kcell_test,cp%phase,tnow/3600,cp%mitosis,cp%dVdt
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -602,7 +596,7 @@ end subroutine
 ! 
 ! NOTE: now the medium concentrations are not affected by cell growth
 !-----------------------------------------------------------------------------------------
-subroutine new_grower(dt, changed, ok)
+subroutine grower(dt, changed, ok)
 real(REAL_KIND) :: dt
 logical :: changed, ok
 integer :: k, kcell, nlist0, ityp, idrug, prev_phase, kpar=0
@@ -640,44 +634,21 @@ do kcell = 1,nlist0
 	mitosis_entry = .false.
 	mitosis_duration = ccp%T_M
 	in_mitosis = .false.
-	    prev_phase = cp%phase
-		if (cp%dVdt > 0) then
-! 	        if (use_exponential_cycletime) then
-!   			    call exp_timestep(cp, ccp, dt, radkilled)
-!    		else
-    	        call log_timestep(cp, ccp, dt, radkilled)
-!    	    endif
-    	    if (radkilled) then
-    	        write(*,*) 'radkilled: ',kcell
-                ityp = cp%celltype
-	            cp%radiation_tag = .true.	! tagged, but not DYING yet
-                Nradiation_tag(ityp) = Nradiation_tag(ityp) + 1
-	            call celldies(cp,.false.)
-            endif
-
-	    endif
-        if (cp%phase == M_phase) then
-!            if (cp%phase /= dividing) then
-!				cp%Iphase = .false.
-				cp%mitosis = 0
-				cp%t_start_mitosis = tnow
-				ncells_mphase = ncells_mphase + 1
-				! Need to record clonogenic SP at first mitosis
-				! Moved to point of dividing
-!				if (is_radiation .and. cp%Psurvive < 0) then
-!				    ! compute survival probability (ala McMahon, mcradio)
-!				    call survivalProbability(cp)
-!				endif
-!            endif
-!            in_mitosis = .true.
-            cp%phase = dividing
-        endif
-        if (cp%state == DYING) then     ! no growth, no progression through cell cycle
-	        cp%dVdt = 0
-            cycle
-		elseif (cp%phase == G1_phase .or.cp%phase == S_phase .or. cp%phase == G2_phase) then
-		    call growcell(cp,dt)
-		endif
+    prev_phase = cp%phase
+	if (cp%phase /= M_phase) then
+	    call growcell(cp,dt)
+	endif
+	if (cp%dVdt > 0) then
+        call log_timestep(cp, ccp, dt)
+    endif
+    if (cp%phase == M_phase) then
+		cp%mitosis = 0
+		cp%t_start_mitosis = tnow
+		ncells_mphase = ncells_mphase + 1
+		! Need to record clonogenic SP at first mitosis
+!       in_mitosis = .true.
+        cp%phase = dividing
+    endif
 	
 !	if (in_mitosis) then
     if (cp%phase == dividing) then
@@ -765,12 +736,12 @@ subroutine growcell(cp, dt)
 type(cell_type), pointer :: cp
 real(REAL_KIND) :: dt
 real(REAL_KIND) :: Cin_0(NCONST), Cex_0(NCONST)		! at some point NCONST -> MAX_CHEMO
-real(REAL_KIND) :: dVdt,  Vin_0, dV,  metab_O2, metab_glucose, metab, Cdrug(2)
+real(REAL_KIND) :: dVdt,  Vin_0, dV,  metab_O2, metab_glucose, metab, Cdrug(2), f_CP
 integer :: ityp
 logical :: oxygen_growth, glucose_growth, tagged
 
-if (use_cell_cycle .and. .not.(cp%phase == G1_phase .or. cp%phase == S_phase .or. cp%phase == G2_phase)) then
-	write(nflog,*) 'no growth - phase: ',cp%phase
+if (cp%phase >= M_phase) then
+!	write(nflog,*) 'no growth - kcell,phase: ',kcell_now,cp%phase
 	return
 endif
 !if (use_metabolism .and. cp%metab%A_rate < r_Ag) then
@@ -815,20 +786,21 @@ else
 		elseif (glucose_growth) then
 			metab = metab_glucose
 		endif
-		dVdt = get_dVdt(cp,metab)
-		if (suppress_growth) then	! for checking solvers
-			dVdt = 0
-		endif
+!		dVdt = get_dVdt(cp,metab)
+!		if (suppress_growth) then	! for checking solvers
+!			dVdt = 0
+!		endif
 	endif
 endif
-cp%dVdt = dVdt
-Vin_0 = cp%V
-dV = dVdt*dt
+
+! Here compute the progress factor %fp, used in cycle.f90
+! This is definitive
+f_CP = slowdown(cp)
+cp%fp = metab*f_CP/cp%fg(cp%phase)
+cp%dVdt = cp%fp*max_growthrate(ityp)
 Cdrug(:) = cp%Cin(DRUG_A:DRUG_A+1)
-if (use_cell_cycle .and. .not.(cp%phase == G1_phase .or. cp%phase == S_phase .or. cp%phase == G2_phase)) then
-    dV = 0		! this should never happen, because growcell is called only for G1, S, G2
-endif
-cp%V = Vin_0 + dV/cp%fg
+Vin_0 = cp%V
+cp%V = Vin_0 + dt*cp%dVdt
 cp%Cin(DRUG_A:DRUG_A+1) = Cdrug(:)*Vin_0/cp%V
 end subroutine
 
@@ -916,7 +888,7 @@ subroutine divider(kcell1, ok)
 integer :: kcell1
 logical :: ok
 integer :: kcell2, ityp, nbrs0, im, imax, ipdd
-real(REAL_KIND) :: r(3), c(3), cfse0, cfse2, V0, Tdiv, gfactor, dVdt
+real(REAL_KIND) :: r(3), c(3), cfse0, cfse2, V0, Tdiv, gfactor, dVdt, fg(4)
 type(cell_type), pointer :: cp1, cp2
 type(cycle_parameters_type), pointer :: ccp
 
@@ -1019,9 +991,10 @@ cp1%G2_M = .false.
 !    cp1%G1_time = tnow + (cp1%metab%I_rate_max/cp1%metab%I_rate)*cp1%fg*ccp%T_G1
 !endif
 !cp1%G1_time = tnow + (max_growthrate(ityp)/cp1%dVdt)*cp1%fg*ccp%T_G1    ! time spend in G1 varies inversely with dV/dt
-cp1%G1_time = tnow + (max_growthrate(ityp)/cp1%dVdt)*cp1%fg*ccp%T_G1    ! time spend in G1 varies inversely with dV/dt
+!cp1%G1_time = tnow + (max_growthrate(ityp)/cp1%dVdt)*cp1%fg*ccp%T_G1    ! time spend in G1 varies inversely with dV/dt
 cp1%Iphase = .true.
 cp1%phase = G1_phase
+cp1%progress = 0
 !if (max_growthrate(ityp)/cp1%dVdt > 2) then
 !    write(*,*) 'dVdt: ',kcell1,max_growthrate(ityp)/cp1%dVdt
 !endif
@@ -1057,7 +1030,7 @@ call set_divide_volume(cp2, V0)
 !	cp2%G1_time = tnow + (max_growthrate(ityp)/cp2%dVdt)*ccp%T_G1    ! time spend in G1 varies inversely with dV/dt
 !endif
 cp2%ATP_rate_factor = get_ATP_rate_factor()
-cp2%G1_time = tnow + (max_growthrate(ityp)/cp2%dVdt)*cp2%fg*ccp%T_G1    ! time spend in G1 varies inversely with dV/dt
+!cp2%G1_time = tnow + (max_growthrate(ityp)/cp2%dVdt)*cp2%fg*ccp%T_G1    ! time spend in G1 varies inversely with dV/dt
 cp2%CFSE = cfse2
 if (cp2%radiation_tag) then
 	Nradiation_tag(ityp) = Nradiation_tag(ityp) + 1

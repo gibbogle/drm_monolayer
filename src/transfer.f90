@@ -182,14 +182,14 @@ subroutine get_summary(summaryData,i_hypoxia_cutoff,i_growth_cutoff) BIND(C)
 use, intrinsic :: iso_c_binding
 real(c_double) :: summaryData(*)
 integer(c_int) :: i_hypoxia_cutoff,i_growth_cutoff
-integer :: nhypoxic(3), nclonohypoxic(3), ngrowth(3), nogrow(MAX_CELLTYPES), nphase(6+1), nmutations, nclono
+integer :: nhypoxic(3), nclonohypoxic(3), ngrowth(3), nogrow(MAX_CELLTYPES), nphase(4+1), nmutations, nclono
 integer :: TNradiation_dead, TNdrug_dead(2),  TNdead, TNviable, TNnonviable, TNATP_dead, TNGLN_dead, TNnogrow, &
            Ntagged_ATP(MAX_CELLTYPES), Ntagged_GLN(MAX_CELLTYPES), Ntagged_radiation(MAX_CELLTYPES), Ntagged_drug(2,MAX_CELLTYPES), &
            TNtagged_ATP, TNtagged_GLN, TNtagged_radiation, TNtagged_drug(2)
 integer :: ityp, i, im, idrug
 real(REAL_KIND) :: hour, plate_eff(MAX_CELLTYPES), divide_fraction, doubling_time, viable_fraction, rmutations
 real(REAL_KIND) :: hypoxic_fraction(3), clonohypoxic_fraction(3), growth_fraction(3), nogrow_fraction, An
-real(REAL_KIND) :: phase_fraction(6+1), clono_fraction, Tplate_eff
+real(REAL_KIND) :: phase_fraction(4+1), clono_fraction, Tplate_eff
 real(REAL_KIND) :: medium_oxygen, medium_glucose, medium_lactate, medium_other, medium_drug(2,0:2)
 !real(REAL_KIND) :: IC_oxygen, IC_glucose, IC_lactate, IC_pyruvate, IC_other, IC_drug(2,0:2)
 real(REAL_KIND) :: EC(MAX_CHEMO), cmedium(MAX_CHEMO)
@@ -289,7 +289,7 @@ else
     doubling_time = 0
 endif
 
-summaryData(1:39) = [ rint(istep), rint(Ncells), rint(TNviable), rint(TNnonviable), &
+summaryData(1:37) = [ rint(istep), rint(Ncells), rint(TNviable), rint(TNnonviable), &
 	rint(TNdrug_dead(1)), rint(TNradiation_dead), rint(TNdead), &
     rint(TNtagged_drug(1)), rint(TNtagged_radiation), &
 	100*viable_fraction, 100*hypoxic_fraction(i_hypoxia_cutoff), 100*clonohypoxic_fraction(i_hypoxia_cutoff), &
@@ -298,7 +298,7 @@ summaryData(1:39) = [ rint(istep), rint(Ncells), rint(TNviable), rint(TNnonviabl
 	caverage(OXYGEN:DRUG_A-1), caverage(DRUG_A:DRUG_A+1), &
 	cmedium(OXYGEN:DRUG_A-1), cmedium(DRUG_A:DRUG_A+1), &
 	doubling_time, r_O, r_G, rint(ndivided), &
-	100*phase_fraction(1:7)]
+	100*phase_fraction(1:5)]
 if (.not.use_PEST) then
 write(nfres,'(a,a,2a12,i8,e12.4,13i7,63e13.5)') trim(header),' ',gui_run_version, dll_run_version, &
 	istep, hour, Ncells_type(1:2), TNviable, TNnonviable, &
@@ -309,7 +309,7 @@ write(nfres,'(a,a,2a12,i8,e12.4,13i7,63e13.5)') trim(header),' ',gui_run_version
 	EC(OXYGEN:DRUG_A-1), EC(DRUG_A:DRUG_A+1), &
 	caverage(OXYGEN:DRUG_A-1), caverage(DRUG_A:DRUG_A+1), &
 	cmedium(OXYGEN:DRUG_A-1), cmedium(DRUG_A:DRUG_A+1), &
-	phase_fraction(1:7),  &	! note order change
+	phase_fraction(1:5),  &	! note order change
 	doubling_time, r_O, r_G, real(ndivided)
 endif
 !call sum_dMdt(GLUCOSE)
