@@ -13,4 +13,13 @@ build_drm_monolayer/**/*
 ToDo/
 /GUI/drm_monolayer_GUI.pro.user
 /GUI/drm_monolayer_GUI.pro
-
+PEST/
+PEST/**/*
+PEST_C/
+PEST_C/**/*
+PEST_I/
+PEST_I/**/*
+PEST_M/
+PEST_M/**/*
+PEST_P/
+PEST_P/**/*

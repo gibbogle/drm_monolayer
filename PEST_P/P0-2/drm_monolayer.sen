@@ -3,30 +3,58 @@
 
  OPTIMISATION ITERATION NO.  1 ----->
  Parameter name    Group          Current value    Sensitivity
-   mitrate         mitrate         4.000000E-02      5.30341    
-   pcomplex        pcomplex        0.670000         1.908326E-02
-   klethal         klethal         0.300000         0.794643    
+   katm3           katm3           3.000000E-03     0.338320    
+   mitrate         mitrate         3.000000E-02      4.87933    
+   klethal         klethal         0.230000          1.58849    
+   phr             phr             0.200000         0.184302    
 
 
  OPTIMISATION ITERATION NO.  2 ----->
  Parameter name    Group          Current value    Sensitivity
-   mitrate         mitrate         5.031428E-02      3.74643    
-   pcomplex        pcomplex        0.639700         4.605903E-02
-   klethal         klethal         0.230769          1.12133    
+   katm3           katm3           6.000000E-03     0.214061    
+   mitrate         mitrate         3.050829E-02      4.83645    
+   klethal         klethal         0.231166          1.59519    
+   phr             phr             0.200052         0.185304    
 
 
  OPTIMISATION ITERATION NO.  3 ----->
  Parameter name    Group          Current value    Sensitivity
-   mitrate         mitrate         5.954319E-02      3.16428    
-   pcomplex        pcomplex        0.637811         5.875122E-02
-   klethal         klethal         0.221291          1.26617    
+   katm3           katm3           4.822154E-03     0.594708    
+   mitrate         mitrate         3.021837E-02      4.90490    
+   klethal         klethal         0.233270          1.58504    
+   phr             phr             0.200566         0.188474    
 
 
  OPTIMISATION ITERATION NO.  4 ----->
  Parameter name    Group          Current value    Sensitivity
-   mitrate         mitrate         5.954319E-02      3.14983    
-   pcomplex        pcomplex        0.637811         5.877265E-02
-   klethal         klethal         0.221291          1.27093    
+   katm3           katm3           2.411077E-03     0.922300    
+   mitrate         mitrate         2.909143E-02      5.09964    
+   klethal         klethal         0.236307          1.55815    
+   phr             phr             0.204146         0.193814    
+
+
+ OPTIMISATION ITERATION NO.  5 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm3           katm3           1.205539E-03     0.661469    
+   mitrate         mitrate         2.850040E-02      5.22968    
+   klethal         klethal         0.239642          1.53810    
+   phr             phr             0.207485         0.199228    
+
+
+ OPTIMISATION ITERATION NO.  6 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm3           katm3           1.660682E-03     0.169042    
+   mitrate         mitrate         2.709845E-02      5.51861    
+   klethal         klethal         0.245829          1.48201    
+   phr             phr             0.225921         0.208088    
+
+
+ OPTIMISATION ITERATION NO.  7 ----->
+ Parameter name    Group          Current value    Sensitivity
+   katm3           katm3           1.503937E-03     0.265109    
+   mitrate         mitrate         2.708589E-02      5.52246    
+   klethal         klethal         0.245885          1.48123    
+   phr             phr             0.225895         0.208378    
 
 
 
@@ -36,9 +64,10 @@
 
  Number of observations with non-zero weight =     1
  Parameter name    Group          Current value    Sensitivity
-   mitrate         mitrate         5.954319E-02      5.15046    
-   pcomplex        pcomplex        0.637811         0.116472    
-   klethal         klethal         0.221291          1.29925    
+   katm3           katm3           1.503937E-03     0.270571    
+   mitrate         mitrate         2.708589E-02      7.95006    
+   klethal         klethal         0.245885          1.35276    
+   phr             phr             0.225895         4.990306E-02
 
 
 
@@ -46,9 +75,10 @@
 
  Number of observations with non-zero weight =     1
  Parameter name    Group          Current value    Sensitivity
-   mitrate         mitrate         5.954319E-02      5.29520    
-   pcomplex        pcomplex        0.637811         6.452113E-02
-   klethal         klethal         0.221291          2.29117    
+   katm3           katm3           1.503937E-03     9.070706E-02
+   mitrate         mitrate         2.708589E-02      8.69401    
+   klethal         klethal         0.245885          2.49294    
+   phr             phr             0.225895         0.161468    
 
 
 
@@ -56,9 +86,10 @@
 
  Number of observations with non-zero weight =     1
  Parameter name    Group          Current value    Sensitivity
-   mitrate         mitrate         5.954319E-02      7.78614    
-   pcomplex        pcomplex        0.637811         7.950063E-02
-   klethal         klethal         0.221291          2.74440    
+   katm3           katm3           1.503937E-03     0.478498    
+   mitrate         mitrate         2.708589E-02      11.6563    
+   klethal         klethal         0.245885          3.48541    
+   phr             phr             0.225895         0.393059    
 
 
 
@@ -66,9 +97,10 @@
 
  Number of observations with non-zero weight =     1
  Parameter name    Group          Current value    Sensitivity
-   mitrate         mitrate         5.954319E-02      10.4586    
-   pcomplex        pcomplex        0.637811         9.946757E-02
-   klethal         klethal         0.221291          2.37677    
+   katm3           katm3           1.503937E-03     0.383152    
+   mitrate         mitrate         2.708589E-02      14.5816    
+   klethal         klethal         0.245885          3.86637    
+   phr             phr             0.225895         0.713969    
 
 
 
@@ -76,6 +108,7 @@
 
  Number of observations with non-zero weight =     4
  Parameter name    Group          Current value    Sensitivity
-   mitrate         mitrate         5.954319E-02      3.74643    
-   pcomplex        pcomplex        0.637811         4.605903E-02
-   klethal         klethal         0.221291          1.12133    
+   katm3           katm3           1.503937E-03     0.169042    
+   mitrate         mitrate         2.708589E-02      5.51861    
+   klethal         klethal         0.245885          1.48201    
+   phr             phr             0.225895         0.208088    

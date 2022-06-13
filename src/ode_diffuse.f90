@@ -342,7 +342,7 @@ integer :: ichemo, k, ict, neqn, i, kcell, im
 real(REAL_KIND) :: t, tend
 real(REAL_KIND) :: C(3*N1D+3), Csum
 real(REAL_KIND) :: timer1, timer2
-integer :: nmetabolites = 0     ! inhibiter drug
+integer :: nmetabolites     ! 0 ==> inhibiter drug
 ! Variables for RKC
 integer :: info(4), idid
 real(REAL_KIND) :: rtol, atol(1)
@@ -353,17 +353,20 @@ if (drug(idrug)%phase_dependent) then
 	return
 endif
 
+!write(*,*) 'DrugSolver: ',istep
 !write(nflog,*) 'DrugSolver: ',istep
 ict = 1 ! for now just a single cell type
 idrug_rkc = idrug
 CO2_rkc = Caverage(OXYGEN)
 
+nmetabolites = drug(idrug)%nmetabolites
 k = 0
-do im = 0,nmetabolites     ! parent inhibiter drug only
+do im = 0,nmetabolites
 	ichemo = iparent + im
 	if (.not.chemo(ichemo)%present) cycle
 	k = k+1
 	C(k) = Caverage(ichemo)		! IC 
+!	write(*,*) 'im,ichemo,k,C(k): ',im,ichemo,k,C(k)
 	do i = 1,N1D
 		k = k+1
 !		C(k) = Cdrug(im,i)		! EC
@@ -396,7 +399,7 @@ if (idid /= 1) then
 	ok = .false.
 	return
 endif
-!write(*,'(a,3e12.3)') 'IC: ',C(1),C(N1D+2)
+!write(*,'(a,3f12.8)') 'IC: ',C(1)   !,C(N1D+nmetabolites)
 
 ! This determines average cell concentrations, assumed the same for all cells
 ! Now put the concentrations into the cells 
@@ -420,7 +423,7 @@ do im = 0,nmetabolites
         cell_list(kcell)%Cin(ichemo) = Caverage(ichemo)
     enddo
 enddo
-!write(*,'(a,5f12.8)') 'EC: ',(Caverage(MAX_CHEMO+iparent+i),i=0,1)
+!write(*,'(a,5f12.8)') 'EC: ',(Caverage(MAX_CHEMO+iparent+i),i=0,nmetabolites)
 
 end subroutine
 
@@ -752,7 +755,7 @@ do it = 1,nt
 				    PI_factor = 2
 			    else
 !					PI_factor = 1 + (t - cp%S_start_time)/(cp%S_time - cp%S_start_time)
-                    PI_factor = 1 + cp%S_time/cp%S_duration
+!                    PI_factor = 1 + cp%S_time/cp%S_duration
 			    endif
 !				dCreact = dCreact*cp%dVdt/max_growthrate(ict)
 			    dCreact = 0.1*PI_factor*dCreact

@@ -15,7 +15,7 @@ Case dimensions:-
    Number of parameters                           :     4
    Number of adjustable parameters                :     4
    Number of parameter groups                     :     4
-   Number of observations                         :    64
+   Number of observations                         :    20
    Number of prior estimates                      :     0
 
 
@@ -32,29 +32,17 @@ Jacobian command line:-
 Model interface files:-
 
    Templates:
-      C01.tpl
-      C02.tpl
-      C03.tpl
-      C04.tpl
+      C6G.tpl
    for model input files:
-      C01.inp
-      C02.inp
-      C03.inp
-      C04.inp
+      C6G.inp
 
    (Parameter values written using double precision protocol.)
    (Decimal point always included.)
 
    Instruction files:
-      C01_out.ins
-      C02_out.ins
-      C03_out.ins
-      C04_out.ins
+      C6G_out.ins
    for reading model output files:
-      C01_out.dat
-      C02_out.dat
-      C03_out.dat
-      C04_out.dat
+      C6G_out.dat
 
 
 PEST-to-model message file:-
@@ -66,26 +54,26 @@ Derivatives calculation:-
 
 Param        Increment   Increment   Increment   Forward or   Multiplier  Method
 group        type                    low bound   central      (central)   (central)
-katm2        relative    1.0000E-02   none         switch       2.000     parabolic
+katm1        relative    1.0000E-02   none         switch       2.000     parabolic
 katm3        relative    1.0000E-02   none         switch       2.000     parabolic
-katr2        relative    1.0000E-02   none         switch       2.000     parabolic
-katr4        relative    1.0000E-02   none         switch       2.000     parabolic
+katr1        relative    1.0000E-02   none         switch       2.000     parabolic
+katr3        relative    1.0000E-02   none         switch       2.000     parabolic
 
 
 Parameter definitions:-
 
 Name         Trans-            Change       Initial        Lower          Upper
              formation         limit        value          bound          bound
-katm2        none              factor     7.600000E-02   4.000000E-02   0.100000    
-katm3        none              factor     0.300000       0.200000       0.500000    
-katr2        none              factor     5.000000E-03   2.000000E-03   1.000000E-02
-katr4        none              factor      1.00000       0.500000        2.00000    
+katm1        none              factor     3.000000E-05    0.00000       1.000000E-04
+katm3        none              factor     0.100000       1.000000E-03   0.200000    
+katr1        none              factor     0.100000       1.000000E-03   0.200000    
+katr3        none              factor     0.125000       1.000000E-02   0.200000    
 
 Name         Group          Scale         Offset        Model command number
-katm2        katm2         1.00000        0.00000            1
+katm1        katm1         1.00000        0.00000            1
 katm3        katm3         1.00000        0.00000            1
-katr2        katr2         1.00000        0.00000            1
-katr4        katr4         1.00000        0.00000            1
+katr1        katr1         1.00000        0.00000            1
+katr3        katr3         1.00000        0.00000            1
 
 
 Prior information:-
@@ -96,70 +84,26 @@ Prior information:-
 Observations:-
 
 Observation name        Observation       Weight       Group
- c01h08p0                1.38626          1.000       c01obgp     
- c01h08p1                34.9716          1.000       c01obgp     
- c01h08p2                36.9250          1.000       c01obgp     
- c01h08p3                26.7171          1.000       c01obgp     
- c01h12p0                1.21413          1.000       c01obgp     
- c01h12p1                30.7947          1.000       c01obgp     
- c01h12p2                39.6247          1.000       c01obgp     
- c01h12p3                28.3664          1.000       c01obgp     
- c01h18p0               0.959024          1.000       c01obgp     
- c01h18p1                36.7480          1.000       c01obgp     
- c01h18p2                41.3252          1.000       c01obgp     
- c01h18p3                20.9677          1.000       c01obgp     
- c01h24p0               0.798838          1.000       c01obgp     
- c01h24p1                28.4677          1.000       c01obgp     
- c01h24p2                45.0980          1.000       c01obgp     
- c01h24p3                25.6354          1.000       c01obgp     
- c02h08p0                2.22222          1.000       c02obgp     
- c02h08p1                34.8571          1.000       c02obgp     
- c02h08p2                35.3651          1.000       c02obgp     
- c02h08p3                27.5556          1.000       c02obgp     
- c02h12p0                1.94878          1.000       c02obgp     
- c02h12p1                31.3474          1.000       c02obgp     
- c02h12p2                38.8641          1.000       c02obgp     
- c02h12p3                27.8396          1.000       c02obgp     
- c02h18p0                1.55280          1.000       c02obgp     
- c02h18p1                35.5812          1.000       c02obgp     
- c02h18p2                42.5022          1.000       c02obgp     
- c02h18p3                20.3638          1.000       c02obgp     
- c02h24p0                1.30354          1.000       c02obgp     
- c02h24p1                26.8901          1.000       c02obgp     
- c02h24p2                45.6983          1.000       c02obgp     
- c02h24p3                26.1080          1.000       c02obgp     
- c03h08p0                3.36722          1.000       c03obgp     
- c03h08p1                34.8158          1.000       c03obgp     
- c03h08p2                34.1804          1.000       c03obgp     
- c03h08p3                27.6366          1.000       c03obgp     
- c03h12p0                2.96753          1.000       c03obgp     
- c03h12p1                31.3550          1.000       c03obgp     
- c03h12p2                38.0739          1.000       c03obgp     
- c03h12p3                27.6036          1.000       c03obgp     
- c03h18p0                2.38417          1.000       c03obgp     
- c03h18p1                34.0981          1.000       c03obgp     
- c03h18p2                43.4098          1.000       c03obgp     
- c03h18p3                20.1080          1.000       c03obgp     
- c03h24p0                2.01598          1.000       c03obgp     
- c03h24p1                25.8273          1.000       c03obgp     
- c03h24p2                45.0361          1.000       c03obgp     
- c03h24p3                27.1206          1.000       c03obgp     
- c04h08p0                3.96166          1.000       c04obgp     
- c04h08p1                34.3131          1.000       c04obgp     
- c04h08p2                33.3546          1.000       c04obgp     
- c04h08p3                28.3706          1.000       c04obgp     
- c04h12p0                3.49099          1.000       c04obgp     
- c04h12p1                30.4617          1.000       c04obgp     
- c04h12p2                38.1757          1.000       c04obgp     
- c04h12p3                27.8716          1.000       c04obgp     
- c04h18p0                2.81946          1.000       c04obgp     
- c04h18p1                32.8786          1.000       c04obgp     
- c04h18p2                44.2019          1.000       c04obgp     
- c04h18p3                20.1000          1.000       c04obgp     
- c04h24p0                2.39013          1.000       c04obgp     
- c04h24p1                24.8651          1.000       c04obgp     
- c04h24p2                44.6029          1.000       c04obgp     
- c04h24p3                28.1419          1.000       c04obgp     
+ c6gh04p1                27.3500          1.000       c6gobgp     
+ c6gh04p2                20.8000          1.000       c6gobgp     
+ c6gh04p3                51.4500          1.000       c6gobgp     
+ c6gh04p4               0.190000          1.000       c6gobgp     
+ c6gh08p1                26.2000          1.000       c6gobgp     
+ c6gh08p2                32.6000          1.000       c6gobgp     
+ c6gh08p3                40.6300          1.000       c6gobgp     
+ c6gh11p4               0.410000          1.000       c6gobgp     
+ c6gh11p1                31.1700          1.000       c6gobgp     
+ c6gh11p2                44.2300          1.000       c6gobgp     
+ c6gh11p3                24.1000          1.000       c6gobgp     
+ c6gh11p4               0.730000          1.000       c6gobgp     
+ c6gh18p1                65.0700          1.000       c6gobgp     
+ c6gh18p2                16.0700          1.000       c6gobgp     
+ c6gh18p3                18.0000          1.000       c6gobgp     
+ c6gh18p4                3.21000          1.000       c6gobgp     
+ c6gh24p1                63.7300          1.000       c6gobgp     
+ c6gh24p2                11.6300          1.000       c6gobgp     
+ c6gh24p3                23.9300          1.000       c6gobgp     
+ c6gh24p4               0.990000          1.000       c6gobgp     
 
 
 Control settings:-
@@ -175,7 +119,7 @@ Control settings:-
    Perform Broyden's update of Jacobian matrix                  : no
    Undertake observation re-referencing                         : no
 
-   Maximum  factor  parameter change (factor-limited changes)   :  1.5000
+   Maximum  factor  parameter change (factor-limited changes)   :  2.0000
    Maximum relative parameter change (relative-limited changes) : na
    Fraction of initial parameter values used in computing
    change limit for near-zero parameters                        : 1.00000E-03
@@ -212,546 +156,66 @@ File saving options: -
 
 
 INITIAL CONDITIONS: 
-   Sum of squared weighted residuals (ie phi)               =   41.656    
-   Contribution to phi from observation group "c01obgp"     =   10.088    
-   Contribution to phi from observation group "c02obgp"     =   16.326    
-   Contribution to phi from observation group "c03obgp"     =   11.536    
-   Contribution to phi from observation group "c04obgp"     =   3.7055    
+   Sum of squared weighted residuals (ie phi) =   6650.7    
 
       Current parameter values
-      katm2           7.600000E-02
-      katm3           0.300000    
-      katr2           5.000000E-03
-      katr4            1.00000    
+      katm1           3.000000E-05
+      katm3           0.100000    
+      katr1           0.100000    
+      katr3           0.125000    
 
 
 OPTIMISATION ITERATION NO.        : 1
    Model calls so far             : 1
-   Starting phi for this iteration                          :   41.656    
-   Contribution to phi from observation group "c01obgp"     :   10.088    
-   Contribution to phi from observation group "c02obgp"     :   16.326    
-   Contribution to phi from observation group "c03obgp"     :   11.536    
-   Contribution to phi from observation group "c04obgp"     :   3.7055    
+   Starting phi for this iteration:   6650.7    
+
+   Parameter "katm1" has no effect on observations.
+   Parameter "katm3" has no effect on observations.
 
        Lambda =   5.0000     ----->
-          Phi =   41.363      (  0.993 of starting phi)
+          Phi =   6644.2      (  0.999 of starting phi)
 
        Lambda =   2.5000     ----->
-          Phi =   41.428      (  0.995 of starting phi)
-
-       Lambda =   10.000     ----->
-          Phi =   41.169      (  0.988 of starting phi)
+          Phi =   6640.4      (  0.998 of starting phi)
 
    No more lambdas: relative phi reduction between lambdas less than 0.0300
-   Lowest phi this iteration:   41.169    
+   Lowest phi this iteration:   6640.4    
    Relative phi reduction between optimisation iterations less than 0.1000
    Switch to higher order derivatives calculation
 
       Current parameter values                 Previous parameter values
-      katm2           8.066257E-02             katm2            7.600000E-02
-      katm3           0.307048                 katm3            0.300000    
-      katr2           5.552431E-03             katr2            5.000000E-03
-      katr4           0.999632                 katr4             1.00000    
-   Maximum   factor change:  1.110     ["katr2"]
-   Maximum relative change: 0.1105     ["katr2"]
+      katm1           3.000000E-05             katm1            3.000000E-05
+      katm3           0.100000                 katm3            0.100000    
+      katr1           5.000000E-02             katr1            0.100000    
+      katr3           0.140940                 katr3            0.125000    
+   Maximum   factor change:  2.000     ["katr1"]
+   Maximum relative change: 0.5000     ["katr1"]
 
 
 OPTIMISATION ITERATION NO.        : 2
-   Model calls so far             : 8
-   Starting phi for this iteration                          :   41.169    
-   Contribution to phi from observation group "c01obgp"     :   8.9722    
-   Contribution to phi from observation group "c02obgp"     :   16.576    
-   Contribution to phi from observation group "c03obgp"     :   12.089    
-   Contribution to phi from observation group "c04obgp"     :   3.5309    
-
-       Lambda =   10.000     ----->
-          Phi =   39.094      (  0.950 of starting phi)
-
-       Lambda =   5.0000     ----->
-          Phi =   37.936      (  0.921 of starting phi)
-
-   No more lambdas: relative phi reduction between lambdas less than 0.0300
-   Lowest phi this iteration:   37.936    
-
-      Current parameter values                 Previous parameter values
-      katm2           7.295295E-02             katm2            8.066257E-02
-      katm3           0.316016                 katm3            0.307048    
-      katr2           5.339919E-03             katr2            5.552431E-03
-      katr4            1.00060                 katr4            0.999632    
-   Maximum   factor change:  1.106     ["katm2"]
-   Maximum relative change: 9.5579E-02 ["katm2"]
-
-
-OPTIMISATION ITERATION NO.        : 3
-   Model calls so far             : 18
-   Starting phi for this iteration                          :   37.936    
-   Contribution to phi from observation group "c01obgp"     :   9.8336    
-   Contribution to phi from observation group "c02obgp"     :   15.833    
-   Contribution to phi from observation group "c03obgp"     :   7.0046    
-   Contribution to phi from observation group "c04obgp"     :   5.2647    
-
-       Lambda =   2.5000     ----->
-          Phi =   25.379      (  0.669 of starting phi)
+   Model calls so far             : 7
+   Starting phi for this iteration:   6640.4    
 
        Lambda =   1.2500     ----->
-          Phi =   24.897      (  0.656 of starting phi)
-
-   No more lambdas: relative phi reduction between lambdas less than 0.0300
-   Lowest phi this iteration:   24.897    
-
-      Current parameter values                 Previous parameter values
-      katm2           6.514487E-02             katm2            7.295295E-02
-      katm3           0.337520                 katm3            0.316016    
-      katr2           5.499092E-03             katr2            5.339919E-03
-      katr4           0.990916                 katr4             1.00060    
-   Maximum   factor change:  1.120     ["katm2"]
-   Maximum relative change: 0.1070     ["katm2"]
-
-
-OPTIMISATION ITERATION NO.        : 4
-   Model calls so far             : 28
-   Starting phi for this iteration                          :   24.897    
-   Contribution to phi from observation group "c01obgp"     :   2.7562    
-   Contribution to phi from observation group "c02obgp"     :   13.276    
-   Contribution to phi from observation group "c03obgp"     :   5.7378    
-   Contribution to phi from observation group "c04obgp"     :   3.1273    
+          Phi =   6640.8      (  1.000 times starting phi)
 
        Lambda =  0.62500     ----->
-          Phi =   11.968      (  0.481 of starting phi)
-
-       Lambda =  0.31250     ----->
-          Phi =   11.172      (  0.449 of starting phi)
-
-       Lambda =  0.15625     ----->
-          Phi =   11.916      (  0.479 of starting phi)
-
-   No more lambdas: phi rising
-   Lowest phi this iteration:   11.172    
-
-      Current parameter values                 Previous parameter values
-      katm2           6.087308E-02             katm2            6.514487E-02
-      katm3           0.358569                 katm3            0.337520    
-      katr2           6.268019E-03             katr2            5.499092E-03
-      katr4           0.931322                 katr4            0.990916    
-   Maximum   factor change:  1.140     ["katr2"]
-   Maximum relative change: 0.1398     ["katr2"]
-
-
-OPTIMISATION ITERATION NO.        : 5
-   Model calls so far             : 39
-   Starting phi for this iteration                          :   11.172    
-   Contribution to phi from observation group "c01obgp"     :   2.2597    
-   Contribution to phi from observation group "c02obgp"     :   3.5648    
-   Contribution to phi from observation group "c03obgp"     :   2.5619    
-   Contribution to phi from observation group "c04obgp"     :   2.7859    
-
-       Lambda =  0.15625     ----->
-          Phi =   8.4182      (  0.753 of starting phi)
-
-       Lambda =  7.81250E-02 ----->
-          Phi =   8.4182      (  0.753 of starting phi)
+          Phi =   6640.8      (  1.000 times starting phi)
 
    No more lambdas: relative phi reduction between lambdas less than 0.0300
-   Lowest phi this iteration:   8.4182    
+   Lowest phi this iteration:   6640.8    
 
       Current parameter values                 Previous parameter values
-      katm2           6.103996E-02             katm2            6.087308E-02
-      katm3           0.394451                 katm3            0.358569    
-      katr2           6.297149E-03             katr2            6.268019E-03
-      katr4           0.929232                 katr4            0.931322    
-   Maximum   factor change:  1.100     ["katm3"]
-   Maximum relative change: 0.1001     ["katm3"]
-
-
-OPTIMISATION ITERATION NO.        : 6
-   Model calls so far             : 49
-   Starting phi for this iteration                          :   8.4182    
-   Contribution to phi from observation group "c01obgp"     :   1.4227    
-   Contribution to phi from observation group "c02obgp"     :   2.2940    
-   Contribution to phi from observation group "c03obgp"     :   1.9775    
-   Contribution to phi from observation group "c04obgp"     :   2.7241    
-
-       Lambda =  7.81250E-02 ----->
-          Phi =   5.7931      (  0.688 of starting phi)
-
-       Lambda =  3.90625E-02 ----->
-          Phi =   5.7931      (  0.688 of starting phi)
-
-   No more lambdas: relative phi reduction between lambdas less than 0.0300
-   Lowest phi this iteration:   5.7931    
-
-      Current parameter values                 Previous parameter values
-      katm2           6.030311E-02             katm2            6.103996E-02
-      katm3           0.406577                 katm3            0.394451    
-      katr2           6.312113E-03             katr2            6.297149E-03
-      katr4           0.928172                 katr4            0.929232    
-   Maximum   factor change:  1.031     ["katm3"]
-   Maximum relative change: 3.0743E-02 ["katm3"]
-
-
-OPTIMISATION ITERATION NO.        : 7
-   Model calls so far             : 59
-   Starting phi for this iteration                          :   5.7931    
-   Contribution to phi from observation group "c01obgp"     :   1.1611    
-   Contribution to phi from observation group "c02obgp"     :   1.5945    
-   Contribution to phi from observation group "c03obgp"     :   1.6164    
-   Contribution to phi from observation group "c04obgp"     :   1.4211    
-
-       Lambda =  3.90625E-02 ----->
-          Phi =   2.2200      (  0.383 of starting phi)
-
-       Lambda =  1.95313E-02 ----->
-          Phi =   2.2200      (  0.383 of starting phi)
-
-   No more lambdas: relative phi reduction between lambdas less than 0.0300
-   Lowest phi this iteration:   2.2200    
-
-      Current parameter values                 Previous parameter values
-      katm2           5.898513E-02             katm2            6.030311E-02
-      katm3           0.419590                 katm3            0.406577    
-      katr2           6.222799E-03             katr2            6.312113E-03
-      katr4           0.927629                 katr4            0.928172    
-   Maximum   factor change:  1.032     ["katm3"]
-   Maximum relative change: 3.2006E-02 ["katm3"]
-
-
-OPTIMISATION ITERATION NO.        : 8
-   Model calls so far             : 69
-   Starting phi for this iteration                          :   2.2200    
-   Contribution to phi from observation group "c01obgp"     :  0.89811    
-   Contribution to phi from observation group "c02obgp"     :  0.60002    
-   Contribution to phi from observation group "c03obgp"     :  0.38012    
-   Contribution to phi from observation group "c04obgp"     :  0.34177    
-
-       Lambda =  1.95313E-02 ----->
-          Phi =   1.4448      (  0.651 of starting phi)
-
-       Lambda =  9.76563E-03 ----->
-          Phi =   1.4385      (  0.648 of starting phi)
-
-   No more lambdas: relative phi reduction between lambdas less than 0.0300
-   Lowest phi this iteration:   1.4385    
-
-      Current parameter values                 Previous parameter values
-      katm2           5.680987E-02             katm2            5.898513E-02
-      katm3           0.418769                 katm3            0.419590    
-      katr2           5.974231E-03             katr2            6.222799E-03
-      katr4           0.943288                 katr4            0.927629    
-   Maximum   factor change:  1.042     ["katr2"]
-   Maximum relative change: 3.9945E-02 ["katr2"]
-
-
-OPTIMISATION ITERATION NO.        : 9
-   Model calls so far             : 79
-   Starting phi for this iteration                          :   1.4385    
-   Contribution to phi from observation group "c01obgp"     :  0.75925    
-   Contribution to phi from observation group "c02obgp"     :  0.11511    
-   Contribution to phi from observation group "c03obgp"     :  0.28336    
-   Contribution to phi from observation group "c04obgp"     :  0.28078    
-
-       Lambda =  4.88281E-03 ----->
-          Phi =   1.0593      (  0.736 of starting phi)
-
-       Lambda =  2.44141E-03 ----->
-          Phi =   1.0593      (  0.736 of starting phi)
-
-   No more lambdas: relative phi reduction between lambdas less than 0.0300
-   Lowest phi this iteration:   1.0593    
-
-      Current parameter values                 Previous parameter values
-      katm2           5.693093E-02             katm2            5.680987E-02
-      katm3           0.424708                 katm3            0.418769    
-      katr2           5.801268E-03             katr2            5.974231E-03
-      katr4           0.949639                 katr4            0.943288    
-   Maximum   factor change:  1.030     ["katr2"]
-   Maximum relative change: 2.8952E-02 ["katr2"]
-
-
-OPTIMISATION ITERATION NO.        : 10
-   Model calls so far             : 89
-   Starting phi for this iteration                          :   1.0593    
-   Contribution to phi from observation group "c01obgp"     :  0.57859    
-   Contribution to phi from observation group "c02obgp"     :  8.84770E-02
-   Contribution to phi from observation group "c03obgp"     :  0.22291    
-   Contribution to phi from observation group "c04obgp"     :  0.16934    
-
-       Lambda =  2.44141E-03 ----->
-          Phi =  0.59792      (  0.564 of starting phi)
-
-       Lambda =  1.22070E-03 ----->
-          Phi =  0.59792      (  0.564 of starting phi)
-
-   No more lambdas: relative phi reduction between lambdas less than 0.0300
-   Lowest phi this iteration:  0.59792    
-
-      Current parameter values                 Previous parameter values
-      katm2           5.570276E-02             katm2            5.693093E-02
-      katm3           0.422168                 katm3            0.424708    
-      katr2           5.748032E-03             katr2            5.801268E-03
-      katr4           0.952216                 katr4            0.949639    
-   Maximum   factor change:  1.022     ["katm2"]
-   Maximum relative change: 2.1573E-02 ["katm2"]
-
-
-OPTIMISATION ITERATION NO.        : 11
-   Model calls so far             : 99
-   Starting phi for this iteration                          :  0.59792    
-   Contribution to phi from observation group "c01obgp"     :  9.43303E-02
-   Contribution to phi from observation group "c02obgp"     :  8.01367E-02
-   Contribution to phi from observation group "c03obgp"     :  0.26296    
-   Contribution to phi from observation group "c04obgp"     :  0.16049    
-
-       Lambda =  1.22070E-03 ----->
-          Phi =  0.73283      (  1.226 times starting phi)
-
-       Lambda =  6.10352E-04 ----->
-          Phi =  0.73283      (  1.226 times starting phi)
-
-   No more lambdas: relative phi reduction between lambdas less than 0.0300
-   Lowest phi this iteration:  0.73283    
-
-      Current parameter values                 Previous parameter values
-      katm2           5.585173E-02             katm2            5.570276E-02
-      katm3           0.420575                 katm3            0.422168    
-      katr2           5.756165E-03             katr2            5.748032E-03
-      katr4           0.953155                 katr4            0.952216    
-   Maximum   factor change:  1.004     ["katm3"]
-   Maximum relative change: 3.7752E-03 ["katm3"]
-
-
-OPTIMISATION ITERATION NO.        : 12
-   Model calls so far             : 109
-   Starting phi for this iteration                          :  0.73283    
-   Contribution to phi from observation group "c01obgp"     :  0.40417    
-   Contribution to phi from observation group "c02obgp"     :  6.06240E-02
-   Contribution to phi from observation group "c03obgp"     :  8.26735E-02
-   Contribution to phi from observation group "c04obgp"     :  0.18536    
-
-       Lambda =  6.10352E-04 ----->
-          Phi =  0.33443      (  0.456 of starting phi)
-
-       Lambda =  3.05176E-04 ----->
-          Phi =  0.33443      (  0.456 of starting phi)
-
-   No more lambdas: relative phi reduction between lambdas less than 0.0300
-   Lowest phi this iteration:  0.33443    
-
-      Current parameter values                 Previous parameter values
-      katm2           5.409037E-02             katm2            5.585173E-02
-      katm3           0.415788                 katm3            0.420575    
-      katr2           5.707591E-03             katr2            5.756165E-03
-      katr4           0.953576                 katr4            0.953155    
-   Maximum   factor change:  1.033     ["katm2"]
-   Maximum relative change: 3.1536E-02 ["katm2"]
-
-
-OPTIMISATION ITERATION NO.        : 13
-   Model calls so far             : 119
-   Starting phi for this iteration                          :  0.33443    
-   Contribution to phi from observation group "c01obgp"     :  7.88018E-02
-   Contribution to phi from observation group "c02obgp"     :  6.50437E-02
-   Contribution to phi from observation group "c03obgp"     :  7.40095E-02
-   Contribution to phi from observation group "c04obgp"     :  0.11658    
-
-       Lambda =  3.05176E-04 ----->
-          Phi =  0.30646      (  0.916 of starting phi)
-
-       Lambda =  1.52588E-04 ----->
-          Phi =  0.30646      (  0.916 of starting phi)
-
-   No more lambdas: relative phi reduction between lambdas less than 0.0300
-   Lowest phi this iteration:  0.30646    
-
-      Current parameter values                 Previous parameter values
-      katm2           5.400236E-02             katm2            5.409037E-02
-      katm3           0.415131                 katm3            0.415788    
-      katr2           5.636792E-03             katr2            5.707591E-03
-      katr4           0.956116                 katr4            0.953576    
-   Maximum   factor change:  1.013     ["katr2"]
-   Maximum relative change: 1.2404E-02 ["katr2"]
-
-
-OPTIMISATION ITERATION NO.        : 14
-   Model calls so far             : 129
-   Starting phi for this iteration                          :  0.30646    
-   Contribution to phi from observation group "c01obgp"     :  7.88018E-02
-   Contribution to phi from observation group "c02obgp"     :  6.50437E-02
-   Contribution to phi from observation group "c03obgp"     :  4.60375E-02
-   Contribution to phi from observation group "c04obgp"     :  0.11658    
-
-       Lambda =  1.52588E-04 ----->
-          Phi =  0.19253      (  0.628 of starting phi)
-
-       Lambda =  7.62939E-05 ----->
-          Phi =  0.19253      (  0.628 of starting phi)
-
-   No more lambdas: relative phi reduction between lambdas less than 0.0300
-   Lowest phi this iteration:  0.19253    
-
-      Current parameter values                 Previous parameter values
-      katm2           5.418000E-02             katm2            5.400236E-02
-      katm3           0.416208                 katm3            0.415131    
-      katr2           5.430745E-03             katr2            5.636792E-03
-      katr4           0.964855                 katr4            0.956116    
-   Maximum   factor change:  1.038     ["katr2"]
-   Maximum relative change: 3.6554E-02 ["katr2"]
-
-
-OPTIMISATION ITERATION NO.        : 15
-   Model calls so far             : 139
-   Starting phi for this iteration                          :  0.19253    
-   Contribution to phi from observation group "c01obgp"     :  2.78130E-02
-   Contribution to phi from observation group "c02obgp"     :  4.76199E-02
-   Contribution to phi from observation group "c03obgp"     :  7.92295E-02
-   Contribution to phi from observation group "c04obgp"     :  3.78679E-02
-
-       Lambda =  7.62939E-05 ----->
-          Phi =  0.23896      (  1.241 times starting phi)
-
-       Lambda =  3.81470E-05 ----->
-          Phi =  0.23896      (  1.241 times starting phi)
-
-   No more lambdas: relative phi reduction between lambdas less than 0.0300
-   Lowest phi this iteration:  0.23896    
-
-      Current parameter values                 Previous parameter values
-      katm2           5.423975E-02             katm2            5.418000E-02
-      katm3           0.416852                 katm3            0.416208    
-      katr2           5.351472E-03             katr2            5.430745E-03
-      katr4           0.976604                 katr4            0.964855    
-   Maximum   factor change:  1.015     ["katr2"]
-   Maximum relative change: 1.4597E-02 ["katr2"]
-
-
-OPTIMISATION ITERATION NO.        : 16
-   Model calls so far             : 149
-   Starting phi for this iteration                          :  0.23896    
-   Contribution to phi from observation group "c01obgp"     :  7.55600E-02
-   Contribution to phi from observation group "c02obgp"     :  4.76199E-02
-   Contribution to phi from observation group "c03obgp"     :  2.27815E-02
-   Contribution to phi from observation group "c04obgp"     :  9.29956E-02
-
-       Lambda =  3.81470E-05 ----->
-          Phi =  0.34887      (  1.460 times starting phi)
-
-       Lambda =  1.90735E-05 ----->
-          Phi =  0.34887      (  1.460 times starting phi)
-
-   No more lambdas: relative phi reduction between lambdas less than 0.0300
-   Lowest phi this iteration:  0.34887    
-
-      Current parameter values                 Previous parameter values
-      katm2           5.435159E-02             katm2            5.423975E-02
-      katm3           0.414918                 katm3            0.416852    
-      katr2           5.240183E-03             katr2            5.351472E-03
-      katr4           0.979737                 katr4            0.976604    
-   Maximum   factor change:  1.021     ["katr2"]
-   Maximum relative change: 2.0796E-02 ["katr2"]
-
-
-OPTIMISATION ITERATION NO.        : 17
-   Model calls so far             : 159
-   Starting phi for this iteration                          :  0.34887    
-   Contribution to phi from observation group "c01obgp"     :  0.28861    
-   Contribution to phi from observation group "c02obgp"     :  3.51038E-02
-   Contribution to phi from observation group "c03obgp"     :  1.72815E-02
-   Contribution to phi from observation group "c04obgp"     :  7.87640E-03
-
-       Lambda =  1.90735E-05 ----->
-          Phi =  4.19640E-02  (  0.120 of starting phi)
-
-   No more lambdas: phi is less than 0.3000 of starting phi
-   Lowest phi this iteration:  4.19640E-02
-
-      Current parameter values                 Previous parameter values
-      katm2           5.261777E-02             katm2            5.435159E-02
-      katm3           0.409918                 katm3            0.414918    
-      katr2           5.199023E-03             katr2            5.240183E-03
-      katr4           0.985074                 katr4            0.979737    
-   Maximum   factor change:  1.033     ["katm2"]
-   Maximum relative change: 3.1900E-02 ["katm2"]
-
-
-OPTIMISATION ITERATION NO.        : 18
-   Model calls so far             : 168
-   Starting phi for this iteration                          :  4.19640E-02
-   Contribution to phi from observation group "c01obgp"     :  1.09466E-02
-   Contribution to phi from observation group "c02obgp"     :  1.29028E-02
-   Contribution to phi from observation group "c03obgp"     :  1.10095E-02
-   Contribution to phi from observation group "c04obgp"     :  7.10500E-03
-
-       Lambda =  9.53674E-06 ----->
-          Phi =  5.00245E-02  (  1.192 times starting phi)
-
-       Lambda =  4.76837E-06 ----->
-          Phi =  5.00245E-02  (  1.192 times starting phi)
-
-   No more lambdas: relative phi reduction between lambdas less than 0.0300
-   Lowest phi this iteration:  5.00245E-02
-
-      Current parameter values                 Previous parameter values
-      katm2           5.222622E-02             katm2            5.261777E-02
-      katm3           0.408164                 katm3            0.409918    
-      katr2           5.161668E-03             katr2            5.199023E-03
-      katr4           0.987467                 katr4            0.985074    
-   Maximum   factor change:  1.007     ["katm2"]
-   Maximum relative change: 7.4414E-03 ["katm2"]
-
-
-OPTIMISATION ITERATION NO.        : 19
-   Model calls so far             : 178
-   Starting phi for this iteration                          :  5.00245E-02
-   Contribution to phi from observation group "c01obgp"     :  1.09466E-02
-   Contribution to phi from observation group "c02obgp"     :  1.29028E-02
-   Contribution to phi from observation group "c03obgp"     :  1.90700E-02
-   Contribution to phi from observation group "c04obgp"     :  7.10500E-03
-
-       Lambda =  4.76837E-06 ----->
-          Phi =  3.59106E-02  (  0.718 of starting phi)
-
-       Lambda =  2.38419E-06 ----->
-          Phi =  3.59106E-02  (  0.718 of starting phi)
-
-   No more lambdas: relative phi reduction between lambdas less than 0.0300
-   Lowest phi this iteration:  3.59106E-02
-
-      Current parameter values                 Previous parameter values
-      katm2           5.181848E-02             katm2            5.222622E-02
-      katm3           0.406347                 katm3            0.408164    
-      katr2           5.120274E-03             katr2            5.161668E-03
-      katr4           0.989275                 katr4            0.987467    
-   Maximum   factor change:  1.008     ["katr2"]
-   Maximum relative change: 8.0193E-03 ["katr2"]
-
-
-OPTIMISATION ITERATION NO.        : 20
-   Model calls so far             : 188
-   Starting phi for this iteration                          :  3.59106E-02
-   Contribution to phi from observation group "c01obgp"     :  6.84227E-03
-   Contribution to phi from observation group "c02obgp"     :  1.29028E-02
-   Contribution to phi from observation group "c03obgp"     :  1.32010E-02
-   Contribution to phi from observation group "c04obgp"     :  2.96450E-03
-
-       Lambda =  2.38419E-06 ----->
-          Phi =  3.59106E-02  (  1.000 times starting phi)
-
-       Lambda =  1.19209E-06 ----->
-          Phi =  3.59106E-02  (  1.000 times starting phi)
-
-   No more lambdas: relative phi reduction between lambdas less than 0.0300
-   Lowest phi this iteration:  3.59106E-02
-
-      Current parameter values                 Previous parameter values
-      katm2           5.148722E-02             katm2            5.181848E-02
-      katm3           0.405104                 katm3            0.406347    
-      katr2           5.096887E-03             katr2            5.120274E-03
-      katr4           0.991453                 katr4            0.989275    
-   Maximum   factor change:  1.006     ["katm2"]
-   Maximum relative change: 6.3928E-03 ["katm2"]
-
-   Optimisation complete: relative parameter change less than 1.0000E-02
-                          over  3 successive iterations.
-   Total model calls:    198
+      katm1           6.000000E-05             katm1            3.000000E-05
+      katm3           8.447795E-02             katm3            0.100000    
+      katr1           5.000000E-02             katr1            5.000000E-02
+      katr3           0.140940                 katr3            0.140940    
+   Maximum   factor change:  2.000     ["katm1"]
+   Maximum relative change:  1.000     ["katm1"]
+
+   Optimisation complete: the  3 lowest phi's are within a relative distance
+                          of eachother of 1.000E-02
+   Total model calls:     17
 
    The model has been run one final time using best parameters. 
    Thus all model input files contain best parameter values, and model 
@@ -760,19 +224,17 @@ OPTIMISATION ITERATION NO.        : 20
 
                             OPTIMISATION RESULTS
 
+Covariance matrix and parameter confidence intervals cannot be determined:-
+Normal matrix nearly singular; cannot be inverted.
+
 
 Parameters ----->
 
-Parameter        Estimated         95% percent confidence limits
-                 value             lower limit       upper limit
- katm2          5.181848E-02       5.158281E-02      5.205415E-02
- katm3          0.406347           0.405181          0.407513    
- katr2          5.120274E-03       5.091608E-03      5.148941E-03
- katr4          0.989275           0.987500          0.991051    
-
-Note: confidence limits provide only an indication of parameter uncertainty.
-      They rely on a linearity assumption which  may not extend as far in 
-      parameter space as the confidence limits themselves - see PEST manual.
+Parameter      Estimated value
+ katm1          3.000000E-05
+ katm3          0.100000    
+ katr1          5.000000E-02
+ katr3          0.140940    
 
 See file drm_monolayer.sen for parameter sensitivities.
 
@@ -781,70 +243,26 @@ Observations ----->
 
 Observation            Measured       Calculated     Residual       Weight     Group
                        value          value
-c01h08p0               1.38626        1.38626        0.00000        1.000      c01obgp     
-c01h08p1               34.9716        34.9716        0.00000        1.000      c01obgp     
-c01h08p2               36.9250        36.9250        0.00000        1.000      c01obgp     
-c01h08p3               26.7171        26.7171        0.00000        1.000      c01obgp     
-c01h12p0               1.21413        1.21413        0.00000        1.000      c01obgp     
-c01h12p1               30.7947        30.7947        0.00000        1.000      c01obgp     
-c01h12p2               39.6247        39.6247        0.00000        1.000      c01obgp     
-c01h12p3               28.3664        28.3664        0.00000        1.000      c01obgp     
-c01h18p0              0.959024       0.959442      -4.180000E-04    1.000      c01obgp     
-c01h18p1               36.7480        36.7205       2.750000E-02    1.000      c01obgp     
-c01h18p2               41.3252        41.2996       2.560000E-02    1.000      c01obgp     
-c01h18p3               20.9677        21.0205      -5.280000E-02    1.000      c01obgp     
-c01h24p0              0.798838       0.798838        0.00000        1.000      c01obgp     
-c01h24p1               28.4677        28.4677        0.00000        1.000      c01obgp     
-c01h24p2               45.0980        45.1344      -3.640000E-02    1.000      c01obgp     
-c01h24p3               25.6354        25.5991       3.630000E-02    1.000      c01obgp     
-c02h08p0               2.22222        2.22222        0.00000        1.000      c02obgp     
-c02h08p1               34.8571        34.8571        0.00000        1.000      c02obgp     
-c02h08p2               35.3651        35.3651        0.00000        1.000      c02obgp     
-c02h08p3               27.5556        27.5556        0.00000        1.000      c02obgp     
-c02h12p0               1.94878        1.94878        0.00000        1.000      c02obgp     
-c02h12p1               31.3474        31.4031      -5.570000E-02    1.000      c02obgp     
-c02h12p2               38.8641        38.8085       5.560000E-02    1.000      c02obgp     
-c02h12p3               27.8396        27.8396        0.00000        1.000      c02obgp     
-c02h18p0               1.55280        1.55280        0.00000        1.000      c02obgp     
-c02h18p1               35.5812        35.6256      -4.440000E-02    1.000      c02obgp     
-c02h18p2               42.5022        42.4579       4.430000E-02    1.000      c02obgp     
-c02h18p3               20.3638        20.3638        0.00000        1.000      c02obgp     
-c02h24p0               1.30354        1.30354        0.00000        1.000      c02obgp     
-c02h24p1               26.8901        26.9274      -3.730000E-02    1.000      c02obgp     
-c02h24p2               45.6983        45.6611       3.720000E-02    1.000      c02obgp     
-c02h24p3               26.1080        26.1080        0.00000        1.000      c02obgp     
-c03h08p0               3.36722        3.36722        0.00000        1.000      c03obgp     
-c03h08p1               34.8158        34.8158        0.00000        1.000      c03obgp     
-c03h08p2               34.1804        34.1804        0.00000        1.000      c03obgp     
-c03h08p3               27.6366        27.6366        0.00000        1.000      c03obgp     
-c03h12p0               2.96753        2.96753        0.00000        1.000      c03obgp     
-c03h12p1               31.3550        31.2990       5.600000E-02    1.000      c03obgp     
-c03h12p2               38.0739        38.1299      -5.600000E-02    1.000      c03obgp     
-c03h12p3               27.6036        27.6036        0.00000        1.000      c03obgp     
-c03h18p0               2.38417        2.38417        0.00000        1.000      c03obgp     
-c03h18p1               34.0981        34.1430      -4.490000E-02    1.000      c03obgp     
-c03h18p2               43.4098        43.3648       4.500000E-02    1.000      c03obgp     
-c03h18p3               20.1080        20.1080        0.00000        1.000      c03obgp     
-c03h24p0               2.01598        2.01598        0.00000        1.000      c03obgp     
-c03h24p1               25.8273        25.8273        0.00000        1.000      c03obgp     
-c03h24p2               45.0361        44.9981       3.800000E-02    1.000      c03obgp     
-c03h24p3               27.1206        27.1586      -3.800000E-02    1.000      c03obgp     
-c04h08p0               3.96166        3.96166        0.00000        1.000      c04obgp     
-c04h08p1               34.3131        34.3131        0.00000        1.000      c04obgp     
-c04h08p2               33.3546        33.3546        0.00000        1.000      c04obgp     
-c04h08p3               28.3706        28.3706        0.00000        1.000      c04obgp     
-c04h12p0               3.49099        3.49099        0.00000        1.000      c04obgp     
-c04h12p1               30.4617        30.4617        0.00000        1.000      c04obgp     
-c04h12p2               38.1757        38.1757        0.00000        1.000      c04obgp     
-c04h12p3               27.8716        27.8716        0.00000        1.000      c04obgp     
-c04h18p0               2.81946        2.81946        0.00000        1.000      c04obgp     
-c04h18p1               32.8786        32.8786        0.00000        1.000      c04obgp     
-c04h18p2               44.2019        44.2019        0.00000        1.000      c04obgp     
-c04h18p3               20.1000        20.1000        0.00000        1.000      c04obgp     
-c04h24p0               2.39013        2.39013        0.00000        1.000      c04obgp     
-c04h24p1               24.8651        24.9036      -3.850000E-02    1.000      c04obgp     
-c04h24p2               44.6029        44.5644       3.850000E-02    1.000      c04obgp     
-c04h24p3               28.1419        28.1419        0.00000        1.000      c04obgp     
+c6gh04p1               27.3500        35.7093       -8.35930        1.000      c6gobgp     
+c6gh04p2               20.8000        42.2082       -21.4082        1.000      c6gobgp     
+c6gh04p3               51.4500        16.9811        34.4689        1.000      c6gobgp     
+c6gh04p4              0.190000        2.51572       -2.32572        1.000      c6gobgp     
+c6gh08p1               26.2000        39.3325       -13.1325        1.000      c6gobgp     
+c6gh08p2               32.6000        41.7759       -9.17590        1.000      c6gobgp     
+c6gh08p3               40.6300        14.6007        26.0293        1.000      c6gobgp     
+c6gh11p4              0.410000        2.08582       -1.67582        1.000      c6gobgp     
+c6gh11p1               31.1700        38.8235       -7.65350        1.000      c6gobgp     
+c6gh11p2               44.2300        44.0107       0.219300        1.000      c6gobgp     
+c6gh11p3               24.1000        13.3690        10.7310        1.000      c6gobgp     
+c6gh11p4              0.730000        1.81818       -1.08818        1.000      c6gobgp     
+c6gh18p1               65.0700        34.1681        30.9019        1.000      c6gobgp     
+c6gh18p2               16.0700        48.0051       -31.9351        1.000      c6gobgp     
+c6gh18p3               18.0000        14.3888        3.61120        1.000      c6gobgp     
+c6gh18p4               3.21000        1.86757        1.34243        1.000      c6gobgp     
+c6gh24p1               63.7300        36.3979        27.3321        1.000      c6gobgp     
+c6gh24p2               11.6300        43.6021       -31.9721        1.000      c6gobgp     
+c6gh24p3               23.9300        17.0497        6.88030        1.000      c6gobgp     
+c6gh24p4              0.990000        1.68096      -0.690960        1.000      c6gobgp     
 
 See file drm_monolayer.res for more details of residuals in graph-ready format.
 
@@ -853,27 +271,23 @@ See file drm_monolayer.seo for composite observation sensitivities.
 
 Objective function ----->
 
-  Sum of squared weighted residuals (ie phi)                =  3.59106E-02
-  Contribution to phi from observation group "c01obgp"      =  6.84227E-03
-  Contribution to phi from observation group "c02obgp"      =  1.29028E-02
-  Contribution to phi from observation group "c03obgp"      =  1.32010E-02
-  Contribution to phi from observation group "c04obgp"      =  2.96450E-03
+  Sum of squared weighted residuals (ie phi)                =   6640.    
 
 
 Correlation Coefficient ----->
 
-  Correlation coefficient                                   =   1.0000    
+  Correlation coefficient                                   =  0.51005    
 
 
 Analysis of residuals ----->
 
   All residuals:-
-     Number of residuals with non-zero weight                       =    64
-     Mean value of non-zero weighted residuals                      = -6.5312E-06
-     Maximum weighted residual [observation "c03h12p1"]             =  5.6000E-02
-     Minimum weighted residual [observation "c03h12p2"]             = -5.6000E-02
-     Standard variance of weighted residuals                        =  5.9851E-04
-     Standard error of weighted residuals                           =  2.4464E-02
+     Number of residuals with non-zero weight                       =    20
+     Mean value of non-zero weighted residuals                      =  0.6050    
+     Maximum weighted residual [observation "c6gh04p3"]             =   34.47    
+     Minimum weighted residual [observation "c6gh24p2"]             =  -31.97    
+     Standard variance of weighted residuals                        =   415.0    
+     Standard error of weighted residuals                           =   20.37    
 
      Note: the above variance was obtained by dividing the objective 
      function by the number of system degrees of freedom (ie. number of 
@@ -883,86 +297,7 @@ Analysis of residuals ----->
      the number of observations with non-zero weight plus the number of 
      prior information items with non-zero weight.
 
-  Residuals for observation group "c01obgp":-
-     Number of residuals with non-zero weight                       =    16
-     Mean value of non-zero weighted residuals                      = -1.3625E-05
-     Maximum weighted residual [observation "c01h24p3"]             =  3.6300E-02
-     Minimum weighted residual [observation "c01h18p3"]             = -5.2800E-02
-     "Variance" of weighted residuals                               =  4.2764E-04
-     "Standard error" of weighted residuals                         =  2.0680E-02
 
-     Note: the above "variance" was obtained by dividing the sum of squared 
-     residuals by the number of items with non-zero weight.
+Covariance and other statistical matrices cannot be determined:-
+Normal matrix nearly singular; cannot be inverted.
 
-  Residuals for observation group "c02obgp":-
-     Number of residuals with non-zero weight                       =    16
-     Mean value of non-zero weighted residuals                      = -1.8750E-05
-     Maximum weighted residual [observation "c02h12p2"]             =  5.5600E-02
-     Minimum weighted residual [observation "c02h12p1"]             = -5.5700E-02
-     "Variance" of weighted residuals                               =  8.0643E-04
-     "Standard error" of weighted residuals                         =  2.8398E-02
-
-     Note: the above "variance" was obtained by dividing the sum of squared 
-     residuals by the number of items with non-zero weight.
-
-  Residuals for observation group "c03obgp":-
-     Number of residuals with non-zero weight                       =    16
-     Mean value of non-zero weighted residuals                      =  6.2500E-06
-     Maximum weighted residual [observation "c03h12p1"]             =  5.6000E-02
-     Minimum weighted residual [observation "c03h12p2"]             = -5.6000E-02
-     "Variance" of weighted residuals                               =  8.2506E-04
-     "Standard error" of weighted residuals                         =  2.8724E-02
-
-     Note: the above "variance" was obtained by dividing the sum of squared 
-     residuals by the number of items with non-zero weight.
-
-  Residuals for observation group "c04obgp":-
-     Number of residuals with non-zero weight                       =    16
-     Mean value of non-zero weighted residuals                      =   0.000    
-     Maximum weighted residual [observation "c04h24p2"]             =  3.8500E-02
-     Minimum weighted residual [observation "c04h24p1"]             = -3.8500E-02
-     "Variance" of weighted residuals                               =  1.8528E-04
-     "Standard error" of weighted residuals                         =  1.3612E-02
-
-     Note: the above "variance" was obtained by dividing the sum of squared 
-     residuals by the number of items with non-zero weight.
-
-
-K-L information statistics ----->
-
-
-  AIC   =  -469.0787    
-  AICC  =  -468.0443    
-  BIC   =  -458.2843    
-  KIC   =  -414.1699    
-
-Parameter covariance matrix ----->
-
-                katm2        katm3        katr2        katr4    
-katm2          1.3885E-08   6.3639E-08   3.6740E-10  -1.3622E-08
-katm3          6.3639E-08   3.3989E-07   2.0345E-09  -5.8831E-08
-katr2          3.6740E-10   2.0345E-09   2.0544E-10  -8.6659E-09
-katr4         -1.3622E-08  -5.8831E-08  -8.6659E-09   7.8802E-07
-
-
-Parameter correlation coefficient matrix ----->
-
-                katm2        katm3        katr2        katr4    
-katm2           1.000       0.9264       0.2175      -0.1302    
-katm3          0.9264        1.000       0.2435      -0.1137    
-katr2          0.2175       0.2435        1.000      -0.6811    
-katr4         -0.1302      -0.1137      -0.6811        1.000    
-
-
-Normalized eigenvectors of parameter covariance matrix ----->
-
-              Vector_1     Vector_2     Vector_3     Vector_4   
-katm2          2.2361E-02   0.9826      -0.1824      -2.7964E-02
-katm3         -8.3104E-03  -0.1843      -0.9740      -0.1317    
-katr2          0.9997      -2.3543E-02  -2.5683E-03  -1.1135E-02
-katr4          1.0761E-02   2.9711E-03  -0.1346       0.9908    
-
-
-Eigenvalues ----->
-
-               1.0347E-10   1.8958E-09   3.4368E-07   7.9632E-07

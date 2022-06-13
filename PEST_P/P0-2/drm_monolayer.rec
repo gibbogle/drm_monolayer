@@ -12,9 +12,9 @@ PEST run mode:-
 
 Case dimensions:-
 
-   Number of parameters                           :     3
-   Number of adjustable parameters                :     3
-   Number of parameter groups                     :     3
+   Number of parameters                           :     4
+   Number of adjustable parameters                :     4
+   Number of parameter groups                     :     4
    Number of observations                         :     4
    Number of prior estimates                      :     0
 
@@ -66,23 +66,26 @@ Derivatives calculation:-
 
 Param        Increment   Increment   Increment   Forward or   Multiplier  Method
 group        type                    low bound   central      (central)   (central)
+katm3        relative    1.0000E-02   none         switch       2.000     parabolic
 mitrate      relative    1.0000E-02   none         switch       2.000     parabolic
-pcomplex     relative    1.0000E-02   none         switch       2.000     parabolic
 klethal      relative    1.0000E-02   none         switch       2.000     parabolic
+phr          relative    1.0000E-02   none         switch       2.000     parabolic
 
 
 Parameter definitions:-
 
 Name         Trans-            Change       Initial        Lower          Upper
              formation         limit        value          bound          bound
-mitrate      none              factor     4.000000E-02   2.000000E-02   6.000000E-02
-pcomplex     none              factor     0.670000       0.500000       0.900000    
-klethal      none              factor     0.300000       0.100000       0.500000    
+katm3        none              factor     3.000000E-03    0.00000       5.000000E-02
+mitrate      none              factor     3.000000E-02   1.000000E-02   5.000000E-02
+klethal      none              factor     0.230000       0.150000       0.300000    
+phr          none              factor     0.200000       0.100000       0.300000    
 
 Name         Group          Scale         Offset        Model command number
+katm3        katm3         1.00000        0.00000            1
 mitrate      mitrate       1.00000        0.00000            1
-pcomplex     pcomplex      1.00000        0.00000            1
 klethal      klethal       1.00000        0.00000            1
+phr          phr           1.00000        0.00000            1
 
 
 Prior information:-
@@ -112,7 +115,7 @@ Control settings:-
    Perform Broyden's update of Jacobian matrix                  : no
    Undertake observation re-referencing                         : no
 
-   Maximum  factor  parameter change (factor-limited changes)   :  1.3000
+   Maximum  factor  parameter change (factor-limited changes)   :  2.0000
    Maximum relative parameter change (relative-limited changes) : na
    Fraction of initial parameter values used in computing
    change limit for near-zero parameters                        : 1.00000E-03
@@ -149,145 +152,214 @@ File saving options: -
 
 
 INITIAL CONDITIONS: 
-   Sum of squared weighted residuals (ie phi)               =  5.39693E-02
-   Contribution to phi from observation group "p01obgp"     =  1.92797E-02
-   Contribution to phi from observation group "p02obgp"     =  2.50324E-03
-   Contribution to phi from observation group "p03obgp"     =  3.47502E-03
-   Contribution to phi from observation group "p04obgp"     =  2.87113E-02
+   Sum of squared weighted residuals (ie phi)               =  7.05290E-03
+   Contribution to phi from observation group "p01obgp"     =  1.97445E-04
+   Contribution to phi from observation group "p02obgp"     =  5.27106E-03
+   Contribution to phi from observation group "p03obgp"     =  9.96426E-04
+   Contribution to phi from observation group "p04obgp"     =  5.87974E-04
 
       Current parameter values
-      mitrate         4.000000E-02
-      pcomplex        0.670000    
-      klethal         0.300000    
+      katm3           3.000000E-03
+      mitrate         3.000000E-02
+      klethal         0.230000    
+      phr             0.200000    
 
 
 OPTIMISATION ITERATION NO.        : 1
    Model calls so far             : 1
-   Starting phi for this iteration                          :  5.39693E-02
-   Contribution to phi from observation group "p01obgp"     :  1.92797E-02
-   Contribution to phi from observation group "p02obgp"     :  2.50324E-03
-   Contribution to phi from observation group "p03obgp"     :  3.47502E-03
-   Contribution to phi from observation group "p04obgp"     :  2.87113E-02
+   Starting phi for this iteration                          :  7.05290E-03
+   Contribution to phi from observation group "p01obgp"     :  1.97445E-04
+   Contribution to phi from observation group "p02obgp"     :  5.27106E-03
+   Contribution to phi from observation group "p03obgp"     :  9.96426E-04
+   Contribution to phi from observation group "p04obgp"     :  5.87974E-04
 
        Lambda =   5.0000     ----->
-          Phi =  4.25312E-02  (  0.788 of starting phi)
+          Phi =  6.69704E-03  (  0.950 of starting phi)
 
        Lambda =   2.5000     ----->
-          Phi =  4.30118E-02  (  0.797 of starting phi)
+          Phi =  6.79660E-03  (  0.964 of starting phi)
 
        Lambda =   10.000     ----->
-          Phi =  4.23302E-02  (  0.784 of starting phi)
+          Phi =  6.56166E-03  (  0.930 of starting phi)
 
    No more lambdas: relative phi reduction between lambdas less than 0.0300
-   Lowest phi this iteration:  4.23302E-02
+   Lowest phi this iteration:  6.56166E-03
+   Relative phi reduction between optimisation iterations less than 0.1000
+   Switch to higher order derivatives calculation
 
       Current parameter values                 Previous parameter values
-      mitrate         5.031428E-02             mitrate          4.000000E-02
-      pcomplex        0.639700                 pcomplex         0.670000    
-      klethal         0.230769                 klethal          0.300000    
-   Maximum   factor change:  1.300     ["klethal"]
-   Maximum relative change: 0.2579     ["mitrate"]
+      katm3           6.000000E-03             katm3            3.000000E-03
+      mitrate         3.050829E-02             mitrate          3.000000E-02
+      klethal         0.231166                 klethal          0.230000    
+      phr             0.200052                 phr              0.200000    
+   Maximum   factor change:  2.000     ["katm3"]
+   Maximum relative change:  1.000     ["katm3"]
 
 
 OPTIMISATION ITERATION NO.        : 2
-   Model calls so far             : 7
-   Starting phi for this iteration                          :  4.23302E-02
-   Contribution to phi from observation group "p01obgp"     :  1.20528E-02
-   Contribution to phi from observation group "p02obgp"     :  7.77929E-04
-   Contribution to phi from observation group "p03obgp"     :  4.44850E-06
-   Contribution to phi from observation group "p04obgp"     :  2.94950E-02
+   Model calls so far             : 8
+   Starting phi for this iteration                          :  6.56166E-03
+   Contribution to phi from observation group "p01obgp"     :  3.53246E-04
+   Contribution to phi from observation group "p02obgp"     :  4.40214E-03
+   Contribution to phi from observation group "p03obgp"     :  1.62019E-03
+   Contribution to phi from observation group "p04obgp"     :  1.86081E-04
 
        Lambda =   10.000     ----->
-          Phi =  5.15161E-02  (  1.217 times starting phi)
+          Phi =  6.48567E-03  (  0.988 of starting phi)
 
        Lambda =   5.0000     ----->
-          Phi =  5.36296E-02  (  1.267 times starting phi)
+          Phi =  6.47870E-03  (  0.987 of starting phi)
 
-       Lambda =   20.000     ----->
-          Phi =  4.79396E-02  (  1.133 times starting phi)
-
-       Lambda =   40.000     ----->
-          Phi =  4.27050E-02  (  1.009 times starting phi)
-
-       Lambda =   80.000     ----->
-          Phi =  3.46089E-02  (  0.818 of starting phi)
-
-       Lambda =   160.00     ----->
-          Phi =  3.31138E-02  (  0.782 of starting phi)
-
-       Lambda =   320.00     ----->
-          Phi =  3.34908E-02  (  0.791 of starting phi)
-
-   No more lambdas: phi rising
-   Lowest phi this iteration:  3.31138E-02
+   No more lambdas: relative phi reduction between lambdas less than 0.0300
+   Lowest phi this iteration:  6.47870E-03
 
       Current parameter values                 Previous parameter values
-      mitrate         5.954319E-02             mitrate          5.031428E-02
-      pcomplex        0.637811                 pcomplex         0.639700    
-      klethal         0.221291                 klethal          0.230769    
-   Maximum   factor change:  1.183     ["mitrate"]
-   Maximum relative change: 0.1834     ["mitrate"]
+      katm3           4.822154E-03             katm3            6.000000E-03
+      mitrate         3.021837E-02             mitrate          3.050829E-02
+      klethal         0.233270                 klethal          0.231166    
+      phr             0.200566                 phr              0.200052    
+   Maximum   factor change:  1.244     ["katm3"]
+   Maximum relative change: 0.1963     ["katm3"]
 
 
 OPTIMISATION ITERATION NO.        : 3
-   Model calls so far             : 17
-   Starting phi for this iteration                          :  3.31138E-02
-   Contribution to phi from observation group "p01obgp"     :  1.99373E-02
-   Contribution to phi from observation group "p02obgp"     :  3.54479E-05
-   Contribution to phi from observation group "p03obgp"     :  1.55184E-03
-   Contribution to phi from observation group "p04obgp"     :  1.15893E-02
+   Model calls so far             : 18
+   Starting phi for this iteration                          :  6.47870E-03
+   Contribution to phi from observation group "p01obgp"     :  3.91640E-04
+   Contribution to phi from observation group "p02obgp"     :  3.96173E-03
+   Contribution to phi from observation group "p03obgp"     :  2.05330E-03
+   Contribution to phi from observation group "p04obgp"     :  7.20319E-05
 
-       Lambda =   160.00     ----->
-          Phi =  3.39612E-02  (  1.026 times starting phi)
+       Lambda =   2.5000     ----->
+          Phi =  6.45036E-03  (  0.996 of starting phi)
 
-       Lambda =   80.000     ----->
-          Phi =  3.72363E-02  (  1.124 times starting phi)
-
-       Lambda =   320.00     ----->
-          Phi =  3.31440E-02  (  1.001 times starting phi)
+       Lambda =   1.2500     ----->
+          Phi =  6.44383E-03  (  0.995 of starting phi)
 
    No more lambdas: relative phi reduction between lambdas less than 0.0300
-   Lowest phi this iteration:  3.31440E-02
-   Relative phi reduction between optimisation iterations less than 0.1000
-   Switch to higher order derivatives calculation
-   (restart from best parameters so far - these achieved at iteration    2)
+   Lowest phi this iteration:  6.44383E-03
 
-      Current parameter values
-      mitrate         5.954319E-02
-      pcomplex        0.637811    
-      klethal         0.221291    
+      Current parameter values                 Previous parameter values
+      katm3           2.411077E-03             katm3            4.822154E-03
+      mitrate         2.909143E-02             mitrate          3.021837E-02
+      klethal         0.236307                 klethal          0.233270    
+      phr             0.204146                 phr              0.200566    
+   Maximum   factor change:  2.000     ["katm3"]
+   Maximum relative change: 0.5000     ["katm3"]
 
 
 OPTIMISATION ITERATION NO.        : 4
-   Model calls so far             : 23
-   Starting phi for this iteration                          :  3.31138E-02
-   Contribution to phi from observation group "p01obgp"     :  1.99373E-02
-   Contribution to phi from observation group "p02obgp"     :  3.54479E-05
-   Contribution to phi from observation group "p03obgp"     :  1.55184E-03
-   Contribution to phi from observation group "p04obgp"     :  1.15893E-02
+   Model calls so far             : 28
+   Starting phi for this iteration                          :  6.44383E-03
+   Contribution to phi from observation group "p01obgp"     :  2.50927E-04
+   Contribution to phi from observation group "p02obgp"     :  4.09198E-03
+   Contribution to phi from observation group "p03obgp"     :  1.94951E-03
+   Contribution to phi from observation group "p04obgp"     :  1.51411E-04
 
-       Lambda =   160.00     ----->
-          Phi =  3.38135E-02  (  1.021 times starting phi)
+       Lambda =  0.62500     ----->
+          Phi =  6.40713E-03  (  0.994 of starting phi)
 
-       Lambda =   80.000     ----->
-          Phi =  3.66974E-02  (  1.108 times starting phi)
-
-       Lambda =   320.00     ----->
-          Phi =  3.31220E-02  (  1.000 times starting phi)
+       Lambda =  0.31250     ----->
+          Phi =  6.39534E-03  (  0.992 of starting phi)
 
    No more lambdas: relative phi reduction between lambdas less than 0.0300
-   Lowest phi this iteration:  3.31220E-02
+   Lowest phi this iteration:  6.39534E-03
 
       Current parameter values                 Previous parameter values
-      mitrate         6.000000E-02             mitrate          5.954319E-02
-      pcomplex        0.636615                 pcomplex         0.637811    
-      klethal         0.218776                 klethal          0.221291    
-   Maximum   factor change:  1.011     ["klethal"]
-   Maximum relative change: 1.1362E-02 ["klethal"]
+      katm3           1.205539E-03             katm3            2.411077E-03
+      mitrate         2.850040E-02             mitrate          2.909143E-02
+      klethal         0.239642                 klethal          0.236307    
+      phr             0.207485                 phr              0.204146    
+   Maximum   factor change:  2.000     ["katm3"]
+   Maximum relative change: 0.5000     ["katm3"]
+
+
+OPTIMISATION ITERATION NO.        : 5
+   Model calls so far             : 38
+   Starting phi for this iteration                          :  6.39534E-03
+   Contribution to phi from observation group "p01obgp"     :  2.56654E-04
+   Contribution to phi from observation group "p02obgp"     :  3.65187E-03
+   Contribution to phi from observation group "p03obgp"     :  2.41587E-03
+   Contribution to phi from observation group "p04obgp"     :  7.09559E-05
+
+       Lambda =  0.15625     ----->
+          Phi =  6.35583E-03  (  0.994 of starting phi)
+
+       Lambda =  7.81250E-02 ----->
+          Phi =  6.36728E-03  (  0.996 of starting phi)
+
+       Lambda =  0.31250     ----->
+          Phi =  6.31493E-03  (  0.987 of starting phi)
+
+   No more lambdas: relative phi reduction between lambdas less than 0.0300
+   Lowest phi this iteration:  6.31493E-03
+
+      Current parameter values                 Previous parameter values
+      katm3           1.660682E-03             katm3            1.205539E-03
+      mitrate         2.709845E-02             mitrate          2.850040E-02
+      klethal         0.245829                 klethal          0.239642    
+      phr             0.225921                 phr              0.207485    
+   Maximum   factor change:  1.378     ["katm3"]
+   Maximum relative change: 0.3775     ["katm3"]
+
+
+OPTIMISATION ITERATION NO.        : 6
+   Model calls so far             : 49
+   Starting phi for this iteration                          :  6.31493E-03
+   Contribution to phi from observation group "p01obgp"     :  1.57091E-04
+   Contribution to phi from observation group "p02obgp"     :  3.55805E-03
+   Contribution to phi from observation group "p03obgp"     :  2.31615E-03
+   Contribution to phi from observation group "p04obgp"     :  2.83643E-04
+
+       Lambda =  0.31250     ----->
+          Phi =  6.31479E-03  (  1.000 of starting phi)
+
+       Lambda =  0.15625     ----->
+          Phi =  6.31501E-03  (  1.000 times starting phi)
+
+       Lambda =  0.62500     ----->
+          Phi =  6.31456E-03  (  1.000 of starting phi)
+
+   No more lambdas: relative phi reduction between lambdas less than 0.0300
+   Lowest phi this iteration:  6.31456E-03
+
+      Current parameter values                 Previous parameter values
+      katm3           1.503937E-03             katm3            1.660682E-03
+      mitrate         2.708589E-02             mitrate          2.709845E-02
+      klethal         0.245885                 klethal          0.245829    
+      phr             0.225895                 phr              0.225921    
+   Maximum   factor change:  1.104     ["katm3"]
+   Maximum relative change: 9.4386E-02 ["katm3"]
+
+
+OPTIMISATION ITERATION NO.        : 7
+   Model calls so far             : 60
+   Starting phi for this iteration                          :  6.31456E-03
+   Contribution to phi from observation group "p01obgp"     :  1.56968E-04
+   Contribution to phi from observation group "p02obgp"     :  3.55458E-03
+   Contribution to phi from observation group "p03obgp"     :  2.31615E-03
+   Contribution to phi from observation group "p04obgp"     :  2.86867E-04
+
+       Lambda =  0.62500     ----->
+          Phi =  6.31776E-03  (  1.001 times starting phi)
+
+       Lambda =  0.31250     ----->
+          Phi =  6.31769E-03  (  1.000 times starting phi)
+
+   No more lambdas: relative phi reduction between lambdas less than 0.0300
+   Lowest phi this iteration:  6.31769E-03
+
+      Current parameter values                 Previous parameter values
+      katm3           7.519686E-04             katm3            1.503937E-03
+      mitrate         2.709148E-02             mitrate          2.708589E-02
+      klethal         0.245764                 klethal          0.245885    
+      phr             0.226034                 phr              0.225895    
+   Maximum   factor change:  2.000     ["katm3"]
+   Maximum relative change: 0.5000     ["katm3"]
 
    Optimisation complete: the  3 lowest phi's are within a relative distance
                           of eachother of 1.000E-02
-   Total model calls:     32
+   Total model calls:     70
 
    The model has been run one final time using best parameters. 
    Thus all model input files contain best parameter values, and model 
@@ -296,18 +368,17 @@ OPTIMISATION ITERATION NO.        : 4
 
                             OPTIMISATION RESULTS
 
+Covariance matrix and parameter confidence intervals cannot be determined:-
+No redundancy in non-zero-weighted observations plus prior information.
+
 
 Parameters ----->
 
-Parameter        Estimated         95% percent confidence limits
-                 value             lower limit       upper limit
- mitrate        5.954319E-02      -0.688881          0.807967    
- pcomplex       0.637811           -36.7624           38.0381    
- klethal        0.221291           -1.82572           2.26831    
-
-Note: confidence limits provide only an indication of parameter uncertainty.
-      They rely on a linearity assumption which  may not extend as far in 
-      parameter space as the confidence limits themselves - see PEST manual.
+Parameter      Estimated value
+ katm3          1.503937E-03
+ mitrate        2.708589E-02
+ klethal        0.245885    
+ phr            0.225895    
 
 See file drm_monolayer.sen for parameter sensitivities.
 
@@ -316,10 +387,10 @@ Observations ----->
 
 Observation            Measured       Calculated     Residual       Weight     Group
                        value          value
-p01logsf             -0.374568      -0.460985       8.641681E-02    1.634      p01obgp     
-p02logsf             -0.991579      -0.985650      -5.928692E-03    1.004      p02obgp     
-p03logsf              -1.58368       -1.63325       4.957424E-02   0.7946      p03obgp     
-p04logsf              -2.46993       -2.30074      -0.169188       0.6363      p04obgp     
+p01logsf             -0.374568      -0.382236       7.667814E-03    1.634      p01obgp     
+p02logsf             -0.991579      -0.932210      -5.936869E-02    1.004      p02obgp     
+p03logsf              -1.58368       -1.64424       6.056424E-02   0.7946      p03obgp     
+p04logsf              -2.46993       -2.44331      -2.661843E-02   0.6363      p04obgp     
 
 See file drm_monolayer.res for more details of residuals in graph-ready format.
 
@@ -328,27 +399,27 @@ See file drm_monolayer.seo for composite observation sensitivities.
 
 Objective function ----->
 
-  Sum of squared weighted residuals (ie phi)                =  3.31138E-02
-  Contribution to phi from observation group "p01obgp"      =  1.99373E-02
-  Contribution to phi from observation group "p02obgp"      =  3.54479E-05
-  Contribution to phi from observation group "p03obgp"      =  1.55184E-03
-  Contribution to phi from observation group "p04obgp"      =  1.15893E-02
+  Sum of squared weighted residuals (ie phi)                =  6.31456E-03
+  Contribution to phi from observation group "p01obgp"      =  1.56968E-04
+  Contribution to phi from observation group "p02obgp"      =  3.55458E-03
+  Contribution to phi from observation group "p03obgp"      =  2.31615E-03
+  Contribution to phi from observation group "p04obgp"      =  2.86867E-04
 
 
 Correlation Coefficient ----->
 
-  Correlation coefficient                                   =  0.98990    
+  Correlation coefficient                                   =  0.99376    
 
 
 Analysis of residuals ----->
 
   All residuals:-
      Number of residuals with non-zero weight                       =     4
-     Mean value of non-zero weighted residuals                      =  1.6746E-02
-     Maximum weighted residual [observation "p01logsf"]             =  0.1412    
-     Minimum weighted residual [observation "p04logsf"]             = -0.1077    
-     Standard variance of weighted residuals                        =  3.3114E-02
-     Standard error of weighted residuals                           =  0.1820    
+     Mean value of non-zero weighted residuals                      = -3.9756E-03
+     Maximum weighted residual [observation "p03logsf"]             =  4.8126E-02
+     Minimum weighted residual [observation "p02logsf"]             = -5.9620E-02
+     Standard variance of weighted residuals                        =  1.5786E-03
+     Standard error of weighted residuals                           =  3.9732E-02
 
      Note: the above variance was obtained by dividing the objective 
      function by the number of system degrees of freedom (ie. number of 
@@ -360,81 +431,49 @@ Analysis of residuals ----->
 
   Residuals for observation group "p01obgp":-
      Number of residuals with non-zero weight                       =     1
-     Mean value of non-zero weighted residuals                      =  0.1412    
-     Maximum weighted residual [observation "p01logsf"]             =  0.1412    
-     Minimum weighted residual [observation "p01logsf"]             =  0.1412    
-     "Variance" of weighted residuals                               =  1.9937E-02
-     "Standard error" of weighted residuals                         =  0.1412    
+     Mean value of non-zero weighted residuals                      =  1.2529E-02
+     Maximum weighted residual [observation "p01logsf"]             =  1.2529E-02
+     Minimum weighted residual [observation "p01logsf"]             =  1.2529E-02
+     "Variance" of weighted residuals                               =  1.5697E-04
+     "Standard error" of weighted residuals                         =  1.2529E-02
 
      Note: the above "variance" was obtained by dividing the sum of squared 
      residuals by the number of items with non-zero weight.
 
   Residuals for observation group "p02obgp":-
      Number of residuals with non-zero weight                       =     1
-     Mean value of non-zero weighted residuals                      = -5.9538E-03
-     Maximum weighted residual [observation "p02logsf"]             = -5.9538E-03
-     Minimum weighted residual [observation "p02logsf"]             = -5.9538E-03
-     "Variance" of weighted residuals                               =  3.5448E-05
-     "Standard error" of weighted residuals                         =  5.9538E-03
+     Mean value of non-zero weighted residuals                      = -5.9620E-02
+     Maximum weighted residual [observation "p02logsf"]             = -5.9620E-02
+     Minimum weighted residual [observation "p02logsf"]             = -5.9620E-02
+     "Variance" of weighted residuals                               =  3.5546E-03
+     "Standard error" of weighted residuals                         =  5.9620E-02
 
      Note: the above "variance" was obtained by dividing the sum of squared 
      residuals by the number of items with non-zero weight.
 
   Residuals for observation group "p03obgp":-
      Number of residuals with non-zero weight                       =     1
-     Mean value of non-zero weighted residuals                      =  3.9393E-02
-     Maximum weighted residual [observation "p03logsf"]             =  3.9393E-02
-     Minimum weighted residual [observation "p03logsf"]             =  3.9393E-02
-     "Variance" of weighted residuals                               =  1.5518E-03
-     "Standard error" of weighted residuals                         =  3.9393E-02
+     Mean value of non-zero weighted residuals                      =  4.8126E-02
+     Maximum weighted residual [observation "p03logsf"]             =  4.8126E-02
+     Minimum weighted residual [observation "p03logsf"]             =  4.8126E-02
+     "Variance" of weighted residuals                               =  2.3161E-03
+     "Standard error" of weighted residuals                         =  4.8126E-02
 
      Note: the above "variance" was obtained by dividing the sum of squared 
      residuals by the number of items with non-zero weight.
 
   Residuals for observation group "p04obgp":-
      Number of residuals with non-zero weight                       =     1
-     Mean value of non-zero weighted residuals                      = -0.1077    
-     Maximum weighted residual [observation "p04logsf"]             = -0.1077    
-     Minimum weighted residual [observation "p04logsf"]             = -0.1077    
-     "Variance" of weighted residuals                               =  1.1589E-02
-     "Standard error" of weighted residuals                         =  0.1077    
+     Mean value of non-zero weighted residuals                      = -1.6937E-02
+     Maximum weighted residual [observation "p04logsf"]             = -1.6937E-02
+     Minimum weighted residual [observation "p04logsf"]             = -1.6937E-02
+     "Variance" of weighted residuals                               =  2.8687E-04
+     "Standard error" of weighted residuals                         =  1.6937E-02
 
      Note: the above "variance" was obtained by dividing the sum of squared 
      residuals by the number of items with non-zero weight.
 
 
-K-L information statistics ----->
+Covariance and other statistical matrices cannot be determined:-
+No redundancy in non-zero-weighted observations plus prior information.
 
-
-  AIC   =  -11.17639    
-  AICC  = indeterminate
-  BIC   =  -13.63122    
-  KIC   =  -10.21693    
-
-Parameter covariance matrix ----->
-
-               mitrate      pcomplex     klethal   
-mitrate        3.4696E-03  -9.9579E-02  -7.4877E-03
-pcomplex      -9.9579E-02    8.664      -2.6387E-03
-klethal       -7.4877E-03  -2.6387E-03   2.5955E-02
-
-
-Parameter correlation coefficient matrix ----->
-
-               mitrate      pcomplex     klethal   
-mitrate         1.000      -0.5743      -0.7890    
-pcomplex      -0.5743        1.000      -5.5643E-03
-klethal       -0.7890      -5.5643E-03    1.000    
-
-
-Normalized eigenvectors of parameter covariance matrix ----->
-
-              Vector_1     Vector_2     Vector_3   
-mitrate        0.9601      -0.2795      -1.1495E-02
-pcomplex       1.1119E-02  -2.9299E-03   0.9999    
-klethal        0.2796       0.9601      -2.9544E-04
-
-
-Eigenvalues ----->
-
-               1.3597E-04   2.8143E-02    8.665    

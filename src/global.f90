@@ -10,7 +10,7 @@ use, intrinsic :: ISO_C_BINDING
 
 implicit none
 
-integer, parameter :: NP = 6        ! pathways 
+integer, parameter :: NP = 5        ! pathways (was 4)
 
 integer, parameter :: TCP_PORT_0 = 5000		! main communication port (logging)
 integer, parameter :: TCP_PORT_1 = 5001		! data transfer port (plotting)
@@ -182,8 +182,8 @@ type cell_type
 !	logical :: growth_delay
 !	real(REAL_KIND) :: dt_delay
 !	real(REAL_KIND) :: t_growth_delay_end	! this is for suppression of growth before first division
-	real(REAL_KIND) :: tag_time             ! time cell is tagged to die metabolically
 !	integer :: N_delayed_cycles_left		! decremented by 1 at each cell division
+	real(REAL_KIND) :: tag_time             ! time cell is tagged to die metabolically
 	logical :: radiation_tag    !, ATP_tag, GLN_tag
 	logical :: drug_tag(MAX_DRUGTYPES)
 	real(REAL_KIND) :: apoptosis_delay
@@ -195,15 +195,15 @@ type cell_type
 
 	! Cell cycle 
     integer :: phase
-    logical :: G1_flag, G1S_flag, S_flag, SG2_flag, G2_flag, G2M_flag
-    real(REAL_KIND) :: G1_time, S_time, G2_time, S_duration
-    real(REAL_KIND) :: G1_V, S_V, G2_V
-    real(REAL_KIND) :: G1S_time, SG2_time, G2M_time, M_time
-    real(REAL_KIND) :: doubling_time
+!    logical :: G1_flag, G1S_flag, S_flag, SG2_flag, G2_flag, G2M_flag
+!    real(REAL_KIND) :: G1_time, S_time, G2_time, S_duration
+!    real(REAL_KIND) :: G1_V, S_V, G2_V
+!    real(REAL_KIND) :: G1S_time, SG2_time, G2M_time, M_time
+!    real(REAL_KIND) :: doubling_time
 !    logical :: arrested ! for S-phase arrest
-    real(REAL_KIND) :: S_start_time	    ! for PI labelling
+!    real(REAL_KIND) :: S_start_time	    ! for PI labelling
     real(REAL_KIND) :: progress, fp
-    integer :: NL1, NL2(2)
+!    integer :: NL1, NL2(2)
     
 !    integer :: N_PL, N_IRL, N_Ch1, N_Ch2
 !    logical :: irrepairable
@@ -219,7 +219,7 @@ type cell_type
 	
 	! DRM section
 	integer :: phase0
-	real(8) :: pATM, pATR, DSB(NP), totDSB0
+	real(8) :: pATM, pATR, DSB(NP), totDSB0, totMis
 	real(8) :: Nlethal, Psurvive
 
 end type
@@ -516,12 +516,10 @@ real(REAL_KIND) :: C_G_base = 10.359
 !logical :: DRUG_A_inhibiter = .false.   ! set true if drug is in the input file
 !real(REAL_KIND) :: C_inhibiter
 !real(REAL_KIND) :: a_inhibit = 0.83, b_inhibit = 0.5
-logical :: use_inhibiter = .false.
 
-real(REAL_KIND) :: rad_dose
 integer :: rad_count(6)
 
-logical :: use_synchronise = .false.
+logical :: use_synchronise != .false.   ! now set in main
 integer :: synch_phase
 real(REAL_KIND) :: synch_fraction
 
@@ -537,11 +535,21 @@ real(REAL_KIND) :: t_irradiation, SFave
 logical :: use_SF = .true.
 integer :: phase_hour(8)
 integer :: nphase_hours, next_phase_hour
-real(REAL_KIND) :: phase_dist(0:8)    ! % of cells in each phase
-real(REAL_KIND) :: recorded_phase_dist(8,0:8)    ! % of cells in each phase phase_hour after IR
+real(REAL_KIND) :: phase_dist(0:4)    ! % of cells in each phase
+real(REAL_KIND) :: recorded_phase_dist(6,0:4)    ! % of cells in each phase phase_hour after IR
 integer, allocatable :: nphase(:,:)
 logical, parameter :: hourly_cycle_dist = .true.
-logical, parameter :: track_cell_phase = .false.
+logical, parameter :: track_cell_phase = .true.
+!logical, parameter :: S_phase_RR = .false.
+logical :: S_phase_RR = .false.
+real(REAL_KIND) :: S_phase_RR_progress
+real(REAL_KIND) :: G1_delay, S_delay, G2_delay  ! test values are specified in drm_monolayer_main
+real(REAL_KIND) :: totNmis = 0
+real(REAL_KIND) :: G2_katm3_factor=1.0, G2_katm4_factor=1.0, G2_katr3_factor=1.0, G2_katr4_factor=1.0
+
+logical :: use_inhibiter = .false.
+logical :: use_fixed_CP != .false.
+logical :: compute_cycle
 
 !integer :: icentral !extracellular variable index corresponding to a central site (NX/2,NY/2,NZ/2)
 
@@ -552,7 +560,9 @@ logical, parameter :: track_cell_phase = .false.
 !real(REAL_KIND), allocatable :: omp_x(:), omp_y(:), omp_z(:)
 
 !DEC$ ATTRIBUTES DLLEXPORT :: nsteps, DELTA_T, use_PEST, PEST_outputfile, simulate_colony
-
+!DEC$ ATTRIBUTES DLLEXPORT :: SFave, S_phase_RR, S_phase_RR_progress, G1_delay, S_delay, G2_delay, use_fixed_CP, compute_cycle
+!DEC$ ATTRIBUTES DLLEXPORT :: use_synchronise, synch_phase, synch_fraction
+!DEC$ ATTRIBUTES DLLEXPORT :: G2_katm3_factor, G2_katm4_factor, G2_katr3_factor, G2_katr4_factor
 contains
 
 !-----------------------------------------------------------------------------------------

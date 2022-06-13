@@ -1,16 +1,16 @@
  PARAMETER STATISTICAL MATRICES: CASE drm_monolayer
 
- OPTIMISATION ITERATION NUMBER 20
+ OPTIMISATION ITERATION NUMBER  2
 
 
  Parameter standard deviations ----->
 
  Adjustable        Group           Current          Standard
  parameter                         value            deviation
- katm2             katm2           5.181848E-02     1.412322E-04
- katm3             katm3           0.406347         6.112664E-04
- katr2             katr2           5.120274E-03     1.272339E-05
- katr4             katr4           0.989275         8.066642E-04
+ katm1             katm1           3.000000E-05     4.739814E+12
+ katm3             katm3           0.100000         1.223694E+16
+ katr1             katr1           5.000000E-02     0.274361    
+ katr3             katr3           0.140940         0.362836    
 
  Note that if a parameter is log-transformed, the standard deviation in the 
  above table refers to the log of the parameter. Note also that the objective
@@ -20,31 +20,31 @@
 
  Parameter covariance matrix ----->
 
-                 katm2        katm3        katr2        katr4    
- katm2          1.9947E-08   8.1780E-08  -8.1323E-11   1.8521E-08
- katm3          8.1780E-08   3.7365E-07   9.8736E-12   8.4109E-08
- katr2         -8.1323E-11   9.8736E-12   1.6188E-10  -6.4112E-09
- katr4          1.8521E-08   8.4109E-08  -6.4112E-09   6.5071E-07
+                 katm1        katm3        katr1        katr3    
+ katm1          2.2466E+25  -3.4696E+28   2.5465E+11  -6.1158E+11
+ katm3         -3.4696E+28   1.4974E+32  -6.1315E+14   1.0422E+15
+ katr1          2.5465E+11  -6.1315E+14   7.5274E-02  -9.1007E-03
+ katr3         -6.1158E+11   1.0422E+15  -9.1007E-03   0.1316    
 
 
  Parameter correlation coefficient matrix ----->
 
-                 katm2        katm3        katr2        katr4    
- katm2           1.000       0.9473      -4.5256E-02   0.1626    
- katm3          0.9473        1.000       1.2695E-03   0.1706    
- katr2         -4.5256E-02   1.2695E-03    1.000      -0.6247    
- katr4          0.1626       0.1706      -0.6247        1.000    
+                 katm1        katm3        katr1        katr3    
+ katm1           1.000      -0.5982       0.1958      -0.3556    
+ katm3         -0.5982        1.000      -0.1826       0.2347    
+ katr1          0.1958      -0.1826        1.000      -9.1420E-02
+ katr3         -0.3556       0.2347      -9.1420E-02    1.000    
 
 
  Normalized eigenvectors of covariance matrix ----->
 
                Vector_1     Vector_2     Vector_3     Vector_4   
- katm2         -4.2226E-02   0.9757      -0.2057      -6.2150E-02
- katm3          1.1553E-02  -0.2146      -0.9349      -0.2824    
- katr2         -0.9990      -4.3719E-02  -5.0508E-03   9.0736E-03
- katr4         -1.0136E-02  -4.6822E-04   0.2891      -0.9572    
+ katm1         -6.6391E-15   2.5979E-14   -1.000      -2.3171E-04
+ katm3          2.2384E-18  -1.1180E-18  -2.3171E-04    1.000    
+ katr1          0.9990      -4.5081E-02  -7.8036E-15  -4.0947E-18
+ katr3          4.5081E-02   0.9990       2.5654E-14   6.9600E-18
 
 
  Eigenvalues ----->
 
-                9.3287E-11   1.9567E-09   3.6563E-07   6.7678E-07
+                7.1797E-02   0.1150       1.4427E+25   1.4974E+32

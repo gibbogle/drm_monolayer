@@ -1,4 +1,9 @@
-D:\drm_monolayer\build\release\drm_monolayer_main.exe  1 M01.inp 0 M01_out.dat
-D:\drm_monolayer\build\release\drm_monolayer_main.exe  1 M02.inp 0 M02_out.dat
-D:\drm_monolayer\build\release\drm_monolayer_main.exe  1 M03.inp 0 M03_out.dat
-D:\drm_monolayer\build\release\drm_monolayer_main.exe  1 M04.inp 0 M04_out.dat
+D:\drm_monolayer\build\release\drm_monolayer_main.exe  1 M51.inp 0 M51_out.dat
+D:\drm_monolayer\build\release\drm_monolayer_main.exe  1 M52.inp 0 M52_out.dat
+D:\drm_monolayer\build\release\drm_monolayer_main.exe  1 M53.inp 0 M53_out.dat
+D:\drm_monolayer\build\release\drm_monolayer_main.exe  1 M54.inp 0 M54_out.dat
+D:\drm_monolayer\build\release\drm_monolayer_main.exe  1 M55.inp 0 M55_out.dat
+D:\drm_monolayer\build\release\drm_monolayer_main.exe  1 M56.inp 0 M56_out.dat
+D:\drm_monolayer\build\release\drm_monolayer_main.exe  1 M57.inp 0 M57_out.dat
+D:\drm_monolayer\build\release\drm_monolayer_main.exe  1 M58.inp 0 M58_out.dat
+D:\drm_monolayer\build\release\drm_monolayer_main.exe  1 M59.inp 0 M59_out.dat

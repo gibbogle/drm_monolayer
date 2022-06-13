@@ -1,46 +1,7 @@
  PARAMETER STATISTICAL MATRICES: CASE drm_monolayer
 
- OPTIMISATION ITERATION NUMBER  4
+ OPTIMISATION ITERATION NUMBER  7
 
-
- Parameter standard deviations ----->
-
- Adjustable        Group           Current          Standard
- parameter                         value            deviation
- mitrate           mitrate         5.954319E-02     7.957751E-02
- pcomplex          pcomplex        0.637811          2.87355    
- klethal           klethal         0.221291         0.150543    
-
- Note that if a parameter is log-transformed, the standard deviation in the 
- above table refers to the log of the parameter. Note also that the objective
- function used in the calculation of the covariance matrix (and eigenvalues
- of the covariance matrix) was calculated at the end of the previous iteration.
-
-
- Parameter covariance matrix ----->
-
-                mitrate      pcomplex     klethal   
- mitrate        6.3326E-03  -0.1477      -8.8524E-03
- pcomplex      -0.1477        8.257      -1.6564E-03
- klethal       -8.8524E-03  -1.6564E-03   2.2663E-02
-
-
- Parameter correlation coefficient matrix ----->
-
-                mitrate      pcomplex     klethal   
- mitrate         1.000      -0.6460      -0.7389    
- pcomplex      -0.6460        1.000      -3.8290E-03
- klethal       -0.7389      -3.8290E-03    1.000    
-
-
- Normalized eigenvectors of covariance matrix ----->
-
-               Vector_1     Vector_2     Vector_3   
- mitrate        0.9299      -0.3673      -1.7896E-02
- pcomplex       1.6711E-02  -6.4054E-03   0.9998    
- klethal        0.3674       0.9301      -1.8182E-04
-
-
- Eigenvalues ----->
-
-                1.8058E-04   2.6171E-02    8.260    
+ Cannot evaluate parameter covariance matrix as the number of observations
+ and prior information items does not exceed the number of adjustable 
+ parameters.

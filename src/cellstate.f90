@@ -66,20 +66,22 @@ end subroutine
 subroutine Irradiation(dose,ok)
 real(REAL_KIND) :: dose
 logical :: ok
-integer :: kcell, site(3), iv, ityp, idrug, im, ichemo, n, kpar=0
-real(REAL_KIND) :: C_O2, SER, p_death, p_recovery, R, kill_prob, tmin, Cdrug
+integer :: kcell, site(3), iv, ityp, n, kpar=0  !, idrug, im, ichemo
+real(REAL_KIND) :: C_O2, SER, p_death, p_recovery, R, kill_prob, tmin, Cdrug, total
 real(REAL_KIND) :: SER_OER(2)
-logical :: dies
+integer :: counts(NP)
 type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
-character :: pchar
+!logical :: dies
+!character :: pchar
 
 ok = .true.
 Nirradiated = Ncells
 t_irradiation = t_simulation
 write(logmsg,*) 'Irradiation: Nirradiated: ',Nirradiated
 call logger(logmsg)
-call setupRadiation
+counts = 0
+!call setupRadiation
 !if (use_volume_method) then
 !    do kcell = 1,nlist
 !        if (colony_simulation) then
@@ -128,14 +130,15 @@ call setupRadiation
     do kcell = 1,nlist
         kcell_now = kcell
         cp => cell_list(kcell)
+        counts(cp%phase) = counts(cp%phase) + 1
 	    if (cp%state == DEAD .or. cp%state == DYING) cycle
-	    if (cp%phase <= G1_checkpoint) then
-	        cp%rad_state = 1
-	    elseif (cp%phase <= S_checkpoint) then
-	        cp%rad_state = 2
-	    else
-	        cp%rad_state = 3
-	    endif
+!	    if (cp%phase <= G1_checkpoint) then
+!	        cp%rad_state = 1
+!	    elseif (cp%phase <= S_checkpoint) then
+!	        cp%rad_state = 2
+!	    else
+!	        cp%rad_state = 3
+!	    endif
 	    ityp = cp%celltype
 	    ccp => cc_parameters(ityp)
 	    call getO2conc(cp,C_O2)
@@ -151,6 +154,7 @@ call setupRadiation
         ! Not using LQ formalism
         SER = C_O2/(C_O2 + LQ(ityp)%K_ms)
         Cdrug = 0
+        SER = 1 ! turn off SER - Bill confirmed
         call cellIrradiation(cp,dose,Cdrug)
 !        call radiation_damage(cp, ccp, dose, SER, tmin)
         ! Now check for possible death if the cell is in S-phase or M-phase
@@ -175,6 +179,22 @@ call setupRadiation
 !call check_radiation
 !write(logmsg,'(a,i6)') 'Did irradiation: # of IRL cells: ',n
 !call logger(logmsg)
+! For testing of inhibition, we need to fix the checkpoint delays (as a function of radiation dose.)
+!if (use_fixed_CP) then
+    G1_delay = 0    ! 3600*dose/6  ! was 0, try this
+    S_delay = 3600*dose/6   ! 1h/6Gy
+    G2_delay = 3600*dose    ! 1h/Gy
+    write(*,'(a,3f8.0)') 'fixed CP delays (sec): ',G1_delay,S_delay,G2_delay
+    if (.not.use_fixed_CP) write(*,'(a)') '(Not using fixed delays)'
+!endif
+total = 0
+do kcell = 1,nlist
+    cp => cell_list(kcell)
+    total = total + cp%totDSB0
+    if (kcell <= 10) write(nflog,'(a,i6,f9.1)') 'totDSB0: ',kcell,cp%totDSB0
+enddo
+write(*,*) 'Irradiation: phase counts: ',counts
+write(nflog,*) 'At irradiation, total DSB: ',total
 end subroutine
 
 #if 0
@@ -606,7 +626,7 @@ real(REAL_KIND) :: rr(3), c(3), rad, d_desired, R, rrsum, pdeath, mitosis_durati
 integer, parameter :: MAX_DIVIDE_LIST = 100000
 integer :: ndivide, divide_list(MAX_DIVIDE_LIST)
 logical :: drugkilled, radkilled
-logical :: mitosis_entry, in_mitosis, divide, tagged
+logical :: divide, tagged
 
 ok = .true.
 changed = .false.
@@ -617,7 +637,7 @@ do kcell = 1,nlist0
 	kcell_now = kcell
 	if (colony_simulation) then
 	    cp => ccell_list(kcell)
-!	    write(*,*) 'colony: new_grower: state,phase: ',cp%state,cp%phase
+!	    write(*,*) 'colony: grower: state,phase: ',cp%state,cp%phase
 	else
     	cp => cell_list(kcell)
     endif
@@ -628,12 +648,9 @@ do kcell = 1,nlist0
 		cycle
 	endif
 	ityp = cp%celltype
-!	if (.not.use_metabolism) cp%dVdt = max_growthrate(ityp)
 	ccp => cc_parameters(ityp)
 	divide = .false.
-	mitosis_entry = .false.
 	mitosis_duration = ccp%T_M
-	in_mitosis = .false.
     prev_phase = cp%phase
 	if (cp%phase /= M_phase) then
 	    call growcell(cp,dt)
@@ -646,11 +663,9 @@ do kcell = 1,nlist0
 		cp%t_start_mitosis = tnow
 		ncells_mphase = ncells_mphase + 1
 		! Need to record clonogenic SP at first mitosis
-!       in_mitosis = .true.
         cp%phase = dividing
     endif
 	
-!	if (in_mitosis) then
     if (cp%phase == dividing) then
 		drugkilled = .false.
 		do idrug = 1,ndrugs_used
@@ -662,36 +677,7 @@ do kcell = 1,nlist0
 		enddo
 		if (drugkilled) cycle
 		cp%mitosis = (tnow - cp%t_start_mitosis)/mitosis_duration
-!		if (kcell == 20) write(nflog,'(a,3f8.0,f8.3)') 'new_grower: ',tnow,cp%t_start_mitosis,mitosis_duration,cp%mitosis
-!    	if (colony_simulation) write(*,*) 'in_mitosis: mitosis: ',cp%mitosis
-!		if (use_volume_method) then
-!			if (cp%growth_delay) then
-!				if (cp%G2_M) then
-!					if (tnow > cp%t_growth_delay_end) then
-!						cp%G2_M = .false.
-!					else
-!						cycle
-!					endif
-!				else
-!					cp%t_growth_delay_end = tnow + cp%dt_delay
-!					cp%G2_M = .true.
-!					cycle
-!				endif
-!			endif
-!			! try moving death prob test to here
-!			if (cp%radiation_tag) then
-!				R = par_uni(kpar)
-!				if (R < cp%p_rad_death) then
-!					call celldies(cp,.false.)
-!!					changed = .true.
-!!					Nradiation_dead(ityp) = Nradiation_dead(ityp) + 1
-!					cycle
-!				endif
-!			endif		
-!		else
-!		    if (colony_simulation) write(*,*) 'radiation_tag: ',cp%radiation_tag
-			if (cp%radiation_tag) cycle
-!		endif
+!		if (cp%radiation_tag) cycle
 		
         if (cp%mitosis >= 1) then
 !            if (kcell == 20) write(nflog,*) 'new_grower: divide cell: ',kcell
@@ -731,6 +717,7 @@ end subroutine
 
 !-----------------------------------------------------------------------------------------
 ! Need to check phase-dependence of growth
+! colony_simulation not fixed
 !-----------------------------------------------------------------------------------------
 subroutine growcell(cp, dt)
 type(cell_type), pointer :: cp
@@ -742,6 +729,7 @@ logical :: oxygen_growth, glucose_growth, tagged
 
 if (cp%phase >= M_phase) then
 !	write(nflog,*) 'no growth - kcell,phase: ',kcell_now,cp%phase
+    cp%dVdt = 0
 	return
 endif
 !if (use_metabolism .and. cp%metab%A_rate < r_Ag) then
@@ -796,12 +784,20 @@ endif
 ! Here compute the progress factor %fp, used in cycle.f90
 ! This is definitive
 f_CP = slowdown(cp)
+!write(*,'(a,i6,3e12.3)') 'growcell: ',kcell_now,metab,f_CP,cp%fg(cp%phase)
 cp%fp = metab*f_CP/cp%fg(cp%phase)
 cp%dVdt = cp%fp*max_growthrate(ityp)
 Cdrug(:) = cp%Cin(DRUG_A:DRUG_A+1)
 Vin_0 = cp%V
 cp%V = Vin_0 + dt*cp%dVdt
 cp%Cin(DRUG_A:DRUG_A+1) = Cdrug(:)*Vin_0/cp%V
+if (isnan(cp%dVdt)) then
+    write(*,*) 'growcell: dVdt is NaN: ',kcell_now,cp%phase
+    write(*,'(a,4e12.3)') 'fg, metab, f_CP, fp: ',cp%fg(cp%phase), metab, f_CP, cp%fp
+    stop
+endif
+!write(*,'(a,5e12.3)') 'growcell: f_CP,metab,fg,fp,pATM: ', f_CP,metab,cp%fg(cp%phase),cp%fp,cp%pATM
+
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -923,7 +919,6 @@ endif
 !'Cell division: ',kcell1,kcell2,cp1%divide_time/3600,(tnow-cp1%t_divide_last)/3600,cp1%divide_time-(tnow-cp1%t_divide_last)
     
 ncells = ncells + 1
-!write(*,*) 'divider: ',kcell1,kcell2
 ityp = cp1%celltype
 ccp => cc_parameters(ityp)
 ncells_type(ityp) = ncells_type(ityp) + 1
@@ -986,15 +981,16 @@ cp1%drug_tag = .false.
 !	cp1%N_delayed_cycles_left = cp1%N_delayed_cycles_left - 1
 !	cp1%growth_delay = (cp1%N_delayed_cycles_left > 0)
 !endif
-cp1%G2_M = .false.
 !if (use_metabolism) then
 !    cp1%G1_time = tnow + (cp1%metab%I_rate_max/cp1%metab%I_rate)*cp1%fg*ccp%T_G1
 !endif
 !cp1%G1_time = tnow + (max_growthrate(ityp)/cp1%dVdt)*cp1%fg*ccp%T_G1    ! time spend in G1 varies inversely with dV/dt
 !cp1%G1_time = tnow + (max_growthrate(ityp)/cp1%dVdt)*cp1%fg*ccp%T_G1    ! time spend in G1 varies inversely with dV/dt
+cp1%G2_M = .false.
 cp1%Iphase = .true.
 cp1%phase = G1_phase
 cp1%progress = 0
+cp1%totMis = 0
 !if (max_growthrate(ityp)/cp1%dVdt > 2) then
 !    write(*,*) 'dVdt: ',kcell1,max_growthrate(ityp)/cp1%dVdt
 !endif
@@ -1017,6 +1013,7 @@ cp2 = cp1
 !cp2%divide_time = Tdiv
 !cp2%fg = gfactor
 !call set_divide_volume(kcell2, V0)
+!if (kcell1 <= 10) write(*,*) 'divided: ',kcell1, kcell2,ncells
 kcell_now = kcell2
 call set_divide_volume(cp2, V0)
 !cp2%dVdt = dVdt/cp2%fg
@@ -1029,12 +1026,15 @@ call set_divide_volume(cp2, V0)
 !	cp2%G1_time = tnow + (max_growthrate(ityp)/cp2%dVdt)*cp2%fg*ccp%T_G1    ! time spend in G1 varies inversely with dV/dt
 !	cp2%G1_time = tnow + (max_growthrate(ityp)/cp2%dVdt)*ccp%T_G1    ! time spend in G1 varies inversely with dV/dt
 !endif
-cp2%ATP_rate_factor = get_ATP_rate_factor()
+!cp2%ATP_rate_factor = get_ATP_rate_factor()
 !cp2%G1_time = tnow + (max_growthrate(ityp)/cp2%dVdt)*cp2%fg*ccp%T_G1    ! time spend in G1 varies inversely with dV/dt
 cp2%CFSE = cfse2
 if (cp2%radiation_tag) then
 	Nradiation_tag(ityp) = Nradiation_tag(ityp) + 1
 endif
+cp2%DSB = 0
+cp2%totDSB0 = 0
+!cp2%Psurvive = 0
 !if (colony_simulation) write(*,'(a,i6,2e12.3)') 'new cell: ',kcell2,cp2%V,cp2%divide_volume
 end subroutine
 

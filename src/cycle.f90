@@ -45,7 +45,7 @@ if (cp%dVdt == 0) then
 	write(nflog,*) 'dVdt=0, kcell: ',kcell_now,cp%phase
 	stop
 endif
-if (kcell_now == 1) write(nflog,'(a,2i4,8f7.2)') 'kcell, phase, DSB: ',kcell_now,cp%phase,cp%DSB
+!if (kcell_now == 1) write(*,'(a,2i4,8f7.3)') 'kcell, phase: ',kcell_now,cp%phase, cp%progress, cp%fp
 10 continue
 if (cp%phase == G1_phase) then
     cp%progress = cp%progress + cp%fp*dt/ccp%T_G1
@@ -62,9 +62,9 @@ elseif (cp%phase == S_phase) then
     endif
 elseif (cp%phase == G2_phase) then
     cp%progress = cp%progress + cp%fp*dt/ccp%T_G2
-!    if (kcell_now == 1) write(nflog,*) 'progress: ',kcell_now, cp%progress
+!    if (kcell_now < 10) write(*,*) 'phase, progress: ',kcell_now, cp%phase,cp%progress
     if (cp%progress >= 1) then
-!        if (kcell_now <= 100) write(nflog,'(a,i6,2e12.3)') 'To M_phase, V, divide_volume: ',kcell_now, cp%V, cp%divide_volume
+!        if (kcell_now <= 10) write(nflog,'(a,i6,2e12.3)') 'To M_phase, V, divide_volume: ',kcell_now, cp%V, cp%divide_volume
         cp%phase = M_phase
         cp%progress = 0
         cp%V = cp%divide_volume     ! correct for slight volume discrepancy here, to maintain correct cell volume
@@ -72,9 +72,13 @@ elseif (cp%phase == G2_phase) then
 elseif (cp%phase == M_phase) then
     ! do nothing - in new_growcells the phase is immediately changed to cp%dividing, and the mitosis timer starts
 endif
-call updateRepair(cp, dt)
+! Note: if cp%phase = dividing, no repair
+if (cp%phase < M_phase) then
+    call updateRepair(cp, dt)
+endif
 end subroutine
 
+#if 0
 !--------------------------------------------------------------------------
 ! Average phase durations have been computed to sum to the average
 ! cycle time, assuming no checkpoint delays.
@@ -213,6 +217,7 @@ endif
 dies = .false.
 call updateRepair(cp, dt)
 end subroutine
+#endif
 
 end module
 

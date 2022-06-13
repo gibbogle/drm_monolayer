@@ -82,7 +82,7 @@ padding: 8px
            <enum>QTabWidget::West</enum>
           </property>
           <property name="currentIndex">
-           <number>2</number>
+           <number>5</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideNone</enum>
@@ -3651,6 +3651,9 @@ padding: 8px
               </item>
               <item row="10" column="1">
                <widget class="QPushButton" name="pushButton_radSF_1">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="maximumSize">
                  <size>
                   <width>50</width>
@@ -4011,6 +4014,9 @@ padding: 8px
             </widget>
            </widget>
            <widget class="QGroupBox" name="groupBox_radiation_RMR">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="geometry">
              <rect>
               <x>1170</x>
@@ -4343,7 +4349,7 @@ padding: 8px
               <item row="17" column="1">
                <widget class="QPushButton" name="pushButton_TCP_1">
                 <property name="enabled">
-                 <bool>true</bool>
+                 <bool>false</bool>
                 </property>
                 <property name="maximumSize">
                  <size>
@@ -4359,7 +4365,7 @@ padding: 8px
               <item row="17" column="2">
                <widget class="QPushButton" name="pushButton_TCP_2">
                 <property name="enabled">
-                 <bool>true</bool>
+                 <bool>false</bool>
                 </property>
                 <property name="maximumSize">
                  <size>

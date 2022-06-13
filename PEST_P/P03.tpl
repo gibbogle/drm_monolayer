@@ -2,7 +2,7 @@ ptf $
 24/11/21 User:_gib
 GUI2.2      GUI_VERSION_NAME                      GUI program version number.
 DLL2.2      DLL_VERSION_NAME                      DLL version number.
-2000        INITIAL_COUNT                         Initial number of tumour cells
+4000        INITIAL_COUNT                         Initial number of tumour cells
 1           USE_LOGNORMAL_DIST                    Use lognormal distribution
 18.7          DIVIDE_TIME_1_MEDIAN                  Median (h)
 1.1         DIVIDE_TIME_1_SHAPE                   Shape parameter
@@ -87,14 +87,14 @@ $ mitrate        $      MITRATE                               Mitosis rate param
 $ klethal        $         KLETHAL                               MisrepRate scaling factor
 0.076       KATM_1                                K_ATM(1) parameter
 0.3         KATM_2                                K_ATM(2) parameter
-0.0         KATM_3                                K_ATM(3) parameter
+$ katm3          $         KATM_3                                K_ATM(3) parameter
 0.1         KATM_4                                K_ATM(4) parameter
 0.005       KATR_1                                K_ATR(1) parameter
 0.3         KATR_2                                K_ATR(2) parameter
 0.0         KATR_3                                K_ATR(3) parameter
 0.1         KATR_4                                K_ATR(4) parameter
-$ pcomplex       $        PCOMPLEX                              PCOMPLEX parameter
-0.99         PHRSIMPLE                             PHRSIMPLE parameter
+0.69        PCOMPLEX                              PCOMPLEX parameter
+$ phr            $         PHRSIMPLE                             PHRSIMPLE parameter
 0.8         KMAXINHIBIT                           KMAXINHIBIT parameter
 1           B_EXP                                 B_EXP parameter
 0.5         B_HILL                                B_HILL parameter

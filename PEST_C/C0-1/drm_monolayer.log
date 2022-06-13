@@ -1,11 +1,11 @@
 OS is Windows
 Executing with OpenMP
- inputfile:  C04.inp
- outputfile: C04_out.dat
+ inputfile:  C6G.inp
+ outputfile: C6G_out.dat
 ReadCellParams new
  ReadCellCycleParameters:
  ityp:            1
-T_G1,T_S,T_G2,T_M, total:     5.03    7.69    5.48    0.50   18.70
+T_G1,T_S,T_G2,T_M, total:     5.60    8.90    3.60    0.50   18.60
  ityp:            2
 T_G1,T_S,T_G2,T_M, total:     6.00    8.00    1.00    0.50   15.50
  Ndrugs_used:            0
@@ -23,7 +23,7 @@ Median, mean divide time:   0.1870E+02  0.1900E+02  0.1879E+02  0.1909E+02
 GUI version: GUI2.2      
 DLL version: DLL2.2      
  
- Opened C04_out.dat
+ Opened C6G_out.dat
 nsteps, NT_CONC, DELTA_T:   1152     1  600.
 NT_DISPLAY, DT_DISPLAY:      2 1200.
 did ReadCellParams
@@ -46,79 +46,62 @@ did ArrayInitialisation
 O2_maxrate, G_maxrate:    0.625E-10   0.130E-09
  did PlaceCells: Ncells:         1000
 Startup procedures have been executed: initial T cell count:   1000
-averages: V,dVdt,fg:    0.114E-08   0.122E-13   0.100E+01
+averages: V,dVdt,fg:    0.117E-08   0.121E-13
  
  GenerateSFlookup: ityp:            1
 istep, hour:      0   0 Nlive:     1000 Nviable:     1000 NPsurvive:        0
-istep, hour:      6   1 Nlive:     1038 Nviable:     1038 NPsurvive:        0
-istep, hour:     12   2 Nlive:     1077 Nviable:     1077 NPsurvive:        0
-istep, hour:     18   3 Nlive:     1110 Nviable:     1110 NPsurvive:        0
-istep, hour:     24   4 Nlive:     1152 Nviable:     1152 NPsurvive:        0
-istep, hour:     30   5 Nlive:     1199 Nviable:     1199 NPsurvive:        0
+istep, hour:      6   1 Nlive:     1048 Nviable:     1048 NPsurvive:        0
+istep, hour:     12   2 Nlive:     1085 Nviable:     1085 NPsurvive:        0
+istep, hour:     18   3 Nlive:     1120 Nviable:     1120 NPsurvive:        0
+istep, hour:     24   4 Nlive:     1156 Nviable:     1156 NPsurvive:        0
+istep, hour:     30   5 Nlive:     1201 Nviable:     1201 NPsurvive:        0
 Event:   2  21600.  21600.  0    0.0000    0.0000
-RADIATION_EVENT: time, dose:   21600.   8.000
-Radiation dose:    8.0
- Irradiation: Nirradiated:         1237
-istep, hour:     36   6 Nlive:     1175 Nviable:     1175 NPsurvive:        0
-istep, hour:     42   7 Nlive:     1209 Nviable:     1209 NPsurvive:       34
-istep, hour:     48   8 Nlive:     1209 Nviable:     1209 NPsurvive:       34
-istep, hour:     54   9 Nlive:     1241 Nviable:     1241 NPsurvive:       66
-istep, hour:     60  10 Nlive:     1280 Nviable:     1280 NPsurvive:      105
-istep, hour:     66  11 Nlive:     1334 Nviable:     1334 NPsurvive:      159
-istep, hour:     72  12 Nlive:     1395 Nviable:     1395 NPsurvive:      220
-istep, hour:     78  13 Nlive:     1449 Nviable:     1449 NPsurvive:      274
-istep, hour:     84  14 Nlive:     1503 Nviable:     1503 NPsurvive:      328
-istep, hour:     90  15 Nlive:     1545 Nviable:     1545 NPsurvive:      370
-istep, hour:     96  16 Nlive:     1595 Nviable:     1595 NPsurvive:      420
-istep, hour:    102  17 Nlive:     1655 Nviable:     1655 NPsurvive:      480
-istep, hour:    108  18 Nlive:     1714 Nviable:     1714 NPsurvive:      539
-istep, hour:    114  19 Nlive:     1783 Nviable:     1783 NPsurvive:      608
-istep, hour:    120  20 Nlive:     1846 Nviable:     1846 NPsurvive:      671
-istep, hour:    126  21 Nlive:     1927 Nviable:     1927 NPsurvive:      752
-istep, hour:    132  22 Nlive:     2005 Nviable:     2005 NPsurvive:      830
-istep, hour:    138  23 Nlive:     2069 Nviable:     2069 NPsurvive:      894
-istep, hour:    144  24 Nlive:     2137 Nviable:     2137 NPsurvive:      962
-istep, hour:    150  25 Nlive:     2230 Nviable:     2230 NPsurvive:     1051
-istep, hour:    156  26 Nlive:     2289 Nviable:     2289 NPsurvive:     1098
-istep, hour:    162  27 Nlive:     2349 Nviable:     2349 NPsurvive:     1137
-istep, hour:    168  28 Nlive:     2400 Nviable:     2400 NPsurvive:     1164
-istep, hour:    174  29 Nlive:     2456 Nviable:     2456 NPsurvive:     1171
-istep, hour:    180  30 Nlive:     2532 Nviable:     2532 NPsurvive:     1175
- NPsurvive = Nirradiated - Napop:         1175        1237          62
-SFave,log10(SFave):    0.279E-02 -2.5549
-phase_dist:         2.4  24.9  44.6  28.1
-nphase:
-  0     319       0     436       0     228       0       0      17
-  1     333       0     455       0     230       0       0      20
-  2     358       0     443       0     258       0       0      18
-  3     360       0     460       0     271       0       0      19
-  4     377       0     465       0     294       0       0      16
-  5     407       0     476       0     297       0       0      19
-  6     412       0     489       0     312       0       0      24
-  7     417       0     474      64     278      38       0       0
-  8     353       0     487      51     277      90       0      13
-  9     354       0     492      58     280     105       0      14
- 10     362       0     510      52     275     111       0      32
- 11     384       0     535      61     270     120       0      26
- 12     457       0     507      77     291      97       0      28
- 13     534       0     479      59     327      81       0      31
- 14     599       0     453      69     333      92       0      19
- 15     607       0     477      52     352      94       0      25
- 16     605       0     507      72     344     105       0      24
- 17     605       0     558      69     357      94       0      34
- 18     603       0     612      66     364      99       0      32
- 19     637       0     653      63     365      99       0      28
- 20     674       0     689      48     367      90       0      40
- 21     737       0     749      36     360      71       0      36
- 22     784       0     801      56     344      52       0      30
- 23     787       0     840      84     334      48       0      38
- 24     785       0     881      91     343      56       0      43
- 25     845       0     887     114     380      38       0      28
- 26     811       0     932      85     459      35       0      29
- 27     777       0     976      86     517      24       0      31
- 28     736       0    1024      66     578      32       0      26
- 29     716       0    1056      76     591      49       0      30
- 30     708       0    1116      40     634      48       0      48
+RADIATION_EVENT: time, dose:   21600.   6.000
+Radiation dose:    6.0
+ Irradiation: Nirradiated:         1241
+totDSB0:      1    412.1
+totDSB0:      2    420.0
+totDSB0:      3    349.7
+totDSB0:      4    299.3
+totDSB0:      5    210.0
+totDSB0:      6    287.6
+totDSB0:      7    404.1
+totDSB0:      8    210.0
+totDSB0:      9    210.0
+totDSB0:     10    420.0
+ At irradiation, total DSB:    360350.950765936     
+istep, hour:     36   6 Nlive:     1204 Nviable:     1204 NPsurvive:        0
+istep, hour:     42   7 Nlive:     1254 Nviable:     1254 NPsurvive:       50
+istep, hour:     48   8 Nlive:     1305 Nviable:     1305 NPsurvive:      101
+istep, hour:     54   9 Nlive:     1352 Nviable:     1352 NPsurvive:      148
+istep, hour:     60  10 Nlive:     1394 Nviable:     1394 NPsurvive:      190
+istep, hour:     66  11 Nlive:     1460 Nviable:     1460 NPsurvive:      256
+kcell, phase0, phase, totDSB, Nlethal:    1   2   5   0.970E+02   0.121E+01
+istep, hour:     72  12 Nlive:     1527 Nviable:     1527 NPsurvive:      323
+istep, hour:     78  13 Nlive:     1592 Nviable:     1592 NPsurvive:      388
+istep, hour:     84  14 Nlive:     1641 Nviable:     1641 NPsurvive:      437
+istep, hour:     90  15 Nlive:     1708 Nviable:     1708 NPsurvive:      504
+istep, hour:     96  16 Nlive:     1766 Nviable:     1766 NPsurvive:      562
+istep, hour:    102  17 Nlive:     1833 Nviable:     1833 NPsurvive:      629
+istep, hour:    108  18 Nlive:     1905 Nviable:     1905 NPsurvive:      701
+istep, hour:    114  19 Nlive:     1975 Nviable:     1975 NPsurvive:      771
+istep, hour:    120  20 Nlive:     2045 Nviable:     2045 NPsurvive:      841
+istep, hour:    126  21 Nlive:     2102 Nviable:     2102 NPsurvive:      898
+istep, hour:    132  22 Nlive:     2164 Nviable:     2164 NPsurvive:      960
+istep, hour:    138  23 Nlive:     2251 Nviable:     2251 NPsurvive:     1040
+istep, hour:    144  24 Nlive:     2319 Nviable:     2319 NPsurvive:     1098
+istep, hour:    150  25 Nlive:     2410 Nviable:     2410 NPsurvive:     1153
+istep, hour:    156  26 Nlive:     2485 Nviable:     2485 NPsurvive:     1183
+istep, hour:    162  27 Nlive:     2572 Nviable:     2572 NPsurvive:     1193
+istep, hour:    168  28 Nlive:     2663 Nviable:     2663 NPsurvive:     1197
+istep, hour:    174  29 Nlive:     2756 Nviable:     2756 NPsurvive:     1203
+istep, hour:    180  30 Nlive:     2878 Nviable:     2878 NPsurvive:     1204
+ Completed
+     4      35.7  42.2  17.0   2.5
+     8      39.3  41.8  14.6   2.1
+    11      38.8  44.0  13.4   1.8
+    18      34.2  48.0  14.4   1.9
+    24      36.4  43.6  17.0   1.7
 terminate_run
 doing wrapup ...
 deallocated all arrays

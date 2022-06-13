@@ -1,102 +1,49 @@
 pcf
 * control data
 restart estimation
-4 64 4 0 4
-4 4 double point 1 0 0
+4 20 4 0 1
+1 1 double point 1 0 0
  5.0   2.0   0.3  0.03    10
- 3.0 1.5 0.001
+ 3.0 2 0.001
  0.1
   30  0.01     3     3  0.01     3
    1     1     1
 * parameter groups
-katm2 relative 0.01  0.0  switch  2.0 parabolic
+katm1 relative 0.01  0.0  switch  2.0 parabolic
 katm3 relative 0.01  0.0  switch  2.0 parabolic
-katr2 relative 0.01  0.0  switch  2.0 parabolic
-katr4 relative 0.01  0.0  switch  2.0 parabolic
+katr1 relative 0.01  0.0  switch  2.0 parabolic
+katr3 relative 0.01  0.0  switch  2.0 parabolic
 * parameter data
-katm2 none factor 0.076 0.04 0.1 katm2 1.0      0.0000      1
-katm3 none factor 0.3 0.2 0.5 katm3 1.0      0.0000      1
-katr2 none factor 0.005 0.002 0.01 katr2 1.0      0.0000      1
-katr4 none factor 1 0.5 2 katr4 1.0      0.0000      1
+katm1 none factor 0.00003 0 0.0001 katm1 1.0      0.0000      1
+katm3 none factor 0.1 0.001 0.2 katm3 1.0      0.0000      1
+katr1 none factor 0.1 0.001 0.2 katr1 1.0      0.0000      1
+katr3 none factor 0.125 0.01 0.2 katr3 1.0      0.0000      1
 * observation groups
-C01obgp
-C02obgp
-C03obgp
-C04obgp
+C6Gobgp
 * observation data
-C01H08P0 1.38626 1 C01obgp
-C01H08P1 34.9716 1 C01obgp
-C01H08P2 36.925 1 C01obgp
-C01H08P3 26.7171 1 C01obgp
-C01H12P0 1.21413 1 C01obgp
-C01H12P1 30.7947 1 C01obgp
-C01H12P2 39.6247 1 C01obgp
-C01H12P3 28.3664 1 C01obgp
-C01H18P0 0.959024 1 C01obgp
-C01H18P1 36.748 1 C01obgp
-C01H18P2 41.3252 1 C01obgp
-C01H18P3 20.9677 1 C01obgp
-C01H24P0 0.798838 1 C01obgp
-C01H24P1 28.4677 1 C01obgp
-C01H24P2 45.098 1 C01obgp
-C01H24P3 25.6354 1 C01obgp
-C02H08P0 2.22222 1 C02obgp
-C02H08P1 34.8571 1 C02obgp
-C02H08P2 35.3651 1 C02obgp
-C02H08P3 27.5556 1 C02obgp
-C02H12P0 1.94878 1 C02obgp
-C02H12P1 31.3474 1 C02obgp
-C02H12P2 38.8641 1 C02obgp
-C02H12P3 27.8396 1 C02obgp
-C02H18P0 1.5528 1 C02obgp
-C02H18P1 35.5812 1 C02obgp
-C02H18P2 42.5022 1 C02obgp
-C02H18P3 20.3638 1 C02obgp
-C02H24P0 1.30354 1 C02obgp
-C02H24P1 26.8901 1 C02obgp
-C02H24P2 45.6983 1 C02obgp
-C02H24P3 26.108 1 C02obgp
-C03H08P0 3.36722 1 C03obgp
-C03H08P1 34.8158 1 C03obgp
-C03H08P2 34.1804 1 C03obgp
-C03H08P3 27.6366 1 C03obgp
-C03H12P0 2.96753 1 C03obgp
-C03H12P1 31.355 1 C03obgp
-C03H12P2 38.0739 1 C03obgp
-C03H12P3 27.6036 1 C03obgp
-C03H18P0 2.38417 1 C03obgp
-C03H18P1 34.0981 1 C03obgp
-C03H18P2 43.4098 1 C03obgp
-C03H18P3 20.108 1 C03obgp
-C03H24P0 2.01598 1 C03obgp
-C03H24P1 25.8273 1 C03obgp
-C03H24P2 45.0361 1 C03obgp
-C03H24P3 27.1206 1 C03obgp
-C04H08P0 3.96166 1 C04obgp
-C04H08P1 34.3131 1 C04obgp
-C04H08P2 33.3546 1 C04obgp
-C04H08P3 28.3706 1 C04obgp
-C04H12P0 3.49099 1 C04obgp
-C04H12P1 30.4617 1 C04obgp
-C04H12P2 38.1757 1 C04obgp
-C04H12P3 27.8716 1 C04obgp
-C04H18P0 2.81946 1 C04obgp
-C04H18P1 32.8786 1 C04obgp
-C04H18P2 44.2019 1 C04obgp
-C04H18P3 20.1 1 C04obgp
-C04H24P0 2.39013 1 C04obgp
-C04H24P1 24.8651 1 C04obgp
-C04H24P2 44.6029 1 C04obgp
-C04H24P3 28.1419 1 C04obgp
+C6GH04P1 27.35 1 C6Gobgp
+C6GH04P2 20.8 1 C6Gobgp
+C6GH04P3 51.45 1 C6Gobgp
+C6GH04P4 0.19 1 C6Gobgp
+C6GH08P1 26.2 1 C6Gobgp
+C6GH08P2 32.6 1 C6Gobgp
+C6GH08P3 40.63 1 C6Gobgp
+C6GH11P4 0.41 1 C6Gobgp
+C6GH11P1 31.17 1 C6Gobgp
+C6GH11P2 44.23 1 C6Gobgp
+C6GH11P3 24.1 1 C6Gobgp
+C6GH11P4 0.73 1 C6Gobgp
+C6GH18P1 65.07 1 C6Gobgp
+C6GH18P2 16.07 1 C6Gobgp
+C6GH18P3 18 1 C6Gobgp
+C6GH18P4 3.21 1 C6Gobgp
+C6GH24P1 63.73 1 C6Gobgp
+C6GH24P2 11.63 1 C6Gobgp
+C6GH24P3 23.93 1 C6Gobgp
+C6GH24P4 0.99 1 C6Gobgp
 * model command line
 drm_monolayer.bat > nul
 * model input/output
-C01.tpl C01.inp
-C02.tpl C02.inp
-C03.tpl C03.inp
-C04.tpl C04.inp
-C01_out.ins C01_out.dat
-C02_out.ins C02_out.dat
-C03_out.ins C03_out.dat
-C04_out.ins C04_out.dat
+C6G.tpl C6G.inp
+C6G_out.ins C6G_out.dat
 * prior information

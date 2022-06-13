@@ -1118,7 +1118,7 @@ do kcell = 1,nlist
 		fluor = 1
 	elseif (cp%phase == S_phase) then
 !		fluor = 1 + min((tnow - cp%G1S_time)/(cp%S_time - cp%G1S_time), 1.0)
-        fluor = 1 + min(cp%S_time/cp%S_duration, 1.0)
+!DRM        fluor = 1 + min(cp%S_time/cp%S_duration, 1.0)
 	else
 		fluor = 2
 	endif
