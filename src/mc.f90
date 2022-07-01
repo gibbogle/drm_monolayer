@@ -189,7 +189,7 @@ elseif (iphase_hours == -2) then    ! this is the compute_cycle case
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 3
     next_phase_hour = 1
-    phase_hour(1:5) = [4.5, 8, 11, 0, 0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+    phase_hour(1:5) = [4.5, 8.0, 11.0, 0.0, 0.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 elseif (iphase_hours == -3) then
     use_SF = .true.     ! in this case SFave is recorded and there are multiple phase distribution recording times
     nphase_hours = 4
