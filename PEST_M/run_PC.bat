@@ -1,2 +1,2 @@
-cd D:\drm_monolayer\pest_M\M6-1
+cd D:\drm_monolayer\pest_M\MB1-1
 pest drm_monolayer.pst

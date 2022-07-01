@@ -41,15 +41,23 @@ type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
 real(REAL_KIND) :: dt
 
-if (cp%dVdt == 0) then
-	write(nflog,*) 'dVdt=0, kcell: ',kcell_now,cp%phase
-	stop
-endif
+!if (cp%dVdt == 0) then
+!	write(nflog,*) 'dVdt=0, kcell: ',kcell_now,cp%phase
+!	stop
+!endif
 !if (kcell_now == 1) write(*,'(a,2i4,8f7.3)') 'kcell, phase: ',kcell_now,cp%phase, cp%progress, cp%fp
 10 continue
 if (cp%phase == G1_phase) then
     cp%progress = cp%progress + cp%fp*dt/ccp%T_G1
     if (cp%progress >= 1) then
+        if (use_G1_stop) then
+            ! At start of CP, need to compute CP delay
+            call get_CP_delay(cp)
+            cp%phase = G1_checkpoint
+            cp%progress = 0
+!            write(*,'(a,i6)') 'G1 -> checkpoint: ',kcell_now
+            goto 20
+        endif
         cp%phase = S_phase
         cp%progress = 0
 !        goto 10    ! could continue in next phase with the remainder of the time step
@@ -57,23 +65,59 @@ if (cp%phase == G1_phase) then
 elseif (cp%phase == S_phase) then
     cp%progress = cp%progress + cp%fp*dt/ccp%T_S
     if (cp%progress >= 1) then
+        if (use_S_stop) then
+            ! At start of CP, need to compute CP delay
+            call get_CP_delay(cp)
+            cp%phase = S_checkpoint
+            cp%progress = 0
+            goto 20
+        endif
         cp%phase = G2_phase
         cp%progress = 0
+        nSdelay = nSdelay + 1   ! only S doesn't use stops
     endif
 elseif (cp%phase == G2_phase) then
     cp%progress = cp%progress + cp%fp*dt/ccp%T_G2
 !    if (kcell_now < 10) write(*,*) 'phase, progress: ',kcell_now, cp%phase,cp%progress
     if (cp%progress >= 1) then
 !        if (kcell_now <= 10) write(nflog,'(a,i6,2e12.3)') 'To M_phase, V, divide_volume: ',kcell_now, cp%V, cp%divide_volume
+        if (use_G2_stop) then
+            ! At start of CP, need to compute CP delay
+            call get_CP_delay(cp)
+            cp%phase = G2_checkpoint
+            cp%progress = 0
+            goto 20
+        endif
         cp%phase = M_phase
         cp%progress = 0
         cp%V = cp%divide_volume     ! correct for slight volume discrepancy here, to maintain correct cell volume
     endif
 elseif (cp%phase == M_phase) then
     ! do nothing - in new_growcells the phase is immediately changed to cp%dividing, and the mitosis timer starts
+elseif (cp%phase == G1_checkpoint) then
+    cp%progress = cp%progress + dt/cp%CP_delay
+    if (cp%progress >= 1) then
+        cp%phase = S_phase
+        cp%progress = 0
+!        write(*,'(a,i6)') 'G1 -> S: ',kcell_now
+    endif 
+elseif (cp%phase == S_checkpoint) then
+    cp%progress = cp%progress + dt/cp%CP_delay
+    if (cp%progress >= 1) then
+        cp%phase = G2_phase
+        cp%progress = 0
+    endif 
+elseif (cp%phase == G2_checkpoint) then
+    cp%progress = cp%progress + dt/cp%CP_delay
+    if (cp%progress >= 1) then
+        cp%phase = M_phase
+        cp%progress = 0
+!        write(*,'(a,i6)') 'G2 -> M: ',kcell_now
+    endif 
 endif
+20  continue
 ! Note: if cp%phase = dividing, no repair
-if (cp%phase < M_phase) then
+if (cp%phase /= M_phase) then
     call updateRepair(cp, dt)
 endif
 end subroutine

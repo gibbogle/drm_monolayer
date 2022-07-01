@@ -1180,6 +1180,7 @@ cp%CFSE = generate_CFSE(1.d0)
 !cp%ATP_rate_factor = get_ATP_rate_factor()
 !cp%ndt = ndt
 cp%Psurvive = -1    ! flags Psurvive not yet computed
+!if (cp%phase == G1_phase) write(*,'(a,i6,f8.3)') 'G1_phase cell: ',kcell,cp%progress
 end subroutine
 
 !--------------------------------------------------------------------------------
@@ -1247,7 +1248,8 @@ if (use_exponential_cycletime) then
 endif
 ityp = cp%celltype
 ccp => cc_parameters(ityp)
-if (S_phase_RR) then
+!if (S_phase_RR) then
+if (use_synchronise .and. (initial_count == 1)) then
     Tc = divide_time_mean(1)
 else
     Tc = cp%divide_time         ! log-normal, implies %fg
@@ -1683,6 +1685,7 @@ type(metabolism_type), pointer :: mp
 type(cell_type), pointer :: cp
 integer :: phase_count(0:4)
 real(REAL_KIND) :: total
+real(REAL_KIND) :: fATM, fATR, fCP, dtCPdelay, dtATMdelay, dtATRdelay, ATM_DSB
 logical :: PEST_OK
 logical :: ok = .true.
 logical :: dbug
@@ -1819,6 +1822,51 @@ res = 0
 
 call getNviable
 
+kcell = 1
+cp => cell_list(kcell)
+if (use_synchronise .and. .false.) then
+    call get_slowdown_factors(cp,cp%phase,fATM,fATR)
+    fCP = fATM*fATR
+    dt = DELTA_T
+    dtCPdelay = dt*(1 - fCP)
+    if (2-fATM-fATR == 0) then
+        dtATMdelay = 0
+        dtATRdelay = 0
+    else
+        dtATMdelay = dtCPdelay*(1 - fATM)/(2 - fATM - fATR)
+        dtATRdelay = dtCPdelay*(1 - fATR)/(2 - fATM - fATR)
+    endif
+    if (isnan(dtATMdelay)) then
+        write(*,*) 'dtATMdelay is NAN'
+        write(*,*) dtCPdelay,fATM,fATR,2-fATM-fATR
+        stop
+    endif
+    tCPdelay = tCPdelay + dtCPdelay
+    tATMdelay = tATMdelay + dtATMdelay
+    tATRdelay = tATRdelay + dtATRdelay 
+!    write(nfphase,'(2i6,11f8.3)') istep,cp%phase,cp%progress,t_simulation/3600,cp%pATM,cp%pATR,fATM,fATR,fCP,tCPdelay/3600,tATMdelay/3600,tATRdelay/3600
+    ATM_DSB = cp%DSB(NHEJc) + cp%DSB(HR)   ! complex DSB
+    write(nfphase,'(2i6,11f8.3)') istep,cp%phase,cp%progress,t_simulation/3600,ATM_DSB,cp%pATM
+    if (cp%phase == S_phase) stop
+    if (cp%phase == dividing) then
+        write(*,*) 'Reached mitosis'
+        res = 1
+        return
+    endif
+endif
+
+if (compute_cycle) then
+    if (next_phase_hour > 0) then  ! check if this is a phase_hour
+        if (real(istep)/nthour >= phase_hour(next_phase_hour)) then   ! record phase_dist
+            recorded_phase_dist(next_phase_hour,:) = phase_dist
+            next_phase_hour = next_phase_hour + 1
+            if (next_phase_hour > nphase_hours) next_phase_hour = 0
+            write(*,*) 'next_phase_hour: ',next_phase_hour
+        endif
+    endif
+endif
+
+
 if (dbug .or. mod(istep,nthour) == 0) then
     hour = istep/nthour
     nphaseh = 0
@@ -1835,6 +1883,7 @@ if (dbug .or. mod(istep,nthour) == 0) then
 !	call logger(logmsg)
 	write(logmsg,'(a,i6,i4,a,i8,a,i8,a,i8,4f8.3,a,e12.3)') 'istep, hour: ',istep,hour,' Nlive: ',Ncells,' Nviable: ',sum(Nviable),' NPsurvive: ',NPsurvive    !, &
 	call logger(logmsg)
+!                write(*,*) 'hour,next_phase_hour: ',hour,next_phase_hour,phase_hour(next_phase_hour),compute_cycle
 !	if (hourly_cycle_dist) then     ! this should always be set true
 	if (compute_cycle) then
 	    call get_phase_distribution(phase_count)
@@ -1843,9 +1892,8 @@ if (dbug .or. mod(istep,nthour) == 0) then
 !	    phase_dist(3) = phase_dist(3) + phase_dist(4)   ! we no longer need to sum G2 and M
 !	    write(nfphase,'(i4,4f8.1)') hour,phase_dist(0:3)
 	endif
-	if (track_cell_phase) then
-	    kcell = 1
-        cp => cell_list(kcell)
+	if (use_synchronise) then
+!        write(*,'(a,i4,f6.3,i4)') 'phase, progress: ',cp%phase, cp%progress, next_phase_hour
 !        write(nfphase,'(2i4,2f6.1,2f6.3)') hour,cp%phase,tnow/3600,cp%G2_time/3600,cp%V/Vdivide0,cp%divide_volume/Vdivide0
     endif
     
@@ -1856,17 +1904,18 @@ if (dbug .or. mod(istep,nthour) == 0) then
     enddo
 
 !    if (use_PEST) then
-    if (compute_cycle) then
-        if (next_phase_hour > 0) then  ! check if this is a phase_hour
-            if (hour == phase_hour(next_phase_hour)) then   ! record phase_dist
-                recorded_phase_dist(next_phase_hour,:) = phase_dist
-                next_phase_hour = next_phase_hour + 1
-                if (next_phase_hour > nphase_hours) next_phase_hour = 0
-            endif
-        endif
-    endif
+!    if (compute_cycle) then
+!        if (next_phase_hour > 0) then  ! check if this is a phase_hour
+!            if (hour >= phase_hour(next_phase_hour)) then   ! record phase_dist
+!                recorded_phase_dist(next_phase_hour,:) = phase_dist
+!                next_phase_hour = next_phase_hour + 1
+!                if (next_phase_hour > nphase_hours) next_phase_hour = 0
+!                write(*,*) 'next_phase_hour: ',next_phase_hour
+!            endif
+!        endif
+!    endif
     
-    write(nfphase,'(a,6f8.1)') 'DSB: ',cp%DSB(1:4),sum(cp%DSB),cp%Nlethal
+!    write(nfphase,'(a,6f8.1)') 'DSB: ',cp%DSB(1:4),sum(cp%DSB),cp%Nlethal
 	    
 endif
 ! write(nflog,'(a,f8.3)') 'did simulate_step: time: ',wtime()-start_wtime
@@ -1874,7 +1923,7 @@ endif
 istep = istep + 1
 !write(*,*) 'end simulate_step: t_simulation: ',t_simulation
 !call averages
-! No need for this here, since we are now caomputing phase_dist every hour
+! No need for this here, since we are now computing phase_dist every hour
 !if (t_simulation - t_irradiation >= phase_hours*3600 .and. phase_dist(1) == 0) then   ! count cells in each phase
 !    call get_phase_distribution(phase_dist)
 !    do kcell = 1,nlist
@@ -1947,14 +1996,14 @@ do kcell = 1,nlist
         ph = 1
     elseif (cp%phase == S_phase .or. cp%phase == S_checkpoint) then
         ph = 2
-    elseif (cp%phase < M_phase) then
+    elseif (cp%phase == G2_phase .or. cp%phase == G2_checkpoint) then
         ph = 3
     else
         ph = 4
     endif
     phase_count(ph) = phase_count(ph) + 1
 enddo
-!write(*,'(5i6)') phase_count(0:4)
+!write(*,'(a,5i6)') 'phase_count: ',phase_count(0:4)
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -2008,18 +2057,25 @@ subroutine completed
 !real(REAL_KIND) :: fract(0:4)
 integer :: kcell, ph, nir(4), nsum, kcellmax, i
 real(REAL_KIND) :: sftot(4), sfsum, sfmax
+integer :: tadjust
 type(cell_type), pointer :: cp
 
 if (compute_cycle) then
     write(nflog,*) 'Completed'
     write(*,*) 'Completed'
+    if (use_synchronise) then
+        tadjust = 0
+    else
+        tadjust = 6
+    endif
     if (nphase_hours > 0) then
         write(nfres,'(20e15.6)') (recorded_phase_dist(i,1:4),i=1,nphase_hours)
         do i = 1,nphase_hours
-            write(nflog,'(i6,4x,4f6.1)') phase_hour(i)-6,recorded_phase_dist(i,1:4)
-            write(*,'(i6,4x,4f6.1)') phase_hour(i)-6,recorded_phase_dist(i,1:4)
+            write(nflog,'(f6.1,4x,4f6.1)') phase_hour(i)-tadjust,recorded_phase_dist(i,1:4)
+            write(*,'(f6.1,4x,4f6.1)') phase_hour(i)-tadjust,recorded_phase_dist(i,1:4)
         enddo
     endif
+    write(*,'(a,3f8.3)') 'Average G1, S, G2 CP delays: ',totG1delay/nG1delay,totSdelay/(3600.*nSdelay),totG2delay/nG2delay
     return
 endif
 

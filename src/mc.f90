@@ -77,6 +77,16 @@ real(8) :: repRateFactor(NP)
 
 real(8) :: totPmit, totPaber, tottotDSB, totNlethal
 
+real(8) :: tCPdelay, tATMdelay, tATRdelay
+logical :: use_addATMATRtimes = .false.
+logical :: use_stops = .true.
+logical :: use_G1_stop = .true.
+logical :: use_S_stop = .false.
+logical :: use_G2_stop = .true.
+real(8) :: totG1delay, totSdelay, totG2delay
+integer :: nG1delay, nSdelay, nG2delay
+logical :: use_pATM_Nindependent = .true.
+
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHRsimple, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
 contains
@@ -179,7 +189,7 @@ elseif (iphase_hours == -2) then    ! this is the compute_cycle case
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 3
     next_phase_hour = 1
-    phase_hour(1:5) = [4, 8, 11, 0, 0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+    phase_hour(1:5) = [4.5, 8, 11, 0, 0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 elseif (iphase_hours == -3) then
     use_SF = .true.     ! in this case SFave is recorded and there are multiple phase distribution recording times
     nphase_hours = 4
@@ -190,7 +200,7 @@ elseif (iphase_hours == -4) then    ! this is the synchronised IR case
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 1
     next_phase_hour = 1
-    phase_hour(1:5) = [20, 0, 0, 0, 0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+    phase_hour(1:5) = [40, 0, 0, 0, 0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 else
     if (use_PEST) then
         write(*,*) 'Error: ReadMcParameters: with PEST iphase_hours must be -1,-2,-3'
@@ -203,6 +213,18 @@ write(*,*) 'did ReadMcParameters:'
 !write(*,*) '====================================================================='
 !write(*,*) 'Test!!!!!!!!!!!!!!!    SETTING repRate = 0 for NHEJ'
 !write(*,*) '====================================================================='
+
+! Initialise CP delay totals
+tCPdelay = 0 
+tATMdelay = 0
+tATRdelay = 0
+! Initialise phase CP delay totals
+totG1delay = 0
+totSdelay = 0
+totG2delay = 0
+nG1delay = 0
+nSdelay = 0
+nG2delay = 0
 end subroutine
 
 !!--------------------------------------------------------------------------
@@ -378,13 +400,24 @@ end subroutine
 !--------------------------------------------------------------------------
 subroutine updateATM(iph,pATM,ATM_DSB,dth)
 integer :: iph
-real(8) :: pATM, ATM_DSB, dth
+real(8) :: pATM, ATM_DSB, dth, pATM0
 real(8) :: r, k
 
-r = K_ATM(iph,1)*ATM_DSB   ! rate of production of pATM
+pATM0 = pATM
+if (use_pATM_Nindependent) then
+    r = K_ATM(iph,1)   ! rate of production of pATM
+else
+    r = K_ATM(iph,1)*ATM_DSB   ! rate of production of pATM
+endif
 k = K_ATM(iph,2)  ! decay rate constant
 pATM = r/k + (pATM - r/k)*exp(-k*dth)
+if (isnan(pATM)) then
+    write(*,*) 'NAN in updateATM: ',iph, r, k, r/k
+    stop
+endif
 !if (kcell_now == 1) write(*,'(a,i4,5f8.2)') 'updateATM: r,k,r/k,ATM_DSB,pATM: ',kcell_now,r,k,r/k,ATM_DSB,pATM
+!write(*,'(a,i3,6f8.4)') 'updateATM: ',iph,ATM_DSB,r,k,r/k,pATM
+!if (iph == 2) stop
 end subroutine
 
 !--------------------------------------------------------------------------
@@ -411,51 +444,82 @@ end subroutine
 
 !------------------------------------------------------------------------
 ! Effect of pATM
-! Using parameters from mcradio, time computed in hours, returned in secs 
-! NOT USED NOW
+! Time computed in hours, returned in secs 
 !------------------------------------------------------------------------
-function S_checkpoint_time(cp) result(t)
+function G1_checkpoint_time(cp) result(t)
 type(cell_type), pointer :: cp
 real(REAL_KIND) :: t, th
 integer :: iph = 1
 
-th = K_ATM(iph,4)*(1 - exp(-K_ATM(iph,1)*cp%pATM))
-!if (kcell_now == 1) write(*,'(a,i6,2f8.3)') 'S_checkpoint_time (h): ',kcell_now,cp%pATM,th
-t = 3600*th
-if (is_radiation) then
-    Sthsum = Sthsum + th
-    NSth = NSth + 1
+th = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*cp%pATM))
+!if (kcell_now == 1) write(*,'(a,i6,2f8.3)') 'G1_checkpoint_time (h): ',kcell_now,cp%pATM,th
+if (isnan(th)) then
+    write(*,*) 'NAN in G1_checkpoint_time: ',cp%pATM
+    stop
 endif
+totG1delay = th + totG1delay
+nG1delay = nG1delay + 1
+t = 3600*th
+!if (is_radiation) then
+!    Sthsum = Sthsum + th
+!    NSth = NSth + 1
+!endif
 end function
 
 !------------------------------------------------------------------------
-! Effect of pATM and pATR
-! Using parameters from mcradio, time computed in hours, returned in secs
-! NOT USED NOW
+! Combined effect of pATM and pATR
+! Time computed in hours, returned in secs
 !------------------------------------------------------------------------
 function G2_checkpoint_time(cp) result(t)
 type(cell_type), pointer :: cp
 real(REAL_KIND) :: t, th, th_ATM, th_ATR
-integer :: iph = 1
+integer :: iph = 3
 
-th_ATM = K_ATM(iph,4)*(1 - exp(-K_ATM(iph,1)*cp%pATM))
-th_ATR = K_ATR(iph,4)*(1 - exp(-K_ATR(iph,1)*cp%pATR))
+th_ATM = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*cp%pATM))
+th_ATR = K_ATR(iph,3)*(1 - exp(-K_ATR(iph,4)*cp%pATR))
 th = th_ATM + th_ATR
+totG2delay = th + totG2delay
+nG2delay = nG2delay + 1
 !if (kcell_now == 3) write(*,'(a,i6,2f8.3)') 'G2_checkpoint_time (ATM, ATR) (h): ',kcell_now,th_ATM,th_ATR 
 t = 3600*th
-if (is_radiation) then
-    G2thsum = G2thsum + th
-    NG2th = NG2th + 1
-endif
+!if (is_radiation) then
+!    G2thsum = G2thsum + th
+!    NG2th = NG2th + 1
+!endif
 end function
+
+!------------------------------------------------------------------------
+!------------------------------------------------------------------------
+subroutine get_slowdown_factors(cp,iph,fATM,fATR)
+type(cell_type), pointer :: cp
+integer :: iph
+real(REAL_KIND) :: fATM, fATR
+real(REAL_KIND) :: pATM, pATR, k1, k2
+
+pATM = cp%pATM
+k1 = K_ATM(iph,3)   !*G2_katm3_factor
+k2 = K_ATM(iph,4)   !*G2_katm4_factor
+fATM = max(0.01,1 - k1*pATM/(k2 + pATM))
+!write(*,'(a,i3,4f8.4)') 'fATM: ',iph,k1,k2,pATM,fATM
+!if (iph == 2) stop
+if (iph > G1_phase) then
+    pATR = cp%pATR
+    k1 = K_ATR(iph,3)   !*G2_katr3_factor
+    k2 = K_ATR(iph,4)   !*G2_katr4_factor
+    fATR = max(0.01,1 - k1*pATR/(k2 + pATR))
+else
+    fATR = 1.0
+endif
+end subroutine
 
 !------------------------------------------------------------------------
 !------------------------------------------------------------------------
 function slowdown(cp) result(fslow)
 type(cell_type), pointer :: cp
+real(REAL_KIND) :: fslow
 type(cycle_parameters_type),pointer :: ccp
-integer :: phase, iph
-real(REAL_KIND) :: pATM, pATR, k1, k2, fATM, fATR, fslow, dose, delay
+integer :: iph
+real(REAL_KIND) :: fATM, fATR, dt, dtCPdelay
 
 ccp => cc_parameters(1)
 if (use_fixed_CP) then
@@ -473,43 +537,39 @@ else
     else
         iph = 1
     endif
-    fslow = 1.0
-    if (cp%phase == G1_phase) then
-        pATM = cp%pATM
-        k1 = K_ATM(iph,3)   ! = 1
-        k2 = K_ATM(iph,4)   ! = 1
-        fATM = 1 - k1*pATM/(k2 + pATM)
-        fATR = 1                !!!!!!!!!!!!!!!????????????????????
-!        ! To apply a fixed CP to G1 only
-!        dose = event(1)%dose
-!        delay = 3600*dose/3
-!        fATM = ccp%T_G1/(ccp%T_G1 + delay)
-!        ! testing fit to phase distribution data, for PEST_C only!!!!!!
-    elseif (cp%phase == S_phase) then
-        pATM = cp%pATM
-        k1 = K_ATM(iph,3)   ! = 1
-        k2 = K_ATM(iph,4)   ! = 1
-        fATM = 1 - k1*pATM/(k2 + pATM)
- !       fATR = 1                !!!!!!!!!!!!!!!????????????????????
-        pATR = cp%pATR
-        k1 = K_ATR(iph,3)
-        k2 = K_ATR(iph,4)
-        fATR = max(0.01,1 - k1*pATR/(k2 + pATR))
-    elseif (cp%phase == G2_phase) then
-        pATM = cp%pATM
-        k1 = K_ATM(iph,3)   !*G2_katm3_factor
-        k2 = K_ATM(iph,4)   !*G2_katm4_factor
-        fATM = max(0.01,1 - k1*pATM/(k2 + pATM))
-        pATR = cp%pATR
-        k1 = K_ATR(iph,3)   !*G2_katr3_factor
-        k2 = K_ATR(iph,4)   !*G2_katr4_factor
-        fATR = max(0.01,1 - k1*pATR/(k2 + pATR))
-!        if (kcell_now <= 10) write(*,'(a,i4,4f8.4)') 'kcell, ATM, ATR: ',kcell_now, pATM, fATM, pATR, fATR
+    if ((iph == 1 .and. use_G1_stop) .or. &
+        (iph == 2 .and. use_S_stop) .or. &
+        (iph == 3 .and. use_G2_stop)) then
+        fslow = 1.0
+    else
+        dt = DELTA_T
+        call get_slowdown_factors(cp,iph,fATM, fATR)
+        if (use_addATMATRtimes) then
+            dt = DELTA_T
+            fslow = max(0.0,fATM + fATR - 1)
+        else
+            fslow = fATM*fATR
+        endif
+        dtCPdelay = dt*(1 - fslow)
+        totSdelay = totSdelay + dtCPdelay
+!        if (kcell_now == 10) write(*,'(a,i4,4f8.3)') 'slowdown: ',kcell_now,fATM,fATR,fslow,cp%progress
     endif
-    fslow = fATM*fATR
 endif
 !if (kcell_now == 1) write(*,'(a,2i6,3f6.3)') 'kcell, phase, fslow: ',kcell_now, cp%phase, fslow, fATM, fATR
 end function
+
+!------------------------------------------------------------------------
+!------------------------------------------------------------------------
+subroutine get_CP_delay(cp)
+type(cell_type), pointer :: cp
+
+if (cp%phase == G1_phase) then
+    cp%CP_delay = G1_checkpoint_time(cp)
+!    write(*,'(a,i6,f8.3)') 'G1 CP_delay: ',kcell_now,cp%CP_delay/3600
+elseif (cp%phase == G2_phase) then
+    cp%CP_delay = G2_checkpoint_time(cp)
+endif
+end subroutine
 
 !--------------------------------------------------------------------------
 ! To determine repair on a given pathway
@@ -569,11 +629,11 @@ logical :: dbug
 dth = dt/3600   ! hours
 use_ATM = .not.use_fixed_CP
 phase = cp%phase
-if (use_phase_dependent_CP_parameters) then
+!if (use_phase_dependent_CP_parameters) then    ! always now
     iph = phase
-else
-    iph = 1
-endif
+!else
+!    iph = 1
+!endif
 DSB = cp%DSB
 repRateFactor = 1.0
 ! DNA-PK inhibition, DSB reassignment
@@ -623,8 +683,11 @@ ATR_DSB = DSB(HR)
 !    call updateATM(cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth
 !    call updateATR(cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth
 !else
-    call updateATM(iph,cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth
-    if (iph > 1) call updateATR(iph,cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth
+    if (iph >= 7) iph = iph - 6     ! checkpoint phase numbers --> phase number, to continue pATM and pATR processes through checkpoints
+    if (iph <= 3) then      ! not for 4 (M_phase) or 5 (dividing)
+        call updateATM(iph,cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth
+        if (iph > 1) call updateATR(iph,cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth
+    endif
 !endif
 
 !pathUsed = pathwayUsed(phase,:)

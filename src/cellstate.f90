@@ -655,9 +655,9 @@ do kcell = 1,nlist0
 	if (cp%phase /= M_phase) then
 	    call growcell(cp,dt)
 	endif
-	if (cp%dVdt > 0) then
+!	if (cp%dVdt > 0) then
         call log_timestep(cp, ccp, dt)
-    endif
+!    endif
     if (cp%phase == M_phase) then
 		cp%mitosis = 0
 		cp%t_start_mitosis = tnow
@@ -728,6 +728,7 @@ integer :: ityp
 logical :: oxygen_growth, glucose_growth, tagged
 
 if (cp%phase >= M_phase) then
+!   Note: no growth in checkpoints
 !	write(nflog,*) 'no growth - kcell,phase: ',kcell_now,cp%phase
     cp%dVdt = 0
 	return

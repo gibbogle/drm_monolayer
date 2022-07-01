@@ -1,7 +1,7 @@
 pcf
 * control data
 restart estimation
-20 24 20 0 2
+19 24 19 0 2
 2 2 double point 1 0 0
  5.0   2.0   0.3  0.03    10
  3.0 2 0.001
@@ -12,7 +12,6 @@ restart estimation
 katm1g1 relative 0.01  0.0  switch  2.0 parabolic
 katm1s relative 0.01  0.0  switch  2.0 parabolic
 katm1g2 relative 0.01  0.0  switch  2.0 parabolic
-katm2g1 relative 0.01  0.0  switch  2.0 parabolic
 katm2s relative 0.01  0.0  switch  2.0 parabolic
 katm2g2 relative 0.01  0.0  switch  2.0 parabolic
 katm3g1 relative 0.01  0.0  switch  2.0 parabolic
@@ -30,31 +29,30 @@ katr3g2 relative 0.01  0.0  switch  2.0 parabolic
 katr4s relative 0.01  0.0  switch  2.0 parabolic
 katr4g2 relative 0.01  0.0  switch  2.0 parabolic
 * parameter data
-katm1g1 none factor 0.1 0 0.2 katm1g1 1.0      0.0000      1
-katm1s none factor 0.1 0 0.2 katm1s 1.0      0.0000      1
-katm1g2 none factor 0.1 0 0.2 katm1g2 1.0      0.0000      1
-katm2g1 none factor 1 0.5 2 katm2g1 1.0      0.0000      1
-katm2s none factor 1 0.5 2 katm2s 1.0      0.0000      1
-katm2g2 none factor 1 0.5 2 katm2g2 1.0      0.0000      1
-katm3g1 none factor 0.5 0 1 katm3g1 1.0      0.0000      1
-katm3s none factor 0.5 0 1 katm3s 1.0      0.0000      1
-katm3g2 none factor 0.5 0 1 katm3g2 1.0      0.0000      1
-katm4g1 none factor 1 0.5 2 katm4g1 1.0      0.0000      1
-katm4s none factor 1 0.5 2 katm4s 1.0      0.0000      1
-katm4g2 none factor 1 0.5 2 katm4g2 1.0      0.0000      1
-katr1s none factor 0.5 0 1 katr1s 1.0      0.0000      1
-katr1g2 none factor 0.5 0 1 katr1g2 1.0      0.0000      1
-katr2s none factor 1 0.5 2 katr2s 1.0      0.0000      1
-katr2g2 none factor 1 0.5 2 katr2g2 1.0      0.0000      1
-katr3s none factor 0.5 0 1 katr3s 1.0      0.0000      1
-katr3g2 none factor 0.5 0 1 katr3g2 1.0      0.0000      1
-katr4s none factor 1 0.5 2 katr4s 1.0      0.0000      1
-katr4g2 none factor 1 0.5 2 katr4g2 1.0      0.0000      1
+katm1g1 none factor 0.264 0.05 0.4 katm1g1 1.0      0.0000      1
+katm1s none factor 0.03254 0.01 0.05 katm1s 1.0      0.0000      1
+katm1g2 none factor 10.72 7 12 katm1g2 1.0      0.0000      1
+katm2s none factor 0.103 0.01 0.5 katm2s 1.0      0.0000      1
+katm2g2 none factor 2.011 1.5 4 katm2g2 1.0      0.0000      1
+katm3g1 none factor 9 5 13 katm3g1 1.0      0.0000      1
+katm3s none factor 0.00174 0.001 0.004 katm3s 1.0      0.0000      1
+katm3g2 none factor 3.035 2 4 katm3g2 1.0      0.0000      1
+katm4g1 none factor 0.5 0.1 1.5 katm4g1 1.0      0.0000      1
+katm4s none factor 0.2 0.1 0.35 katm4s 1.0      0.0000      1
+katm4g2 none factor 2.281 1.5 4 katm4g2 1.0      0.0000      1
+katr1s none factor 0.18 0.05 0.25 katr1s 1.0      0.0000      1
+katr1g2 none factor 0.01757 0.001 0.05 katr1g2 1.0      0.0000      1
+katr2s none factor 9.016 7 11 katr2s 1.0      0.0000      1
+katr2g2 none factor 0.1 0.01 0.5 katr2g2 1.0      0.0000      1
+katr3s none factor 3.278 2 5 katr3s 1.0      0.0000      1
+katr3g2 none factor 4.882 2 6 katr3g2 1.0      0.0000      1
+katr4s none factor 10.28 8 15 katr4s 1.0      0.0000      1
+katr4g2 none factor 0.1 0.01 0.3 katr4g2 1.0      0.0000      1
 * observation groups
 CB2Gobgp
 CB6Gobgp
 * observation data
-CB2GH04P1 23.6 0.205846742398155 CB2Gobgp
+CB2GH04P1 31 0.179605302026775 CB2Gobgp
 CB2GH04P2 42.6 0.153212853258974 CB2Gobgp
 CB2GH04P3 22.2 0.212238179989004 CB2Gobgp
 CB2GH04P4 1.9 0.725476250110012 CB2Gobgp

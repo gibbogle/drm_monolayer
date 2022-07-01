@@ -79,11 +79,11 @@ endif
 
 ! Synchronisation of cell IR
 use_synchronise = .false.
-synch_phase = G2_phase
+synch_phase = G1_phase
 synch_fraction = 0.0
 G2_katm3_factor = 1.0
 G2_katm4_factor = 1.0
-G2_katr3_factor = 1.5
+G2_katr3_factor = 1.0
 G2_katr4_factor = 1.0
 
 use_fixed_CP = .false.
@@ -92,7 +92,7 @@ compute_cycle = .true.
 i_hypoxia_cutoff = 3
 i_growth_cutoff = 1
 do irun = 1,1
-    synch_fraction = (irun-1)*0.2
+!    synch_fraction = (irun-1)*0.2
     if (use_synchronise) then
     	write(*,'(a,2i4,f6.1)') 'irun, synch_phase, synch_fraction: ',irun,synch_phase,synch_fraction
     endif
