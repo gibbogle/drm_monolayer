@@ -13,48 +13,48 @@ pcomplex relative 0.01  0.0  switch  2.0 parabolic
 phrsimple relative 0.01  0.0  switch  2.0 parabolic
 preass relative 0.01  0.0  switch  2.0 parabolic
 * parameter data
-pcomplex none factor 0.447 0.4 0.5 pcomplex 1.0      0.0000      1
-phrsimple none factor 0.55 0.45 0.65 phrsimple 1.0      0.0000      1
-preass none factor 0.06 0.04 0.1 preass 1.0      0.0000      1
+pcomplex none factor 0.488 0.35 0.55 pcomplex 1.0      0.0000      1
+phrsimple none factor 0.559 0.4 0.7 phrsimple 1.0      0.0000      1
+preass none factor 0.066 0.04 0.1 preass 1.0      0.0000      1
 * observation groups
-MB11obgp
-MB12obgp
-MB13obgp
-MB14obgp
-MB15obgp
-MB16obgp
-MB17obgp
-MB18obgp
-MB19obgp
+SF01obgp
+SF02obgp
+SF03obgp
+SF04obgp
+SF05obgp
+SF06obgp
+SF07obgp
+SF08obgp
+SF09obgp
 * observation data
-MB11logSF -0.22816081766742 2.09353134522914 MB11obgp
-MB12logSF -0.45 1.49071198499986 MB12obgp
-MB13logSF -0.659607311147601 1.23128126007101 MB13obgp
-MB14logSF -0.990128758930256 1.0049724642631 MB14obgp
-MB15logSF -1.32843322966482 0.867621158873765 MB15obgp
-MB16logSF -1.71887107931348 0.762743205709987 MB16obgp
-MB17logSF -1.95953539021001 0.714370388558065 MB17obgp
-MB18logSF -2.33676150018011 0.654173286695667 MB18obgp
-MB19logSF -2.76453412878027 0.601435448993248 MB19obgp
+SF01logSF -0.22816081766742 2.09353134522914 SF01obgp
+SF02logSF -0.45 1.49071198499986 SF02obgp
+SF03logSF -0.659607311147601 1.23128126007101 SF03obgp
+SF04logSF -0.990128758930256 1.0049724642631 SF04obgp
+SF05logSF -1.32843322966482 0.867621158873765 SF05obgp
+SF06logSF -1.71887107931348 0.762743205709987 SF06obgp
+SF07logSF -1.95953539021001 0.714370388558065 SF07obgp
+SF08logSF -2.33676150018011 0.654173286695667 SF08obgp
+SF09logSF -2.76453412878027 0.601435448993248 SF09obgp
 * model command line
 drm_monolayer.bat > nul
 * model input/output
-MB11.tpl MB11.inp
-MB12.tpl MB12.inp
-MB13.tpl MB13.inp
-MB14.tpl MB14.inp
-MB15.tpl MB15.inp
-MB16.tpl MB16.inp
-MB17.tpl MB17.inp
-MB18.tpl MB18.inp
-MB19.tpl MB19.inp
-MB11_out.ins MB11_out.dat
-MB12_out.ins MB12_out.dat
-MB13_out.ins MB13_out.dat
-MB14_out.ins MB14_out.dat
-MB15_out.ins MB15_out.dat
-MB16_out.ins MB16_out.dat
-MB17_out.ins MB17_out.dat
-MB18_out.ins MB18_out.dat
-MB19_out.ins MB19_out.dat
+SF01.tpl SF01.inp
+SF02.tpl SF02.inp
+SF03.tpl SF03.inp
+SF04.tpl SF04.inp
+SF05.tpl SF05.inp
+SF06.tpl SF06.inp
+SF07.tpl SF07.inp
+SF08.tpl SF08.inp
+SF09.tpl SF09.inp
+SF01_out.ins SF01_out.dat
+SF02_out.ins SF02_out.dat
+SF03_out.ins SF03_out.dat
+SF04_out.ins SF04_out.dat
+SF05_out.ins SF05_out.dat
+SF06_out.ins SF06_out.dat
+SF07_out.ins SF07_out.dat
+SF08_out.ins SF08_out.dat
+SF09_out.ins SF09_out.dat
 * prior information

@@ -1,8 +1,8 @@
 pcf
 * control data
 restart estimation
-19 24 19 0 2
-2 2 double point 1 0 0
+19 64 19 0 4
+4 4 double point 1 0 0
  5.0   2.0   0.3  0.03    10
  3.0 2 0.001
  0.1
@@ -29,29 +29,71 @@ katr3g2 relative 0.01  0.0  switch  2.0 parabolic
 katr4s relative 0.01  0.0  switch  2.0 parabolic
 katr4g2 relative 0.01  0.0  switch  2.0 parabolic
 * parameter data
-katm1g1 none factor 0.264 0.05 0.4 katm1g1 1.0      0.0000      1
-katm1s none factor 0.03254 0.01 0.05 katm1s 1.0      0.0000      1
-katm1g2 none factor 10.72 7 12 katm1g2 1.0      0.0000      1
-katm2s none factor 0.103 0.01 0.5 katm2s 1.0      0.0000      1
-katm2g2 none factor 2.011 1.5 4 katm2g2 1.0      0.0000      1
-katm3g1 none factor 9 5 13 katm3g1 1.0      0.0000      1
-katm3s none factor 0.00174 0.001 0.004 katm3s 1.0      0.0000      1
-katm3g2 none factor 3.035 2 4 katm3g2 1.0      0.0000      1
-katm4g1 none factor 0.5 0.1 1.5 katm4g1 1.0      0.0000      1
-katm4s none factor 0.2 0.1 0.35 katm4s 1.0      0.0000      1
-katm4g2 none factor 2.281 1.5 4 katm4g2 1.0      0.0000      1
-katr1s none factor 0.18 0.05 0.25 katr1s 1.0      0.0000      1
-katr1g2 none factor 0.01757 0.001 0.05 katr1g2 1.0      0.0000      1
-katr2s none factor 9.016 7 11 katr2s 1.0      0.0000      1
-katr2g2 none factor 0.1 0.01 0.5 katr2g2 1.0      0.0000      1
-katr3s none factor 3.278 2 5 katr3s 1.0      0.0000      1
-katr3g2 none factor 4.882 2 6 katr3g2 1.0      0.0000      1
-katr4s none factor 10.28 8 15 katr4s 1.0      0.0000      1
-katr4g2 none factor 0.1 0.01 0.3 katr4g2 1.0      0.0000      1
+katm1g1 none factor 0.069 0.001 0.3 katm1g1 1.0      0.0000      1
+katm1s none factor 0.0151 0.015 0.0152 katm1s 1.0      0.0000      1
+katm1g2 none factor 20 10 30 katm1g2 1.0      0.0000      1
+katm2s none factor 0.121 0.12 0.122 katm2s 1.0      0.0000      1
+katm2g2 none factor 0.01 0.0001 1 katm2g2 1.0      0.0000      1
+katm3g1 none factor 15 8 25 katm3g1 1.0      0.0000      1
+katm3s none factor 0.00164 0.00001 0.003 katm3s 1.0      0.0000      1
+katm3g2 none factor 2.2 0.01 4 katm3g2 1.0      0.0000      1
+katm4g1 none factor 1.13 0.1 3 katm4g1 1.0      0.0000      1
+katm4s none factor 0.104 0 0.35 katm4s 1.0      0.0000      1
+katm4g2 none factor 1.99 0.01 3 katm4g2 1.0      0.0000      1
+katr1s none factor 0.485 0.05 1 katr1s 1.0      0.0000      1
+katr1g2 none factor 0.037 0.001 0.05 katr1g2 1.0      0.0000      1
+katr2s none factor 13 5 25 katr2s 1.0      0.0000      1
+katr2g2 none factor 0.251 0.25 0.252 katr2g2 1.0      0.0000      1
+katr3s none factor 1.87 0.1 6 katr3s 1.0      0.0000      1
+katr3g2 none factor 7.32 3 15 katr3g2 1.0      0.0000      1
+katr4s none factor 10 1 20 katr4s 1.0      0.0000      1
+katr4g2 none factor 0.073 0.01 0.3 katr4g2 1.0      0.0000      1
 * observation groups
+CC11-2Gobgp
+CC11-6Gobgp
 CB2Gobgp
 CB6Gobgp
 * observation data
+CC11-2GH05P1 32 0.176776695296637 CC11-2Gobgp
+CC11-2GH05P2 53.8 0.136335470787303 CC11-2Gobgp
+CC11-2GH05P3 12.7 0.280606766633157 CC11-2Gobgp
+CC11-2GH05P4 1.5 0.816496580927726 CC11-2Gobgp
+CC11-2GH10P1 29.3 0.184742233484292 CC11-2Gobgp
+CC11-2GH10P2 55.44 0.134303827337563 CC11-2Gobgp
+CC11-2GH10P3 15 0.258198889747161 CC11-2Gobgp
+CC11-2GH10P4 0.26 1.96116135138184 CC11-2Gobgp
+CC11-2GH20P1 28.5 0.187317162316339 CC11-2Gobgp
+CC11-2GH20P2 50.49 0.14073344364025 CC11-2Gobgp
+CC11-2GH20P3 20.8 0.219264504826757 CC11-2Gobgp
+CC11-2GH20P4 0.21 2.18217890235992 CC11-2Gobgp
+CC11-2GH30P1 25.6 0.197642353760524 CC11-2Gobgp
+CC11-2GH30P2 51.12 0.139863559716115 CC11-2Gobgp
+CC11-2GH30P3 22.9 0.208969189764286 CC11-2Gobgp
+CC11-2GH30P4 0.38 1.62221421130763 CC11-2Gobgp
+CC11-2GH40P1 25.6 0.197642353760524 CC11-2Gobgp
+CC11-2GH40P2 50.13 0.141237866202345 CC11-2Gobgp
+CC11-2GH40P3 23.15 0.207837783563186 CC11-2Gobgp
+CC11-2GH40P4 1.12 0.944911182523068 CC11-2Gobgp
+CC11-6GH05P1 29.5 0.184114923579665 CC11-6Gobgp
+CC11-6GH05P2 54.8 0.135085806739575 CC11-6Gobgp
+CC11-6GH05P3 14.6 0.261711961295107 CC11-6Gobgp
+CC11-6GH05P4 1.11 0.949157995752499 CC11-6Gobgp
+CC11-6GH10P1 28.1 0.188645669476136 CC11-6Gobgp
+CC11-6GH10P2 56.1 0.133511467458638 CC11-6Gobgp
+CC11-6GH10P3 15.7 0.252377232562534 CC11-6Gobgp
+CC11-6GH10P4 0.18 2.35702260395516 CC11-6Gobgp
+CC11-6GH20P1 27.4 0.191040179975218 CC11-6Gobgp
+CC11-6GH20P2 51.74 0.139023042198334 CC11-6Gobgp
+CC11-6GH20P3 20.8 0.219264504826757 CC11-6Gobgp
+CC11-6GH20P4 0.06 4.08248290463863 CC11-6Gobgp
+CC11-6GH30P1 24.9 0.200401204014051 CC11-6Gobgp
+CC11-6GH30P2 54.8 0.135085806739575 CC11-6Gobgp
+CC11-6GH30P3 20.24 0.222277112237194 CC11-6Gobgp
+CC11-6GH30P4 0.06 4.08248290463863 CC11-6Gobgp
+CC11-6GH40P1 23.2 0.20761369963435 CC11-6Gobgp
+CC11-6GH40P2 50.78 0.140331010250649 CC11-6Gobgp
+CC11-6GH40P3 25.8 0.196874807739539 CC11-6Gobgp
+CC11-6GH40P4 0.22 2.1320071635561 CC11-6Gobgp
 CB2GH04P1 31 0.179605302026775 CB2Gobgp
 CB2GH04P2 42.6 0.153212853258974 CB2Gobgp
 CB2GH04P3 22.2 0.212238179989004 CB2Gobgp
@@ -77,10 +119,14 @@ CB6GH11P2 24.1 0.203700210931678 CB6Gobgp
 CB6GH11P3 44.23 0.150363189822906 CB6Gobgp
 CB6GH11P4 0.73 1.17041147196131 CB6Gobgp
 * model command line
-drm_monolayer.bat > nul
+./run_simulations.sh > /dev/null
 * model input/output
+CC11-2G.tpl CC11-2G.inp
+CC11-6G.tpl CC11-6G.inp
 CB2G.tpl CB2G.inp
 CB6G.tpl CB6G.inp
+CC11-2G_out.ins CC11-2G_out.dat
+CC11-6G_out.ins CC11-6G_out.dat
 CB2G_out.ins CB2G_out.dat
 CB6G_out.ins CB6G_out.dat
 * prior information

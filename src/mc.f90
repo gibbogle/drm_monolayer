@@ -190,6 +190,13 @@ elseif (iphase_hours == -2) then    ! this is the compute_cycle case
     nphase_hours = 3
     next_phase_hour = 1
     phase_hour(1:5) = [4.5, 8.0, 11.0, 0.0, 0.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+elseif (iphase_hours == -5) then    ! this is the compute_cycle case for CC-11
+    CC11 = .true.
+    compute_cycle = .true.
+    use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
+    nphase_hours = 5
+    next_phase_hour = 1
+    phase_hour(1:5) = [0.5, 1.0, 2.0, 3.0, 4.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 elseif (iphase_hours == -3) then
     use_SF = .true.     ! in this case SFave is recorded and there are multiple phase distribution recording times
     nphase_hours = 4

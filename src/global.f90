@@ -551,6 +551,7 @@ real(REAL_KIND) :: G2_katm3_factor=1.0, G2_katm4_factor=1.0, G2_katr3_factor=1.0
 logical :: use_inhibiter = .false.
 logical :: use_fixed_CP != .false.
 logical :: compute_cycle
+logical :: CC11 = .false.
 
 !integer :: icentral !extracellular variable index corresponding to a central site (NX/2,NY/2,NZ/2)
 
