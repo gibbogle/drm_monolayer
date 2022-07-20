@@ -34,19 +34,19 @@ katm1s none factor 0.0151 0.015 0.0152 katm1s 1.0      0.0000      1
 katm1g2 none factor 20 10 30 katm1g2 1.0      0.0000      1
 katm2s none factor 0.121 0.12 0.122 katm2s 1.0      0.0000      1
 katm2g2 none factor 0.01 0.0001 1 katm2g2 1.0      0.0000      1
-katm3g1 none factor 15 8 25 katm3g1 1.0      0.0000      1
+katm3g1 none factor 15 10 20 katm3g1 1.0      0.0000      1
 katm3s none factor 0.00164 0.00001 0.003 katm3s 1.0      0.0000      1
 katm3g2 none factor 2.2 0.01 4 katm3g2 1.0      0.0000      1
 katm4g1 none factor 1.13 0.1 3 katm4g1 1.0      0.0000      1
-katm4s none factor 0.104 0 0.35 katm4s 1.0      0.0000      1
+katm4s none factor 0.104 0.0001 0.35 katm4s 1.0      0.0000      1
 katm4g2 none factor 1.99 0.01 3 katm4g2 1.0      0.0000      1
-katr1s none factor 0.485 0.05 1 katr1s 1.0      0.0000      1
-katr1g2 none factor 0.037 0.001 0.05 katr1g2 1.0      0.0000      1
+katr1s none factor 0.485 0.001 1 katr1s 1.0      0.0000      1
+katr1g2 none factor 0.037 0.001 0.2 katr1g2 1.0      0.0000      1
 katr2s none factor 13 5 25 katr2s 1.0      0.0000      1
 katr2g2 none factor 0.251 0.25 0.252 katr2g2 1.0      0.0000      1
-katr3s none factor 1.87 0.1 6 katr3s 1.0      0.0000      1
+katr3s none factor 1.87 0.001 6 katr3s 1.0      0.0000      1
 katr3g2 none factor 7.32 3 15 katr3g2 1.0      0.0000      1
-katr4s none factor 10 1 20 katr4s 1.0      0.0000      1
+katr4s none factor 10 5 20 katr4s 1.0      0.0000      1
 katr4g2 none factor 0.073 0.01 0.3 katr4g2 1.0      0.0000      1
 * observation groups
 CC11-2Gobgp
@@ -119,7 +119,7 @@ CB6GH11P2 24.1 0.203700210931678 CB6Gobgp
 CB6GH11P3 44.23 0.150363189822906 CB6Gobgp
 CB6GH11P4 0.73 1.17041147196131 CB6Gobgp
 * model command line
-./run_simulations.sh > /dev/null
+drm_monolayer.bat > nul
 * model input/output
 CC11-2G.tpl CC11-2G.inp
 CC11-6G.tpl CC11-6G.inp

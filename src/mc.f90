@@ -86,6 +86,7 @@ logical :: use_G2_stop = .true.
 real(8) :: totG1delay, totSdelay, totG2delay
 integer :: nG1delay, nSdelay, nG2delay
 logical :: use_pATM_Nindependent = .true.
+logical :: output_DNA_rate = .false.
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHRsimple, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
@@ -181,6 +182,7 @@ use_SF = .false.
 nphase_hours = 0
 next_phase_hour = 0
 phase_hour(:) = 0
+output_DNA_rate = .false.
 if (iphase_hours == -1) then
     use_SF = .true.     ! in this case SFave only is recorded
     compute_cycle = .false.
@@ -193,6 +195,14 @@ elseif (iphase_hours == -2) then    ! this is the compute_cycle case
 elseif (iphase_hours == -5) then    ! this is the compute_cycle case for CC-11
     CC11 = .true.
     compute_cycle = .true.
+    use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
+    nphase_hours = 5
+    next_phase_hour = 1
+    phase_hour(1:5) = [0.5, 1.0, 2.0, 3.0, 4.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+elseif (iphase_hours == -6) then    ! this is the output_DNA_rate case
+    CC11 = .true.
+    compute_cycle = .false.
+    output_DNA_rate = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 5
     next_phase_hour = 1
@@ -804,6 +814,12 @@ totPaber = totPaber + Paber
 tottotDSB = tottotDSB + totDSB
 totNlethal = totNlethal + Nlethal
 
+end subroutine
+
+subroutine get_DNA_synthesis_rate(DNA_rate)
+real(8) :: DNA_rate
+
+DNA_rate = 0
 end subroutine
 
 end module

@@ -1685,7 +1685,7 @@ type(metabolism_type), pointer :: mp
 type(cell_type), pointer :: cp
 integer :: phase_count(0:4)
 real(REAL_KIND) :: total
-real(REAL_KIND) :: fATM, fATR, fCP, dtCPdelay, dtATMdelay, dtATRdelay, ATM_DSB
+real(REAL_KIND) :: fATM, fATR, fCP, dtCPdelay, dtATMdelay, dtATRdelay, ATM_DSB, DNA_rate
 logical :: PEST_OK
 logical :: ok = .true.
 logical :: dbug
@@ -1855,9 +1855,17 @@ if (use_synchronise .and. .false.) then
     endif
 endif
 
-if (compute_cycle) then
+if (compute_cycle .or. output_DNA_rate) then
     if (next_phase_hour > 0) then  ! check if this is a phase_hour
         if (real(istep)/nthour >= phase_hour(next_phase_hour)) then   ! record phase_dist
+	if (compute_cycle) then
+	    call get_phase_distribution(phase_count)
+	    total = sum(phase_count)
+	    phase_dist = 100*phase_count/total
+	endif
+	if (output_DNA_rate) then
+	    call get_DNA_synthesis_rate(DNA_rate)
+	endif
             recorded_phase_dist(next_phase_hour,:) = phase_dist
             next_phase_hour = next_phase_hour + 1
             if (next_phase_hour > nphase_hours) next_phase_hour = 0
@@ -1885,13 +1893,15 @@ if (dbug .or. mod(istep,nthour) == 0) then
 	call logger(logmsg)
 !                write(*,*) 'hour,next_phase_hour: ',hour,next_phase_hour,phase_hour(next_phase_hour),compute_cycle
 !	if (hourly_cycle_dist) then     ! this should always be set true
-	if (compute_cycle) then
-	    call get_phase_distribution(phase_count)
-	    total = sum(phase_count)
-	    phase_dist = 100*phase_count/total
-!	    phase_dist(3) = phase_dist(3) + phase_dist(4)   ! we no longer need to sum G2 and M
-!	    write(nfphase,'(i4,4f8.1)') hour,phase_dist(0:3)
-	endif
+! It is a mistake to put get_phase_distribution() here in the case when phase_hour is not an integer (e.g. for CC-11 with 0.5h)
+!	if (compute_cycle) then
+!	    call get_phase_distribution(phase_count)
+!	    total = sum(phase_count)
+!	    phase_dist = 100*phase_count/total
+!	endif
+!	if (output_DNA_rate) then
+!	    call get_DNA_synthesis_rate(DNA_rate)
+!	endif
 	if (use_synchronise) then
 !        write(*,'(a,i4,f6.3,i4)') 'phase, progress: ',cp%phase, cp%progress, next_phase_hour
 !        write(nfphase,'(2i4,2f6.1,2f6.3)') hour,cp%phase,tnow/3600,cp%G2_time/3600,cp%V/Vdivide0,cp%divide_volume/Vdivide0
