@@ -1855,21 +1855,25 @@ if (use_synchronise .and. .false.) then
     endif
 endif
 
+if (output_DNA_rate .and. (Nirradiated > 0)) then
+    call show_S_phase_statistics()
+endif
 if (compute_cycle .or. output_DNA_rate) then
     if (next_phase_hour > 0) then  ! check if this is a phase_hour
         if (real(istep)/nthour >= phase_hour(next_phase_hour)) then   ! record phase_dist
-	if (compute_cycle) then
-	    call get_phase_distribution(phase_count)
-	    total = sum(phase_count)
-	    phase_dist = 100*phase_count/total
-	endif
-	if (output_DNA_rate) then
-	    call get_DNA_synthesis_rate(DNA_rate)
-	endif
-            recorded_phase_dist(next_phase_hour,:) = phase_dist
+	        if (compute_cycle) then
+	            call get_phase_distribution(phase_count)
+	            total = sum(phase_count)
+	            phase_dist = 100*phase_count/total
+                recorded_phase_dist(next_phase_hour,:) = phase_dist
+	        endif
+	        if (output_DNA_rate) then
+	            call get_DNA_synthesis_rate(DNA_rate)
+	            recorded_DNA_rate(next_phase_hour) = DNA_rate
+	        endif
             next_phase_hour = next_phase_hour + 1
             if (next_phase_hour > nphase_hours) next_phase_hour = 0
-            write(*,*) 'next_phase_hour: ',next_phase_hour
+            write(*,*) 'next_phase_hour: ',next_phase_hour, output_DNA_rate
         endif
     endif
 endif
@@ -1956,7 +1960,7 @@ istep = istep + 1
 ! Need the phase_dist check in case NPsurvive = Nirradiated before phase_hours
 
 ! Check for completion of the run
-if (compute_cycle) then
+if (compute_cycle .or. output_DNA_rate) then
     if (next_phase_hour == 0) then
         call completed
         res = 1
@@ -2086,6 +2090,23 @@ if (compute_cycle) then
         enddo
     endif
     write(*,'(a,3f8.3)') 'Average G1, S, G2 CP delays: ',totG1delay/nG1delay,totSdelay/(3600.*nSdelay),totG2delay/nG2delay
+    return
+endif
+if (output_DNA_rate) then
+    write(nflog,*) 'Completed'
+    write(*,*) 'Completed'
+    if (use_synchronise) then
+        tadjust = 0
+    else
+        tadjust = 6
+    endif
+    if (nphase_hours > 0) then
+        write(nfres,'(20e15.6)') (recorded_DNA_rate(i),i=1,nphase_hours)
+        do i = 1,nphase_hours
+            write(nflog,'(f6.1,4x,4f6.3)') phase_hour(i)-tadjust,recorded_DNA_rate(i)
+            write(*,'(f6.1,4x,4f6.3)') phase_hour(i)-tadjust,recorded_DNA_rate(i)
+        enddo
+    endif
     return
 endif
 

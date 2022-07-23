@@ -85,7 +85,7 @@ logical :: use_S_stop = .false.
 logical :: use_G2_stop = .true.
 real(8) :: totG1delay, totSdelay, totG2delay
 integer :: nG1delay, nSdelay, nG2delay
-logical :: use_pATM_Nindependent = .true.
+logical :: use_G2_pATM_Nindependent = .true.
 logical :: output_DNA_rate = .false.
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHRsimple, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
@@ -418,18 +418,18 @@ end subroutine
 subroutine updateATM(iph,pATM,ATM_DSB,dth)
 integer :: iph
 real(8) :: pATM, ATM_DSB, dth, pATM0
-real(8) :: r, k
+real(8) :: r, kdecay
 
 pATM0 = pATM
-if (use_pATM_Nindependent) then
+if (use_G2_pATM_Nindependent .and. iph == G2_phase) then
     r = K_ATM(iph,1)   ! rate of production of pATM
 else
     r = K_ATM(iph,1)*ATM_DSB   ! rate of production of pATM
 endif
-k = K_ATM(iph,2)  ! decay rate constant
-pATM = r/k + (pATM - r/k)*exp(-k*dth)
+kdecay = K_ATM(iph,2)  ! decay rate constant
+pATM = r/kdecay + (pATM - r/kdecay)*exp(-kdecay*dth)
 if (isnan(pATM)) then
-    write(*,*) 'NAN in updateATM: ',iph, r, k, r/k
+    write(*,*) 'NAN in updateATM: ',iph, r, kdecay, r/kdecay
     stop
 endif
 !if (kcell_now == 1) write(*,'(a,i4,5f8.2)') 'updateATM: r,k,r/k,ATM_DSB,pATM: ',kcell_now,r,k,r/k,ATM_DSB,pATM
@@ -511,19 +511,19 @@ subroutine get_slowdown_factors(cp,iph,fATM,fATR)
 type(cell_type), pointer :: cp
 integer :: iph
 real(REAL_KIND) :: fATM, fATR
-real(REAL_KIND) :: pATM, pATR, k1, k2
+real(REAL_KIND) :: pATM, pATR, k3, k4
 
 pATM = cp%pATM
-k1 = K_ATM(iph,3)   !*G2_katm3_factor
-k2 = K_ATM(iph,4)   !*G2_katm4_factor
-fATM = max(0.01,1 - k1*pATM/(k2 + pATM))
+k3 = K_ATM(iph,3)
+k4 = K_ATM(iph,4)
+fATM = max(0.01,1 - k3*pATM/(k4 + pATM))
 !write(*,'(a,i3,4f8.4)') 'fATM: ',iph,k1,k2,pATM,fATM
 !if (iph == 2) stop
 if (iph > G1_phase) then
     pATR = cp%pATR
-    k1 = K_ATR(iph,3)   !*G2_katr3_factor
-    k2 = K_ATR(iph,4)   !*G2_katr4_factor
-    fATR = max(0.01,1 - k1*pATR/(k2 + pATR))
+    k3 = K_ATR(iph,3)   !*G2_katr3_factor
+    k4 = K_ATR(iph,4)   !*G2_katr4_factor
+    fATR = max(0.01,1 - k3*pATR/(k4 + pATR))
 else
     fATR = 1.0
 endif
@@ -816,10 +816,73 @@ totNlethal = totNlethal + Nlethal
 
 end subroutine
 
+!------------------------------------------------------------------------
+! Get average DNA growth factor for cells in S-phase
+!------------------------------------------------------------------------
 subroutine get_DNA_synthesis_rate(DNA_rate)
 real(8) :: DNA_rate
+type(cell_type), pointer :: cp
+integer :: kcell, iph, cnt
+real(8) :: pATM, k1, k2, fATM, rate_sum, pATM_ave
 
-DNA_rate = 0
+write(*,'(a)') 'get_DNA_synthesis_rate'
+k1 = K_ATM(S_phase,3)
+k2 = K_ATM(S_phase,4)
+cnt = 0
+rate_sum = 0
+pATM_ave = 0
+do kcell = 1,nlist
+    cp => cell_list(kcell)
+    iph = cp%phase
+    if (iph == S_phase) then
+        cnt = cnt + 1
+        pATM = cp%pATM
+        pATM_ave = pATM_ave + pATM
+        fATM = max(0.01,1 - k1*pATM/(k2 + pATM))
+        rate_sum = rate_sum + fATM
+    endif
+enddo
+DNA_rate = rate_sum/cnt
+pATM_ave = pATM_ave/cnt
+write(*,'(a,3f8.3,e12.3)') 'DNA growth rate factor: ',DNA_rate,k1,k2,pATM_ave
+end subroutine
+
+!------------------------------------------------------------------------
+! Write average S-phase ATM_DSB, pATM, fATM
+!------------------------------------------------------------------------
+subroutine show_S_phase_statistics()
+real(8) :: hour
+type(cell_type), pointer :: cp
+integer :: kcell, iph, cnt, nthour
+real(8) :: pATM, k1, k2, fATM, fATM_ave, pATM_ave, ATM_DSB, ATM_DSB_ave
+
+!write(nflog,'(a)') 'S_phase_statistics'
+nthour = 3600/DELTA_T
+hour = real(istep)/nthour
+k1 = K_ATM(S_phase,3)
+k2 = K_ATM(S_phase,4)
+cnt = 0
+ATM_DSB_ave = 0
+fATM_ave = 0
+pATM_ave = 0
+do kcell = 1,nlist
+    cp => cell_list(kcell)
+    iph = cp%phase
+    if (iph == S_phase) then
+        cnt = cnt + 1
+        ATM_DSB = cp%DSB(NHEJc) + cp%DSB(HR)   ! complex DSB
+        ATM_DSB_ave = ATM_DSB_ave + ATM_DSB
+        pATM = cp%pATM
+        pATM_ave = pATM_ave + pATM
+        fATM = max(0.01,1 - k1*pATM/(k2 + pATM))
+        fATM_ave = fATM_ave + fATM
+    endif
+enddo
+ATM_DSB_ave = ATM_DSB_ave/cnt
+fATM_ave = fATM_ave/cnt
+pATM_ave = pATM_ave/cnt
+write(nflog,'(i6,f8.2,i6,3f8.3)') istep, hour,cnt, ATM_DSB_ave,pATM_ave,fATM_ave
+
 end subroutine
 
 end module
