@@ -519,7 +519,7 @@ k4 = K_ATM(iph,4)
 fATM = max(0.01,1 - k3*pATM/(k4 + pATM))
 !write(*,'(a,i3,4f8.4)') 'fATM: ',iph,k1,k2,pATM,fATM
 !if (iph == 2) stop
-if (iph > G1_phase) then
+if (iph > S_phase) then
     pATR = cp%pATR
     k3 = K_ATR(iph,3)   !*G2_katr3_factor
     k4 = K_ATR(iph,4)   !*G2_katr4_factor
@@ -527,6 +527,7 @@ if (iph > G1_phase) then
 else
     fATR = 1.0
 endif
+if (iph == S_phase) write(*,*) 'S-phase fATR: ',fATR
 end subroutine
 
 !------------------------------------------------------------------------
