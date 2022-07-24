@@ -186,7 +186,7 @@ output_DNA_rate = .false.
 if (iphase_hours == -1) then
     use_SF = .true.     ! in this case SFave only is recorded
     compute_cycle = .false.
-elseif (iphase_hours == -2) then    ! this is the compute_cycle case
+elseif (iphase_hours == -2) then    ! this is the compute_cycle case for CA-135
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 3
@@ -462,6 +462,7 @@ end subroutine
 !------------------------------------------------------------------------
 ! Effect of pATM
 ! Time computed in hours, returned in secs 
+! CP delay determined by pATM only.
 !------------------------------------------------------------------------
 function G1_checkpoint_time(cp) result(t)
 type(cell_type), pointer :: cp
@@ -486,6 +487,7 @@ end function
 !------------------------------------------------------------------------
 ! Combined effect of pATM and pATR
 ! Time computed in hours, returned in secs
+! CP delay is the sum of delays created by pATM and by pATR
 !------------------------------------------------------------------------
 function G2_checkpoint_time(cp) result(t)
 type(cell_type), pointer :: cp
@@ -506,6 +508,8 @@ t = 3600*th
 end function
 
 !------------------------------------------------------------------------
+! Only G2 is affected by pATR
+! Best to turn off pATR in S-phase by setting katr1s = katr3s = 0
 !------------------------------------------------------------------------
 subroutine get_slowdown_factors(cp,iph,fATM,fATR)
 type(cell_type), pointer :: cp
@@ -518,8 +522,7 @@ k3 = K_ATM(iph,3)
 k4 = K_ATM(iph,4)
 fATM = max(0.01,1 - k3*pATM/(k4 + pATM))
 !write(*,'(a,i3,4f8.4)') 'fATM: ',iph,k1,k2,pATM,fATM
-!if (iph == 2) stop
-if (iph > S_phase) then
+if (iph > G1_phase) then
     pATR = cp%pATR
     k3 = K_ATR(iph,3)   !*G2_katr3_factor
     k4 = K_ATR(iph,4)   !*G2_katr4_factor
@@ -527,7 +530,6 @@ if (iph > S_phase) then
 else
     fATR = 1.0
 endif
-if (iph == S_phase) write(*,*) 'S-phase fATR: ',fATR
 end subroutine
 
 !------------------------------------------------------------------------
