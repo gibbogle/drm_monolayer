@@ -85,7 +85,7 @@ logical :: use_S_stop = .false.
 logical :: use_G2_stop = .true.
 real(8) :: totG1delay, totSdelay, totG2delay
 integer :: nG1delay, nSdelay, nG2delay
-logical :: use_G2_pATM_Nindependent = .true.
+logical :: use_G2_pATM_Nindependent = .false.
 logical :: output_DNA_rate = .false.
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHRsimple, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
@@ -174,7 +174,7 @@ ATMsum = 0  ! to investigate ATM dependence on parameters
 ATRsum = 0  ! to investigate ATR dependence on parameters
 !Sthsum = 0
 NSth = 0
-!G2thsum = 0
+G2thsum = 0
 NG2th = 0
 
 ! For PEST runs, iphase_hours must be -1 (for M runs) or -2 (for C runs) or -3 (for MC runs)
@@ -501,10 +501,11 @@ totG2delay = th + totG2delay
 nG2delay = nG2delay + 1
 !if (kcell_now == 3) write(*,'(a,i6,2f8.3)') 'G2_checkpoint_time (ATM, ATR) (h): ',kcell_now,th_ATM,th_ATR 
 t = 3600*th
-!if (is_radiation) then
-!    G2thsum = G2thsum + th
-!    NG2th = NG2th + 1
-!endif
+if (is_radiation) then
+    G2thsum = G2thsum + th_ATM
+    NG2th = NG2th + 1
+endif
+if (kcell_now <= 100) write(*,'(a,f6.2)') 'th_ATM: ',th_ATM
 end function
 
 !------------------------------------------------------------------------
@@ -704,9 +705,9 @@ ATR_DSB = DSB(HR)
 !    call updateATR(cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth
 !else
     if (iph >= 7) iph = iph - 6     ! checkpoint phase numbers --> phase number, to continue pATM and pATR processes through checkpoints
-    if (iph <= 3) then      ! not for 4 (M_phase) or 5 (dividing)
+    if (iph <= G2_phase) then      ! not for 4 (M_phase) or 5 (dividing)
         call updateATM(iph,cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth
-        if (iph > 1) call updateATR(iph,cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth
+        if (iph > G1_phase) call updateATR(iph,cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth
     endif
 !endif
 

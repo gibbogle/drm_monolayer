@@ -2090,6 +2090,7 @@ if (compute_cycle) then
         enddo
     endif
     write(*,'(a,3f8.3)') 'Average G1, S, G2 CP delays: ',totG1delay/nG1delay,totSdelay/(3600.*nSdelay),totG2delay/nG2delay
+    write(*,'(a,f8.3)') 'Average G2 ATM delay: ',G2thsum/NG2th
     return
 endif
 if (output_DNA_rate) then
@@ -2164,7 +2165,7 @@ call logger(logmsg)
 write(*,'(a,f8.3)') 'Final average pATM: ',ATMsum/nirradiated
 write(*,'(a,f8.3)') 'Final average pATR: ',ATRsum/nirradiated
 !write(*,'(a,f8.3)') 'Average S delay: ',Sthsum/NSth
-!write(*,'(a,f8.3)') 'Average G2 delay: ',G2thsum/NG2th
+!write(*,'(a,f8.3)') 'Average G2 ATM delay: ',G2thsum/NG2th
 
 if (use_PEST) then
     if (use_SF) then
