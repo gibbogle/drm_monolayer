@@ -1,7 +1,7 @@
 pcf
 * control data
 restart estimation
-8 64 8 0 4
+8 16 8 0 4
 4 4 double point 1 0 0
  5.0   2.0   0.3  0.03    10
  3.0 2 0.001
@@ -18,83 +18,35 @@ katr2g2 relative 0.01  0.0  switch  2.0 parabolic
 katr3g2 relative 0.01  0.0  switch  2.0 parabolic
 katr4g2 relative 0.01  0.0  switch  2.0 parabolic
 * parameter data
-katm1g2 none factor 0.011 0.005 0.05 katm1g2 1.0      0.0000      1
-katm2g2 none factor 0.0004 0.0001 0.001 katm2g2 1.0      0.0000      1
-katm3g2 none factor 0.9 0.01 2 katm3g2 1.0      0.0000      1
-katm4g2 none factor 0.9 0.1 2 katm4g2 1.0      0.0000      1
-katr1g2 none factor 0.11 0.01 0.2 katr1g2 1.0      0.0000      1
-katr2g2 none factor 0.0126 0.01 0.05 katr2g2 1.0      0.0000      1
-katr3g2 none factor 3.5 1 6 katr3g2 1.0      0.0000      1
-katr4g2 none factor 0.07 0.01 0.15 katr4g2 1.0      0.0000      1
+katm1g2 none factor 0.018 0.005 0.05 katm1g2 1.0      0.0000      1
+katm2g2 none factor 0.0006 0.0001 0.002 katm2g2 1.0      0.0000      1
+katm3g2 none factor 3 0.01 6 katm3g2 1.0      0.0000      1
+katm4g2 none factor 0.5 0.1 2 katm4g2 1.0      0.0000      1
+katr1g2 none factor 0.2 0.01 0.4 katr1g2 1.0      0.0000      1
+katr2g2 none factor 0.035 0.01 0.07 katr2g2 1.0      0.0000      1
+katr3g2 none factor 1 0.1 2 katr3g2 1.0      0.0000      1
+katr4g2 none factor 0.01 0.001 0.1 katr4g2 1.0      0.0000      1
 * observation groups
 SF11-2Gobgp
 SF11-6Gobgp
 SF35-2Gobgp
 SF35-6Gobgp
 * observation data
-SF11-2GH05P1 32 0.1 SF11-2Gobgp
-SF11-2GH05P2 53.8 0.1 SF11-2Gobgp
-SF11-2GH05P3 12.7 0.1 SF11-2Gobgp
 SF11-2GH05P4 1.5 1 SF11-2Gobgp
-SF11-2GH10P1 29.3 0.1 SF11-2Gobgp
-SF11-2GH10P2 55.44 0.1 SF11-2Gobgp
-SF11-2GH10P3 15 0.1 SF11-2Gobgp
 SF11-2GH10P4 0.26 1 SF11-2Gobgp
-SF11-2GH20P1 28.5 0.1 SF11-2Gobgp
-SF11-2GH20P2 50.49 0.1 SF11-2Gobgp
-SF11-2GH20P3 20.8 0.1 SF11-2Gobgp
 SF11-2GH20P4 0.21 1 SF11-2Gobgp
-SF11-2GH30P1 25.6 0.1 SF11-2Gobgp
-SF11-2GH30P2 51.12 0.1 SF11-2Gobgp
-SF11-2GH30P3 22.9 0.1 SF11-2Gobgp
 SF11-2GH30P4 0.38 1 SF11-2Gobgp
-SF11-2GH40P1 25.6 0.1 SF11-2Gobgp
-SF11-2GH40P2 50.13 0.1 SF11-2Gobgp
-SF11-2GH40P3 23.15 0.1 SF11-2Gobgp
 SF11-2GH40P4 1.12 1 SF11-2Gobgp
-SF11-6GH05P1 29.5 0.1 SF11-6Gobgp
-SF11-6GH05P2 54.8 0.1 SF11-6Gobgp
-SF11-6GH05P3 14.6 0.1 SF11-6Gobgp
 SF11-6GH05P4 1.11 1 SF11-6Gobgp
-SF11-6GH10P1 28.1 0.1 SF11-6Gobgp
-SF11-6GH10P2 56.1 0.1 SF11-6Gobgp
-SF11-6GH10P3 15.7 0.1 SF11-6Gobgp
 SF11-6GH10P4 0.18 1 SF11-6Gobgp
-SF11-6GH20P1 27.4 0.1 SF11-6Gobgp
-SF11-6GH20P2 51.74 0.1 SF11-6Gobgp
-SF11-6GH20P3 20.8 0.1 SF11-6Gobgp
 SF11-6GH20P4 0.06 1 SF11-6Gobgp
-SF11-6GH30P1 24.9 0.1 SF11-6Gobgp
-SF11-6GH30P2 54.8 0.1 SF11-6Gobgp
-SF11-6GH30P3 20.24 0.1 SF11-6Gobgp
 SF11-6GH30P4 0.06 1 SF11-6Gobgp
-SF11-6GH40P1 23.2 0.1 SF11-6Gobgp
-SF11-6GH40P2 50.78 0.1 SF11-6Gobgp
-SF11-6GH40P3 25.8 0.1 SF11-6Gobgp
 SF11-6GH40P4 0.22 1 SF11-6Gobgp
-SF35-2GH04P1 31 0.1 SF35-2Gobgp
-SF35-2GH04P2 42.6 0.1 SF35-2Gobgp
-SF35-2GH04P3 22.2 0.1 SF35-2Gobgp
 SF35-2GH04P4 1.9 1 SF35-2Gobgp
-SF35-2GH08P1 32.5 0.1 SF35-2Gobgp
-SF35-2GH08P2 37.7 0.1 SF35-2Gobgp
-SF35-2GH08P3 27.3 0.1 SF35-2Gobgp
 SF35-2GH08P4 1.7 1 SF35-2Gobgp
-SF35-2GH11P1 43.9 0.1 SF35-2Gobgp
-SF35-2GH11P2 25.6 0.1 SF35-2Gobgp
-SF35-2GH11P3 28.1 0.1 SF35-2Gobgp
 SF35-2GH11P4 1.8 1 SF35-2Gobgp
-SF35-6GH04P1 27.35 0.1 SF35-6Gobgp
-SF35-6GH04P2 51.45 0.1 SF35-6Gobgp
-SF35-6GH04P3 20.8 0.1 SF35-6Gobgp
 SF35-6GH04P4 0.19 1 SF35-6Gobgp
-SF35-6GH08P1 26.2 0.1 SF35-6Gobgp
-SF35-6GH08P2 40.63 0.1 SF35-6Gobgp
-SF35-6GH08P3 32.6 0.1 SF35-6Gobgp
 SF35-6GH08P4 0.41 1 SF35-6Gobgp
-SF35-6GH11P1 31.17 0.1 SF35-6Gobgp
-SF35-6GH11P2 24.1 0.1 SF35-6Gobgp
-SF35-6GH11P3 44.23 0.1 SF35-6Gobgp
 SF35-6GH11P4 0.73 1 SF35-6Gobgp
 * model command line
 drm_monolayer.bat > nul

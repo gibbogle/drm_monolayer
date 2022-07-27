@@ -2073,6 +2073,7 @@ integer :: kcell, ph, nir(4), nsum, kcellmax, i
 real(REAL_KIND) :: sftot(4), sfsum, sfmax
 integer :: tadjust
 type(cell_type), pointer :: cp
+logical :: only_M_phase = .true.
 
 if (compute_cycle) then
     write(nflog,*) 'Completed'
@@ -2083,7 +2084,11 @@ if (compute_cycle) then
         tadjust = 6
     endif
     if (nphase_hours > 0) then
-        write(nfres,'(20e15.6)') (recorded_phase_dist(i,1:4),i=1,nphase_hours)
+        if (only_M_phase) then
+            write(nfres,'(20e15.6)') (recorded_phase_dist(i,4),i=1,nphase_hours)
+        else
+            write(nfres,'(20e15.6)') (recorded_phase_dist(i,1:4),i=1,nphase_hours)
+        endif
         do i = 1,nphase_hours
             write(nflog,'(f6.1,4x,4f6.1)') phase_hour(i)-tadjust,recorded_phase_dist(i,1:4)
             write(*,'(f6.1,4x,4f6.1)') phase_hour(i)-tadjust,recorded_phase_dist(i,1:4)
