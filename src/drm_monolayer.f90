@@ -2090,7 +2090,7 @@ if (compute_cycle) then
         enddo
     endif
     write(*,'(a,3f8.3)') 'Average G1, S, G2 CP delays: ',totG1delay/nG1delay,totSdelay/(3600.*nSdelay),totG2delay/nG2delay
-    write(*,'(a,f8.3)') 'Average G2 ATM delay: ',G2thsum/NG2th
+    write(*,'(a,2f8.3)') 'Average G2 ATM, ATR delay: ',G2thsum/NG2th
     return
 endif
 if (output_DNA_rate) then

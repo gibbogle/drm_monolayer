@@ -71,7 +71,7 @@ real(8) :: SSA_fid_fraction = 0.5
 logical :: read_SSA_parameters = .false.
 logical :: alt_EJ_suppressed = .false.
 
-real(8) :: ATMsum, ATRsum, Sthsum, G2thsum
+real(8) :: ATMsum, ATRsum, Sthsum, G2thsum(2)
 integer :: NSth, NG2th
 real(8) :: repRateFactor(NP)
 
@@ -87,6 +87,7 @@ real(8) :: totG1delay, totSdelay, totG2delay
 integer :: nG1delay, nSdelay, nG2delay
 logical :: use_G2_pATM_Nindependent = .false.
 logical :: output_DNA_rate = .false.
+logical :: FIX_katm1s_eq_katm1g2 = .true.
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHRsimple, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
@@ -138,6 +139,10 @@ elseif (nCPparams == 3) then
             write(*,*) j,iph,K_ATR(iph,j)
         enddo
     enddo
+    ! Hard code katm1s = katm1g2
+    if (FIX_katm1s_eq_katm1g2) then
+        K_ATM(2,1) = K_ATM(3,1)
+    endif
 else
     write(*,*) 'ERROR: wrong nCPparams: ',nCPparams
     stop
@@ -414,6 +419,9 @@ end subroutine
 ! Note: parameters from mcradio assume time is hours, therefore the time
 ! step passed to the subroutine, dth, has been converted to hours.
 ! 11/02/22 changed K_ATM(2) & (3) to (1) & (2)
+! Note that as k -> 0, M(t) -> M(0) + lim(rt*(1 - exp(-kt))/kt)
+! and limit as x->0, lim(1-exp(-x)/x = lim(x - x2/2 + x^3/6 - ...)/x = 1
+! therefore M(t) -> M(0) + rt as expected.
 !--------------------------------------------------------------------------
 subroutine updateATM(iph,pATM,ATM_DSB,dth)
 integer :: iph
@@ -426,7 +434,7 @@ if (use_G2_pATM_Nindependent .and. iph == G2_phase) then
 else
     r = K_ATM(iph,1)*ATM_DSB   ! rate of production of pATM
 endif
-kdecay = K_ATM(iph,2)  ! decay rate constant
+kdecay = max(1.0e-8,K_ATM(iph,2))  ! decay rate constant
 pATM = r/kdecay + (pATM - r/kdecay)*exp(-kdecay*dth)
 if (isnan(pATM)) then
     write(*,*) 'NAN in updateATM: ',iph, r, kdecay, r/kdecay
@@ -502,7 +510,8 @@ nG2delay = nG2delay + 1
 !if (kcell_now == 3) write(*,'(a,i6,2f8.3)') 'G2_checkpoint_time (ATM, ATR) (h): ',kcell_now,th_ATM,th_ATR 
 t = 3600*th
 if (is_radiation) then
-    G2thsum = G2thsum + th_ATM
+    G2thsum(1) = G2thsum(1) + th_ATM
+    G2thsum(2) = G2thsum(2) + th_ATR
     NG2th = NG2th + 1
 endif
 if (kcell_now <= 100) write(*,'(a,f6.2)') 'th_ATM: ',th_ATM
