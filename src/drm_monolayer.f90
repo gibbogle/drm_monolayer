@@ -2073,7 +2073,7 @@ integer :: kcell, ph, nir(4), nsum, kcellmax, i
 real(REAL_KIND) :: sftot(4), sfsum, sfmax
 integer :: tadjust
 type(cell_type), pointer :: cp
-logical :: only_M_phase = .true.
+logical :: only_M_phase = .false.
 
 if (compute_cycle) then
     write(nflog,*) 'Completed'
