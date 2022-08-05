@@ -203,7 +203,7 @@ type cell_type
 !    real(REAL_KIND) :: doubling_time
 !    logical :: arrested ! for S-phase arrest
 !    real(REAL_KIND) :: S_start_time	    ! for PI labelling
-    real(REAL_KIND) :: progress, fp
+    real(REAL_KIND) :: progress, fp, mitosis_duration
 !    integer :: NL1, NL2(2)
     
 !    integer :: N_PL, N_IRL, N_Ch1, N_Ch2
@@ -226,6 +226,7 @@ type cell_type
 end type
 
 type cycle_parameters_type
+    real(REAL_KIND) :: f_G1, f_S, f_G2, f_M
     real(REAL_KIND) :: T_G1, T_S, T_G2, T_M
     real(REAL_KIND) :: G1_mean_delay, S_mean_delay, G2_mean_delay
     real(REAL_KIND) :: G2_delay_factor
@@ -554,6 +555,8 @@ logical :: use_fixed_CP != .false.
 logical :: compute_cycle
 logical :: CC11 = .false.
 
+real(REAL_KIND) :: mitosis_std = 0.0    ! as a fraction of mean T_M
+
 !integer :: icentral !extracellular variable index corresponding to a central site (NX/2,NY/2,NZ/2)
 
 ! Off-lattice parameters, in the input file but unused here
@@ -854,6 +857,9 @@ I2div = (ccp%T_G1 + ccp%T_S + ccp%T_G2)*I_rate_max
 end function
 
 !--------------------------------------------------------------------------------------
+! par_rnor is N(0,1)
+! p1 = mean
+! p2 = std deviation
 !--------------------------------------------------------------------------------------
 real(REAL_KIND) function rv_normal(p1,p2,kpar)
 integer :: kpar

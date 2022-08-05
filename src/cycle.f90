@@ -236,7 +236,8 @@ elseif (phase == G2_phase) then
         cp%V = cp%divide_volume     ! correct for slight volume discrepancy here, to maintain correct cell volume
         if (.not.is_radiation) then
             cp%phase = M_phase
-            cp%M_time = tnow + ccp%T_M   
+!            cp%M_time = tnow + ccp%T_M   
+            cp%M_time = tnow + cp%mitosis_duration   
             goto 10
         endif
         cp%phase = G2_checkpoint
@@ -251,7 +252,8 @@ elseif (phase == G2_checkpoint) then ! this checkpoint combines the release from
     if (cp%G2_flag .and. cp%G2M_flag) then  ! switch to M-phase
         M_switch = .true.
         cp%phase = M_phase
-        cp%M_time = tnow + ccp%T_M   
+!        cp%M_time = tnow + ccp%T_M   
+        cp%M_time = tnow + cp%mitosis_duration   
         N_checkpoint = N_checkpoint - 1
         goto 10
     endif

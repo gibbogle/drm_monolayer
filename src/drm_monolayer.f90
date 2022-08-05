@@ -117,6 +117,7 @@ if (.not.ok) stop
 
 call PlaceCells(ok)
 
+!call checkInitialPhaseDistribution
 !write(*,*) 'stopping after PlaceCells'
 !stop
 
@@ -566,6 +567,7 @@ if (.not.chemo(GLUCOSE)%used) then
     chemo(GLUCOSE)%controls_death = .false.
 endif
 
+#if 0
 if (use_exponential_cycletime) then
     divide_dist(1:2)%class = EXPONENTIAL_DIST
     do ityp = 1,2
@@ -586,10 +588,8 @@ else
     call logger(logmsg)
     write(logmsg,'(a,4e12.4)') 'Median, mean divide time: ',divide_time_median(1:2)/3600,divide_time_mean(1:2)/3600
     call logger(logmsg)
-    ccp => cc_parameters(1)
-    call AdjustCycleTimes
+!    call AdjustCycleTimes
 endif
-#if 0
 do ityp = 1,2
     ccp => cc_parameters(ityp)
     if (ccp%G1_mean_delay > 0) then
@@ -609,6 +609,7 @@ do ityp = 1,2
 	endif
 enddo
 #endif
+
 use_divide_time_distribution = (iuse_lognormal == 1)
 use_V_dependence = (iV_depend == 1)
 randomise_initial_volume = (iV_random == 1)
@@ -703,25 +704,42 @@ end subroutine
 ! Time unit = hour
 ! Note: Now with the log-normal phase times there are no checkpoint delays except those
 ! created by cell damage (e.g. by radiation.)  Therefore now the mean cycle time is just the
-! sum of G1, S and G2 times.
+! sum of G1, S, G2 and M times.
 !-----------------------------------------------------------------------------------------
 subroutine ReadCellCycleParameters(nf)
 integer :: nf
 type(cycle_parameters_type),pointer :: ccp
 integer :: ityp, i
-real(REAL_KIND) :: total
+real(REAL_KIND) :: sigma, total
 
 write(nflog,*) 'ReadCellCycleParameters:'
 do ityp = 1,2
     write(nflog,*) 'ityp: ',ityp
-ccp => cc_parameters(ityp)
+    ccp => cc_parameters(ityp)
 
-read(nf,*) ccp%T_G1
-read(nf,*) ccp%T_S
-read(nf,*) ccp%T_G2
-read(nf,*) ccp%T_M
+!read(nf,*) ccp%T_G1
+!read(nf,*) ccp%T_S
+!read(nf,*) ccp%T_G2
+!read(nf,*) ccp%T_M
+read(nf,*) ccp%f_G1
+read(nf,*) ccp%f_S
+read(nf,*) ccp%f_G2
+read(nf,*) ccp%f_M
 read(nf,*) ccp%Apoptosis_median
 read(nf,*) ccp%Apoptosis_shape
+
+divide_dist(ityp)%class = LOGNORMAL_DIST
+divide_time_median(ityp) = 60*60*divide_time_median(ityp)		! hours -> seconds
+sigma = log(divide_time_shape(ityp))
+divide_dist(ityp)%p1 = log(divide_time_median(ityp))	
+divide_dist(ityp)%p2 = sigma
+divide_time_mean(ityp) = exp(divide_dist(ityp)%p1 + 0.5*divide_dist(ityp)%p2**2)	! mean = median.exp(sigma^2/2)
+write(logmsg,'(a,i4,2e12.4)') 'ityp, shape, sigma: ',ityp,divide_time_shape(ityp),sigma
+call logger(logmsg)
+write(logmsg,'(a,2e12.4)') 'Median, mean divide time (hours): ',divide_time_median(ityp)/3600,divide_time_mean(ityp)/3600
+call logger(logmsg)
+
+call SteelMethod(ityp)
 
 total = ccp%T_G1 + ccp%T_S + ccp%T_G2 + ccp%T_M
 write(nflog,'(a,8f8.2)') 'T_G1,T_S,T_G2,T_M, total: ',ccp%T_G1,ccp%T_S,ccp%T_G2,ccp%T_M, total
@@ -733,6 +751,24 @@ enddo
 end subroutine
 
 !-----------------------------------------------------------------------------------------
+! Compute phase durations from phase fractions.  All corresponding to the average cycle time.
+!-----------------------------------------------------------------------------------------
+subroutine SteelMethod(ityp)
+integer :: ityp
+real(REAL_KIND) :: Tc, b
+type(cycle_parameters_type),pointer :: ccp
+
+ccp => cc_parameters(ityp)
+Tc = divide_time_mean(ityp)/3600    ! seconds -> hours
+b = log(2.0)/Tc
+ccp%T_G1 = -(log(1-ccp%f_G1/2))/b
+ccp%T_S = -(log(1-(ccp%f_G1+ccp%f_S)/2))/b - ccp%T_G1
+ccp%T_G2 = -(log(1-(ccp%f_G1+ccp%f_S+ccp%f_G2)/2))/b - ccp%T_G1 - ccp%T_S
+ccp%T_M = Tc - ccp%T_G1 - ccp%T_S - ccp%T_G2
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+! NOT USED
 !-----------------------------------------------------------------------------------------
 subroutine AdjustCycleTimes
 integer :: ityp
@@ -1041,6 +1077,9 @@ real(REAL_KIND) :: fract(0:8), total
 !integer :: phase_count(0:8), hour
 integer :: counts(NP)
 
+!call checkInitialPhaseDistribution
+!stop
+
 counts = 0
 lastID = 0
 kcell = 0
@@ -1097,6 +1136,9 @@ Ncells_type(ityp) = Ncells_type(ityp) + 1
 cp%Iphase = .true.
 cp%totMis = 0
 !cp%nspheres = 1
+! Set cell's mitosis duration as a Gaussian rv
+R = par_rnor(kpar)	! N(0,1)
+cp%mitosis_duration = (1 + mitosis_std*R)*ccp%T_M
 
 V0 = Vdivide0/2
 !cp%divide_volume = get_divide_volume(ityp, V0, Tdiv, gfactor)
@@ -1239,7 +1281,7 @@ integer :: kcell
 type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
 integer :: ityp, kpar = 0
-real(REAL_KIND) :: Tc, b, t, R, tswitch(3), rVmax, V0, Vprev, fg(4), metab, f_CP, fp(4)
+real(REAL_KIND) :: Tc, Tmean, scale, b, t, R, tswitch(3), rVmax, V0, Vprev, fg(4), metab, f_CP, fp(4)
 real(REAL_KIND) :: T_G1, T_S, T_G2, T_M, tleft, Vleft, Vphase
 
 if (use_exponential_cycletime) then
@@ -1254,7 +1296,8 @@ if (use_synchronise .and. (initial_count == 1)) then
 else
     Tc = cp%divide_time         ! log-normal, implies %fg
 endif
-!Tc = Tc - ccp%T_M           ! subtract mitosis time - no cells can start in mitosis
+Tmean = divide_time_mean(ityp)
+scale = Tc/Tmean
 fg = cp%fg
 metab = 1.0
 f_CP = 1.0
@@ -1271,6 +1314,9 @@ T_S = ccp%T_S/fp(2)
 T_G2 = ccp%T_G2/fp(3)
 T_M = ccp%T_M/fp(4)
 
+if (kcell <= 10) then
+    write(*,'(a,i4,9f8.3)') 'kcell,fg,Tc,sum: ',kcell,fg(:),Tc/3600,(T_G1+T_S+T_G2+T_M)/3600
+endif
 if (use_synchronise) then
     if (synch_phase == G1_phase) then
         t = synch_fraction*T_G1
@@ -1289,10 +1335,7 @@ else
     R = par_uni(kpar)
     t = -(1/b)*log(1 - R/2)     ! cycle progression, log-normal r.v. (t/Tc = fractional progression)
 endif
-!if (S_phase_RR) then
-!    t = T_G1 + T_S*S_phase_RR_progress
-!endif
-if (kcell <= 10) write(*,*) 'kcell, t: ',kcell,t/Tc
+!if (kcell <= 10) write(*,*) 'kcell, t: ',kcell,t/Tc
 tswitch(1) = T_G1 
 tswitch(2) = tswitch(1) + T_S
 tswitch(3) = tswitch(2) + T_G2
@@ -1335,18 +1378,71 @@ elseif (t < tswitch(3)) then
 !    endif
 else
     cp%phase = M_phase
-    cp%fp = metab*f_CP/fg(M_phase)      ! not used
+!    cp%fp = metab*f_CP/fg(M_phase)      ! not used
     cp%dVdt = 0
     cp%V = 2*V0
     R = par_uni(kpar)
-    cp%t_start_mitosis = -R*ccp%T_M
+!    cp%t_start_mitosis = -R*ccp%T_M
+    cp%t_start_mitosis = -R*cp%mitosis_duration
     cp%progress = 1.0
 endif
-if (kcell <= 10) write(*,*) 'kcell, phase, progress: ',kcell,cp%phase,cp%progress
+!if (kcell <= 10) write(*,*) 'kcell, phase, progress: ',kcell,cp%phase,cp%progress
 cp%t_divide_last = -t
-if (kcell <= 10) write(*,'(a,i4,2f8.3)') 'kcell, V: ',kcell,cp%V/(2*V0),cp%progress
+!if (kcell <= 10) write(*,'(a,i4,2f8.3)') 'kcell, V: ',kcell,cp%V/(2*V0),cp%progress
 end subroutine
 
+!--------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------
+subroutine checkInitialPhaseDistribution
+real(8) :: Tc, Tmean, scale, b, t, R, tswitch(3), progress
+integer :: k, phase, ityp = 1, kpar = 0
+integer :: pcount(4), N = 10000
+type(cycle_parameters_type), pointer :: ccp
+type(cell_type), pointer :: cp
+
+write(*,'(a)') 'checkInitialPhaseDistribution'
+N = nlist
+pcount = 0
+do k = 1,N
+    cp => cell_list(k)
+    phase = cp%phase
+    pcount(phase) = pcount(phase) + 1
+enddo
+write(*,'(4f8.4)') pcount/real(N)
+return
+
+ccp => cc_parameters(ityp)
+tswitch(1) = ccp%T_G1 
+tswitch(2) = tswitch(1) + ccp%T_S
+tswitch(3) = tswitch(2) + ccp%T_G2
+
+do k = 1,N
+    Tc = DivideTime(ityp)     ! log-normally distributed
+    Tmean = divide_time_mean(ityp)
+    scale = Tc/Tmean
+    tswitch(1) = scale*ccp%T_G1 
+    tswitch(2) = tswitch(1) + scale*ccp%T_S
+    tswitch(3) = tswitch(2) + scale*ccp%T_G2
+    b = log(2.0)/Tc
+    R = par_uni(kpar)
+    t = -(1/b)*log(1 - R/2)     ! cycle progression, log-normal r.v. (t/Tc = fractional progression)
+    if (t < tswitch(1)) then
+        phase = G1_phase
+        progress = t/ccp%T_G1
+    elseif (t < tswitch(2)) then
+        phase = S_phase
+        progress = (t - tswitch(1))/ccp%T_S
+    elseif (t < tswitch(3)) then
+        phase = G2_phase
+        progress = (t - tswitch(2))/ccp%T_G2
+    else
+        phase = M_phase
+        progress = 1.0
+    endif
+    pcount(phase) = pcount(phase) + 1
+enddo
+write(*,'(4f8.4)') pcount/real(N)
+end subroutine
 
 !--------------------------------------------------------------------------------
 ! Not USED
@@ -1684,7 +1780,7 @@ real(REAL_KIND) :: C_O2, HIF1, PDK1
 type(metabolism_type), pointer :: mp
 type(cell_type), pointer :: cp
 integer :: phase_count(0:4)
-real(REAL_KIND) :: total
+real(REAL_KIND) :: total, tadjust
 real(REAL_KIND) :: fATM, fATR, fCP, dtCPdelay, dtATMdelay, dtATRdelay, ATM_DSB, DNA_rate
 logical :: PEST_OK
 logical :: ok = .true.
@@ -1858,13 +1954,20 @@ endif
 if (output_DNA_rate .and. (Nirradiated > 0)) then
     call show_S_phase_statistics()
 endif
+if (compute_cycle) then
+    call get_phase_distribution(phase_count)
+    total = sum(phase_count)
+    phase_dist = 100*phase_count/total
+    tadjust = event(1)%time/3600    ! if the RADIATION event is #1
+    write(nflog,'(a,f8.3,i8,f8.3)') 'hour, count, M%: ',real(istep)/nthour - tadjust,phase_count(M_phase),phase_dist(M_phase)
+endif
 if (compute_cycle .or. output_DNA_rate) then
     if (next_phase_hour > 0) then  ! check if this is a phase_hour
         if (real(istep)/nthour >= phase_hour(next_phase_hour)) then   ! record phase_dist
 	        if (compute_cycle) then
-	            call get_phase_distribution(phase_count)
-	            total = sum(phase_count)
-	            phase_dist = 100*phase_count/total
+!	            call get_phase_distribution(phase_count)
+!	            total = sum(phase_count)
+!	            phase_dist = 100*phase_count/total
                 recorded_phase_dist(next_phase_hour,:) = phase_dist
 	        endif
 	        if (output_DNA_rate) then
@@ -2081,7 +2184,7 @@ if (compute_cycle) then
     if (use_synchronise) then
         tadjust = 0
     else
-        tadjust = 6
+        tadjust = event(1)%time/3600
     endif
     if (nphase_hours > 0) then
         if (only_M_phase) then

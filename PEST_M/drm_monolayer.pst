@@ -13,48 +13,48 @@ pcomplex relative 0.01  0.0  switch  2.0 parabolic
 phrsimple relative 0.01  0.0  switch  2.0 parabolic
 preass relative 0.01  0.0  switch  2.0 parabolic
 * parameter data
-pcomplex none factor 0.488 0.35 0.55 pcomplex 1.0      0.0000      1
-phrsimple none factor 0.559 0.4 0.7 phrsimple 1.0      0.0000      1
+pcomplex none factor 0.488 0.4 0.55 pcomplex 1.0      0.0000      1
+phrsimple none factor 0.559 0.45 0.7 phrsimple 1.0      0.0000      1
 preass none factor 0.066 0.04 0.1 preass 1.0      0.0000      1
 * observation groups
-SF01obgp
-SF02obgp
-SF03obgp
-SF04obgp
-SF05obgp
-SF06obgp
-SF07obgp
-SF08obgp
-SF09obgp
+MC01obgp
+MC02obgp
+MC03obgp
+MC04obgp
+MC05obgp
+MC06obgp
+MC07obgp
+MC08obgp
+MC09obgp
 * observation data
-SF01logSF -0.22816081766742 2.09353134522914 SF01obgp
-SF02logSF -0.45 1.49071198499986 SF02obgp
-SF03logSF -0.659607311147601 1.23128126007101 SF03obgp
-SF04logSF -0.990128758930256 1.0049724642631 SF04obgp
-SF05logSF -1.32843322966482 0.867621158873765 SF05obgp
-SF06logSF -1.71887107931348 0.762743205709987 SF06obgp
-SF07logSF -1.95953539021001 0.714370388558065 SF07obgp
-SF08logSF -2.33676150018011 0.654173286695667 SF08obgp
-SF09logSF -2.76453412878027 0.601435448993248 SF09obgp
+MC01logSF -0.22816081766742 2.09353134522914 MC01obgp
+MC02logSF -0.45 1.49071198499986 MC02obgp
+MC03logSF -0.659607311147601 1.23128126007101 MC03obgp
+MC04logSF -0.990128758930256 1.0049724642631 MC04obgp
+MC05logSF -1.32843322966482 0.867621158873765 MC05obgp
+MC06logSF -1.71887107931348 0.762743205709987 MC06obgp
+MC07logSF -1.95953539021001 0.714370388558065 MC07obgp
+MC08logSF -2.33676150018011 0.654173286695667 MC08obgp
+MC09logSF -2.76453412878027 0.601435448993248 MC09obgp
 * model command line
 drm_monolayer.bat > nul
 * model input/output
-SF01.tpl SF01.inp
-SF02.tpl SF02.inp
-SF03.tpl SF03.inp
-SF04.tpl SF04.inp
-SF05.tpl SF05.inp
-SF06.tpl SF06.inp
-SF07.tpl SF07.inp
-SF08.tpl SF08.inp
-SF09.tpl SF09.inp
-SF01_out.ins SF01_out.dat
-SF02_out.ins SF02_out.dat
-SF03_out.ins SF03_out.dat
-SF04_out.ins SF04_out.dat
-SF05_out.ins SF05_out.dat
-SF06_out.ins SF06_out.dat
-SF07_out.ins SF07_out.dat
-SF08_out.ins SF08_out.dat
-SF09_out.ins SF09_out.dat
+MC01.tpl MC01.inp
+MC02.tpl MC02.inp
+MC03.tpl MC03.inp
+MC04.tpl MC04.inp
+MC05.tpl MC05.inp
+MC06.tpl MC06.inp
+MC07.tpl MC07.inp
+MC08.tpl MC08.inp
+MC09.tpl MC09.inp
+MC01_out.ins MC01_out.dat
+MC02_out.ins MC02_out.dat
+MC03_out.ins MC03_out.dat
+MC04_out.ins MC04_out.dat
+MC05_out.ins MC05_out.dat
+MC06_out.ins MC06_out.dat
+MC07_out.ins MC07_out.dat
+MC08_out.ins MC08_out.dat
+MC09_out.ins MC09_out.dat
 * prior information

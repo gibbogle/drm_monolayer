@@ -88,6 +88,7 @@ integer :: nG1delay, nSdelay, nG2delay
 logical :: use_G2_pATM_Nindependent = .false.
 logical :: output_DNA_rate = .false.
 logical :: FIX_katm1s_eq_katm1g2 = .true.
+logical :: negligent_G2_CP = .false.
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHRsimple, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
@@ -196,14 +197,14 @@ elseif (iphase_hours == -2) then    ! this is the compute_cycle case for CA-135
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 3
     next_phase_hour = 1
-    phase_hour(1:5) = [4.5, 8.0, 11.0, 0.0, 0.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+    phase_hour(1:5) = [5.0, 8.5, 11.5, 0.0, 0.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 elseif (iphase_hours == -5) then    ! this is the compute_cycle case for CC-11
     CC11 = .true.
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 5
     next_phase_hour = 1
-    phase_hour(1:5) = [0.5, 1.0, 2.0, 3.0, 4.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+    phase_hour(1:5) = [1.0, 1.5, 2.5, 3.5, 4.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 elseif (iphase_hours == -6) then    ! this is the output_DNA_rate case
     CC11 = .true.
     compute_cycle = .false.
@@ -211,7 +212,7 @@ elseif (iphase_hours == -6) then    ! this is the output_DNA_rate case
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 5
     next_phase_hour = 1
-    phase_hour(1:5) = [0.5, 1.0, 2.0, 3.0, 4.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+    phase_hour(1:5) = [1.0, 1.5, 2.5, 3.5, 4.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 elseif (iphase_hours == -3) then
     use_SF = .true.     ! in this case SFave is recorded and there are multiple phase distribution recording times
     nphase_hours = 4
@@ -499,10 +500,16 @@ end function
 !------------------------------------------------------------------------
 function G2_checkpoint_time(cp) result(t)
 type(cell_type), pointer :: cp
-real(REAL_KIND) :: t, th, th_ATM, th_ATR
+real(REAL_KIND) :: t, th, th_ATM, th_ATR, totDSB
 integer :: iph = 3
+real(REAL_KIND) :: G2_DSB_threshold = 15
 
-th_ATM = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*cp%pATM))
+totDSB = sum(cp%DSB)
+if (negligent_G2_CP .and. (totDSB < G2_DSB_threshold)) then
+    th_ATM = 0
+else
+    th_ATM = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*cp%pATM))
+endif
 th_ATR = K_ATR(iph,3)*(1 - exp(-K_ATR(iph,4)*cp%pATR))
 th = th_ATM + th_ATR
 totG2delay = th + totG2delay
@@ -514,7 +521,7 @@ if (is_radiation) then
     G2thsum(2) = G2thsum(2) + th_ATR
     NG2th = NG2th + 1
 endif
-if (kcell_now <= 100) write(*,'(a,f6.2)') 'th_ATM: ',th_ATM
+if (kcell_now <= 100) write(*,'(a,i6,f6.2)') 'kcell, th_ATM: ',kcell_now, th_ATM
 end function
 
 !------------------------------------------------------------------------

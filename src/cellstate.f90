@@ -650,7 +650,8 @@ do kcell = 1,nlist0
 	ityp = cp%celltype
 	ccp => cc_parameters(ityp)
 	divide = .false.
-	mitosis_duration = ccp%T_M
+!	mitosis_duration = ccp%T_M
+    mitosis_duration = cp%mitosis_duration
     prev_phase = cp%phase
 	if (cp%phase /= M_phase) then
 	    call growcell(cp,dt)
@@ -850,7 +851,8 @@ if (cp%state == DYING) then
 endif
 ityp = cp%celltype
 ccp => cc_parameters(ityp)
-mitosis_duration = ccp%T_M
+!mitosis_duration = ccp%T_M
+mitosis_duration = cp%mitosis_duration
 if (use_cell_cycle) then
     if (use_constant_growthrate) then
         dVdt = max_growthrate(ityp)
@@ -885,9 +887,10 @@ subroutine divider(kcell1, ok)
 integer :: kcell1
 logical :: ok
 integer :: kcell2, ityp, nbrs0, im, imax, ipdd
-real(REAL_KIND) :: r(3), c(3), cfse0, cfse2, V0, Tdiv, gfactor, dVdt, fg(4)
+real(REAL_KIND) :: R, c(3), cfse0, cfse2, V0, Tdiv, gfactor, dVdt, fg(4)
 type(cell_type), pointer :: cp1, cp2
 type(cycle_parameters_type), pointer :: ccp
+integer :: kpar = 0
 
 !write(logmsg,*) 'divider: ',kcell1 
 !call logger(logmsg)
@@ -948,6 +951,9 @@ call set_divide_volume(cp1, V0)
 !	cp1%metab%I2Divide = get_I2Divide(cp1)
 !	cp1%metab%Itotal = 0
 !endif
+! Set cell's mitosis duration as a Gaussian rv
+R = par_rnor(kpar)	! N(0,1)
+cp1%mitosis_duration = (1 + mitosis_std*R)*ccp%T_M
 cp1%mitosis = 0
 cfse0 = cp1%CFSE
 cp1%CFSE = generate_CFSE(cfse0/2)
@@ -1015,6 +1021,10 @@ cp2 = cp1
 !cp2%fg = gfactor
 !call set_divide_volume(kcell2, V0)
 !if (kcell1 <= 10) write(*,*) 'divided: ',kcell1, kcell2,ncells
+
+! Set cell's mitosis duration as a Gaussian rv
+R = par_rnor(kpar)	! N(0,1)
+cp2%mitosis_duration = (1 + mitosis_std*R)*ccp%T_M
 kcell_now = kcell2
 call set_divide_volume(cp2, V0)
 !cp2%dVdt = dVdt/cp2%fg

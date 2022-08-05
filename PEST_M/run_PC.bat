@@ -1,2 +1,2 @@
-cd D:\drm_monolayer\pest_M\CMAES_SF
+cd D:\drm_monolayer\pest_M\MC01
 pest drm_monolayer.pst
