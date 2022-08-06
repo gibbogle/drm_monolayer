@@ -535,7 +535,7 @@ real(8), allocatable :: Psurvive(:)
 !logical, parameter :: phase_dist = .true.
 real(REAL_KIND) :: t_irradiation, SFave
 logical :: use_SF = .true.
-real(REAL_KIND) :: phase_hour(8)
+real(REAL_KIND) :: phase_hour(20)
 integer :: nphase_hours, next_phase_hour
 real(REAL_KIND) :: phase_dist(0:4)    ! % of cells in each phase
 real(REAL_KIND) :: recorded_phase_dist(6,0:4)   ! % of cells in each phase phase_hour after IR
