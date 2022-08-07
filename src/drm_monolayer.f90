@@ -1963,8 +1963,6 @@ if (compute_cycle) then
 endif
 if (compute_cycle .or. output_DNA_rate) then
     if (next_phase_hour > 0) then  ! check if this is a phase_hour
-    write(*,*) 'next_phase_hour: ',next_phase_hour
-    write(*,*) 'phase_hour: ',phase_hour(next_phase_hour)
         if (real(istep)/nthour >= phase_hour(next_phase_hour)) then   ! record phase_dist
 	        if (compute_cycle) then
 !	            call get_phase_distribution(phase_count)
@@ -1978,7 +1976,6 @@ if (compute_cycle .or. output_DNA_rate) then
 	        endif
             next_phase_hour = next_phase_hour + 1
             if (next_phase_hour > nphase_hours) next_phase_hour = 0
-            write(*,*) 'next_phase_hour: ',next_phase_hour, output_DNA_rate
         endif
     endif
 endif

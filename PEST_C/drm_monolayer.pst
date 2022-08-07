@@ -1,7 +1,7 @@
 pcf
 * control data
 restart estimation
-3 10 3 0 2
+2 10 2 0 2
 2 2 double point 1 0 0
  5.0   2.0   0.3  0.03    10
  3.0 2 0.001
@@ -9,13 +9,11 @@ restart estimation
   30  0.01     3     3  0.01     3
    1     1     1
 * parameter groups
-katm1 relative 0.01  0.0  switch  2.0 parabolic
 katm2 relative 0.01  0.0  switch  2.0 parabolic
 katm4 relative 0.01  0.0  switch  2.0 parabolic
 * parameter data
-katm1 none factor 0.011 0 0.02 katm1 1.0      0.0000      1
-katm2 none factor 12 5 20 katm2 1.0      0.0000      1
-katm4 none factor 0.53 0.1 1 katm4 1.0      0.0000      1
+katm2 none factor 12.03 5 15 katm2 1.0      0.0000      1
+katm4 none factor 0.381 0.2 0.6 katm4 1.0      0.0000      1
 * observation groups
 CC05EDUobgp
 CC11EDUobgp

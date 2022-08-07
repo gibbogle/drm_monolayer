@@ -26,24 +26,27 @@ integer, parameter :: SSA = 5
 !integer, parameter :: HRs = 4
 !integer, parameter :: MDR = 5
 
+! Note: McMahon parameter values are from MEDRAS code, specifically medrascell.py
+!       ------------------------
+
 real(8) :: eta = 0.0006506387875449218
-real(8) :: Pcomplex = 0.4337    ! fraction of created DSBs that are complex
+real(8) :: Pcomplex = 0.4337    ! fraction of created DSBs that are complex (McMahon: complexFrac)
 real(8) :: PHRsimple = 0.8      ! fraction of post-replication simple DSBs that are repaired by HR (slow) rather than NHEJ (fast)
 character*(2) :: phaseName(4) = ['G1','S ','G2','M ']
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.008462]   ! by pathway
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.2604, 0.008462]   ! by pathway  with HR simple
 !real(8) :: repRate(NP) = [2.081, 0.2604, 0.2604, 0.2604, 0.008462]   ! by pathway  with HR simple
-real(8) :: repRate(NP) = [2.081, 0.2604, 0.2604, 0.008462, 0.0]   ! by pathway (MDR was 0.008462)
+real(8) :: repRate(NP) = [2.081, 0.2604, 0.2604, 0.008462, 0.0]   ! by pathway (MDR was 0.008462) (McMahon: fastRepair, slowRepair, verySlowRepair)
 !real(8) :: misrepRate(8) = [0.18875,0.18875,0.18247,0.18247,0.14264,0.14264,0.18875,0.18875]        ! by phase, Nlethal = 0.5*misrepRate*Nmis 
 !real(8) :: misrepRate(8) = [0.18875,0.0,0.18247,0.0,0.14264,0.0,0.18875,0.0]        ! by phase, Nlethal = 0.5*misrepRate*Nmis 
 !real(8) :: fidRate(NP)  = [0.98537, 0.98537, 0.98537, 1.0, 0.4393]  ! by pathway
 !real(8) :: fidRate(NP)  = [0.98537, 0.98537, 0.98537, 1.0, 1.0, 0.4393]  ! by pathway  with HR simple
 !real(8) :: fidRate(NP)  = [0.98537, 0.98537, 1.0, 1.0, 0.4393]  ! by pathway  with HR simple
-real(8) :: fidRate(NP)  = [0.98537, 0.98537, 1.0, 0.4393, 0.0]  ! by pathway  with HR simple ! MDR was 0.4393
+real(8) :: fidRate(NP)  = [0.98537, 0.98537, 1.0, 0.4393, 0.0]  ! by pathway  with HR simple (McMahon: NHEJFidelity, NHEJFidelity, 1.0, MMEJFidelity)
 !logical :: pathwayUsed(8,NP)
-real(8) :: apopRate = 0.01117   ! NOT USED
-real(8) :: baseRate = 0.000739
-real(8) :: mitRate  = 0.0141
+real(8) :: apopRate = 0.01117   ! (McMahon: apoptoticRate) (NOT USED only baseRate is used)
+real(8) :: baseRate = 0.000739  ! (McMahon: baseRate)
+real(8) :: mitRate  = 0.0141    ! (McMahon: mitoticRate)
 real(8) :: Msurvival = 0.05
 real(8) :: Kaber = 1.0          ! now fixed, McMahon has 1.  
 real(8) :: Klethal = 0.4
@@ -333,7 +336,7 @@ DSB0 = 0
 if (phase == G1_phase) then
     f_S = 0
     PHR = 0
-elseif (phase == G2_phase) then
+elseif (phase >= G2_phase) then
     f_S = 1.0
     PHR = PHRsimple
 elseif (phase == S_phase) then
@@ -399,7 +402,7 @@ endif
 cp%DSB = DSB0
 cp%totDSB0 = totDSB0
 cp%Nlethal = 0
-if (kcell_now <= 10) write(*,'(a,2i6,8f8.2)') 'IR: kcell, phase,DSB,f_S: ',kcell_now,phase,cp%DSB(1:3),f_S
+!if (kcell_now <= 10) write(*,'(a,2i6,8f8.2)') 'IR: kcell, phase,DSB,f_S: ',kcell_now,phase,cp%DSB(1:3),f_S
 
 totPmit = 0
 totPaber = 0
@@ -516,14 +519,12 @@ th_ATR = K_ATR(iph,3)*(1 - exp(-K_ATR(iph,4)*cp%pATR))
 th = th_ATM + th_ATR
 totG2delay = th + totG2delay
 nG2delay = nG2delay + 1
-!if (kcell_now == 3) write(*,'(a,i6,2f8.3)') 'G2_checkpoint_time (ATM, ATR) (h): ',kcell_now,th_ATM,th_ATR 
 t = 3600*th
 if (is_radiation) then
     G2thsum(1) = G2thsum(1) + th_ATM
     G2thsum(2) = G2thsum(2) + th_ATR
     NG2th = NG2th + 1
 endif
-if (kcell_now <= 100) write(*,'(a,i6,f6.2)') 'kcell, th_ATM: ',kcell_now, th_ATM
 end function
 
 !------------------------------------------------------------------------
@@ -748,6 +749,12 @@ do k = 1,NP
         totDSBinfid = totDSBinfid + DSB(k)
     endif
 enddo
+
+! Testing eta dependence
+!eta_G1 = eta_G2 ! -> Pmis = 0.01 - 0.07
+!eta_G2 = eta_G1 ! -> Pmis = 0.1 - 0.127
+! Therefore small eta -> small Pmis -> bigger Nmis (the factor (1 - Pmis) is ~0.95 for eta_G2, ~0.89 for eta_G1)
+
 if (phase == G1_phase) then
     eta = eta_G1
 elseif (phase == S_phase) then
@@ -760,7 +767,7 @@ if (use_DSBinfid) then
 else
     Pmis = misrepairRate(totDSB0, totDSB, eta)
 endif
-!if (Pmis > 0.2) write(*,'(a,i6,e12.3)') 'Pmis: ',kcell_now,Pmis
+!if (Pmis > 0.1) write(*,'(a,i6,e12.3)') 'Pmis: ',kcell_now,Pmis    ! dose = 6 Gy -> Pmis = 0.127
 cp%totMis = cp%totMis + Pmis*(totDSB0 - totDSB)
 binMisProb = cp%totMis/(cp%totDSB0 - totDSB)
 Nmis = 0
@@ -807,7 +814,7 @@ DSB = cp%DSB
 totDSB = sum(DSB)
 Nlethal = cp%Nlethal
 if (kcell_now == 1) write(nflog,'(a,3i4,2e12.3)') 'kcell, phase0, phase, totDSB, Nlethal: ',kcell_now, cp%phase0, cp%phase, totDSB, Nlethal
-if (cp%phase0 == G1_phase) then
+if (cp%phase0 == G1_phase) then     ! same as S, G2
 !    Pbase = exp(-baseRate*cp%totDSB0)   ! this is handled in cellIrradiation() = 1 - Pdie
     Paber = exp(-Kaber*Nlethal) ! Kaber = 1, not needed because Klethal is a parameter
     Pmit = exp(-mitRate*totDSB)
@@ -815,8 +822,8 @@ if (cp%phase0 == G1_phase) then
 !    if (kcell_now < 40) write(*,'(a,i3,2f5.1,3e11.3)') 'G1: Nlethal,totDSB,Paber,Pmit: ',kcell_now,Nlethal,totDSB,Paber,Pmit,Paber*Pmit
 !       cp%Psurvive = Paber*Pbase*Papop*Pmit
 !    if (kcell_now == 35) write(*,*) 'cell #35 Psurvive: ',cp%Psurvive
-elseif (cp%phase0 < M_phase) then   ! S, G2
-    Paber = exp(-Kaber*Nlethal)
+elseif (cp%phase0 < M_phase) then   ! G1, S, G2
+    Paber = exp(-Nlethal)
     Pmit = exp(-mitRate*totDSB)
     cp%Psurvive = Pmit*Paber  
     if (kcell_now == 1) write(*,'(a,2f8.4,2e12.3)') 'totDSB,Nlethal,Pmit,Paber: ',totDSB,Nlethal,Pmit,Paber   
@@ -847,7 +854,7 @@ type(cell_type), pointer :: cp
 integer :: kcell, iph, cnt
 real(8) :: pATM, k1, k2, fATM, rate_sum, pATM_ave
 
-write(*,'(a)') 'get_DNA_synthesis_rate'
+!write(*,'(a)') 'get_DNA_synthesis_rate'
 k1 = K_ATM(S_phase,3)
 k2 = K_ATM(S_phase,4)
 cnt = 0
@@ -866,7 +873,7 @@ do kcell = 1,nlist
 enddo
 DNA_rate = rate_sum/cnt
 pATM_ave = pATM_ave/cnt
-write(*,'(a,3f8.3,e12.3)') 'DNA growth rate factor: ',DNA_rate,k1,k2,pATM_ave
+!write(*,'(a,3f8.3,e12.3)') 'DNA growth rate factor: ',DNA_rate,k1,k2,pATM_ave
 end subroutine
 
 !------------------------------------------------------------------------

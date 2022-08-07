@@ -69,7 +69,7 @@ logical :: ok
 integer :: kcell, site(3), iv, ityp, n, kpar=0  !, idrug, im, ichemo
 real(REAL_KIND) :: C_O2, SER, p_death, p_recovery, R, kill_prob, tmin, Cdrug, total
 real(REAL_KIND) :: SER_OER(2)
-integer :: counts(NP)
+integer :: counts(8)
 type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
 !logical :: dies
