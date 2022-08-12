@@ -213,10 +213,10 @@ elseif (iphase_hours == -6) then    ! this is the output_DNA_rate case
     compute_cycle = .false.
     output_DNA_rate = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
-!    nphase_hours = 10  ! To generate DNA synthesis factor from S ATM parameters
-!    phase_hour(1:10) = [0.05,0.1,0.16666,0.33333,0.5,0.75,1.25,2.25,3.25,4.25]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
-    nphase_hours = 5    ! To fit S ATM parameters to EDU data
-    phase_hour(1:5) = [0.75,1.25,2.25,3.25,4.25]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+    nphase_hours = 10  ! To generate DNA synthesis factor from S ATM parameters
+    phase_hour(1:10) = [0.05,0.1,0.16666,0.33333,0.5,0.75,1.25,2.25,3.25,4.25]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+!    nphase_hours = 5    ! To fit S ATM parameters to EDU data
+!    phase_hour(1:5) = [0.75,1.25,2.25,3.25,4.25]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
     next_phase_hour = 1
 elseif (iphase_hours == -3) then
     use_SF = .true.     ! in this case SFave is recorded and there are multiple phase distribution recording times
@@ -422,6 +422,8 @@ end subroutine
 ! M(t) - r/k = A.exp(-kt)
 ! M(0) = r/k + A => A = M(0) - r/k
 ! M(t) = r/k + (M(0) - r/k)exp(-kt)
+! This assumes that r is constant, therefore it is valid only for small t,
+! because ATM_DSB is constantly changing.
 ! Note: parameters from mcradio assume time is hours, therefore the time
 ! step passed to the subroutine, dth, has been converted to hours.
 ! 11/02/22 changed K_ATM(2) & (3) to (1) & (2)
@@ -516,6 +518,10 @@ else
     th_ATM = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*cp%pATM))
 endif
 th_ATR = K_ATR(iph,3)*(1 - exp(-K_ATR(iph,4)*cp%pATR))
+if (kcell_now <= 100) then
+    write(nflog,'(a,i6,4f8.4)') 'cell, pATM, pATR, th_ATM, th_ATR: ',kcell_now, cp%pATM,cp%pATR,th_ATM,th_ATR
+    write(*,'(a,i6,4f8.4)') 'cell, pATM, pATR, th_ATM, th_ATR: ',kcell_now, cp%pATM,cp%pATR,th_ATM,th_ATR
+endif
 th = th_ATM + th_ATR
 totG2delay = th + totG2delay
 nG2delay = nG2delay + 1

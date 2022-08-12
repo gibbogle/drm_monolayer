@@ -1968,7 +1968,7 @@ if (compute_cycle .or. output_DNA_rate) then
 !	            call get_phase_distribution(phase_count)
 !	            total = sum(phase_count)
 !	            phase_dist = 100*phase_count/total
-                recorded_phase_dist(next_phase_hour,:) = phase_dist
+                recorded_phase_dist(next_phase_hour,1:4) = 100*phase_dist(1:4)/sum(phase_dist(1:4))
 	        endif
 	        if (output_DNA_rate) then
 	            call get_DNA_synthesis_rate(DNA_rate)
@@ -2176,25 +2176,45 @@ real(REAL_KIND) :: sftot(4), sfsum, sfmax
 integer :: tadjust
 type(cell_type), pointer :: cp
 logical :: only_M_phase = .false.
+logical :: PDS4 = .true.
+real(REAL_KIND) :: phi, PDS4_M(3) = [0.191, 0.414286, 0.732812]
 
 if (compute_cycle) then
-    write(nflog,*) 'Completed'
-    write(*,*) 'Completed'
+    write(nflog,*) 'Completed compute cycle'
+    write(*,*) 'Completed compute cycle'
     if (use_synchronise) then
         tadjust = 0
     else
         tadjust = event(1)%time/3600
     endif
+    do i = 1,nphase_hours
+        write(nflog,'(f6.1,4x,4f8.4)') phase_hour(i)-tadjust,recorded_phase_dist(i,1:4)
+        write(*,'(f6.1,4x,4f8.4)') phase_hour(i)-tadjust,recorded_phase_dist(i,1:4)
+        if (PDS4) then
+            phi = phi + (recorded_phase_dist(i,4) - PDS4_M(i))**2
+        endif
+    enddo
+    if (PDS4) then 
+        write(nflog,'(a)') '    hour    expt   model   error'
+        write(*,'(a)') '    hour    expt   model   error'
+        do i = 1,nphase_hours
+            write(nflog,'(f8.1,3f8.4)') phase_hour(i)-tadjust,PDS4_M(i),recorded_phase_dist(i,4),recorded_phase_dist(i,4) - PDS4_M(i)
+            write(*,'(f8.1,3f8.4)') phase_hour(i)-tadjust,PDS4_M(i),recorded_phase_dist(i,4),recorded_phase_dist(i,4) - PDS4_M(i)
+        enddo
+        write(nflog,'(a,f6.3)') '    phi: ',phi
+        write(*,'(a,f6.3)') '    phi: ',phi
+    endif
+    
     if (nphase_hours > 0) then
         if (only_M_phase) then
             write(nfres,'(20e15.6)') (recorded_phase_dist(i,4),i=1,nphase_hours)
         else
             write(nfres,'(20e15.6)') (recorded_phase_dist(i,1:4),i=1,nphase_hours)
         endif
-        do i = 1,nphase_hours
-            write(nflog,'(f6.1,4x,4f6.1)') phase_hour(i)-tadjust,recorded_phase_dist(i,1:4)
-            write(*,'(f6.1,4x,4f6.1)') phase_hour(i)-tadjust,recorded_phase_dist(i,1:4)
-        enddo
+!        do i = 1,nphase_hours
+!            write(nfres,'(f6.1,4x,4f6.1)') phase_hour(i)-tadjust,recorded_phase_dist(i,1:4)
+!            write(*,'(f6.1,4x,4f6.1)') phase_hour(i)-tadjust,recorded_phase_dist(i,1:4)
+!        enddo
     endif
     write(*,'(a,3f8.3)') 'Average G1, S, G2 CP delays: ',totG1delay/nG1delay,totSdelay/(3600.*nSdelay),totG2delay/nG2delay
     write(*,'(a,2f8.3)') 'Average G2 ATM, ATR delay: ',G2thsum/NG2th
