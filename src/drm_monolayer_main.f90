@@ -79,8 +79,8 @@ endif
 
 ! Synchronisation of cell IR
 use_synchronise = .false.
-synch_phase = G1_phase
-synch_fraction = 0.0
+synch_phase = S_phase
+synch_fraction = 0.6
 G2_katm3_factor = 1.0
 G2_katm4_factor = 1.0
 G2_katr3_factor = 1.0

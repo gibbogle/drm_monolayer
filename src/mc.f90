@@ -92,6 +92,7 @@ logical :: use_G2_pATM_Nindependent = .false.
 logical :: output_DNA_rate = .false.
 logical :: FIX_katm1s_eq_katm1g2 = .false.  ! handle this in the input files, making katm1g2 = katm1s
 logical :: negligent_G2_CP = .false.
+logical :: use_DSB_CP = .true.
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHRsimple, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
@@ -131,16 +132,20 @@ if (nCPparams == 1) then
     enddo
 elseif (nCPparams == 3) then
     use_phase_dependent_CP_parameters = .true.
+    write(nflog,*) 'K_ATM'
     do j = 1,4
         do iph = 1,3
             read(nfin,*) K_ATM(iph,j)
             write(*,*) j,iph,K_ATM(iph,j)
+            write(nflog,*) j,iph,K_ATM(iph,j)
         enddo
      enddo
+    write(nflog,*) 'K_ATR'
     do j = 1,4
         do iph = 2,3
             read(nfin,*) K_ATR(iph,j)
             write(*,*) j,iph,K_ATR(iph,j)
+            write(nflog,*) j,iph,K_ATR(iph,j)
         enddo
     enddo
     ! Hard code katm1s = katm1g2
@@ -151,6 +156,7 @@ else
     write(*,*) 'ERROR: wrong nCPparams: ',nCPparams
     stop
 endif
+
 read(nfin,*) Pcomplex
 read(nfin,*) PHRsimple
 read(nfin,*) Chalf
@@ -253,6 +259,11 @@ totG2delay = 0
 nG1delay = 0
 nSdelay = 0
 nG2delay = 0
+
+! Test changes to repRate(HR)
+!write(nflog,*) '!!!!!!!!!!!!!!!!!!!! changing repRate(HR) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+!repRate(HR) = 0.4*repRate(HR)
+!write(nflog,*) '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
 end subroutine
 
 !!--------------------------------------------------------------------------
@@ -462,16 +473,17 @@ end subroutine
 subroutine updateATR(iph,pATR,ATR_DSB,dth)
 integer :: iph
 real(8) :: pATR, ATR_DSB, dth
-real(8) :: r, k, x, xmax, km, xf
+real(8) :: r, k1, k2, x, xmax, km, xf
 
-r = K_ATR(iph,1)*ATR_DSB   ! rate of production of pATR
-k = K_ATR(iph,2)  ! decay rate constant
-if (k == 0) then
-    write(*,*) 'updateATR: k = 0: iph,K_ATR(iph,2): ',iph,K_ATR(iph,2)
+k1 = K_ATR(iph,1)
+r = k1*ATR_DSB   ! rate of production of pATR
+k2 = K_ATR(iph,2)  ! decay rate constant
+if (k2 == 0) then
+    write(*,*) 'updateATR: k2 = 0: iph,K_ATR(iph,2): ',iph,K_ATR(iph,2)
     stop
 endif
-pATR = r/k + (pATR - r/k)*exp(-k*dth)
-!if (kcell_now == 76) write(*,'(a,i4,5f8.4)') 'updateATR: r,k,r/k,ATR_DSB,pATR: ',kcell_now,r,k,r/k,ATR_DSB,pATR
+pATR = r/k2 + (pATR - r/k2)*exp(-k2*dth)
+if (kcell_now == 1) write(nfphase,'(a,i4,6f8.3)') 'updateATR: k1,r,k2,r/k2,ATR_DSB,pATR: ',kcell_now,k1,r,k2,r/k2,ATR_DSB,pATR
 !if (pATR > 0) write(*,'(a,i4,5f8.4)') 'updateATR: r,k,r/k,ATR_DSB,pATR: ',kcell_now,r,k,r/k,ATR_DSB,pATR
 end subroutine
 
@@ -485,6 +497,10 @@ type(cell_type), pointer :: cp
 real(REAL_KIND) :: t, th
 integer :: iph = 1
 
+if (use_DSB_CP) then
+    t = 0
+    return
+endif
 th = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*cp%pATM))
 !if (kcell_now == 1) write(*,'(a,i6,2f8.3)') 'G1_checkpoint_time (h): ',kcell_now,cp%pATM,th
 if (isnan(th)) then
@@ -507,21 +523,29 @@ end function
 !------------------------------------------------------------------------
 function G2_checkpoint_time(cp) result(t)
 type(cell_type), pointer :: cp
-real(REAL_KIND) :: t, th, th_ATM, th_ATR, totDSB
+real(REAL_KIND) :: t, th, th_ATM, th_ATR, N_DSB, k3, k4
 integer :: iph = 3
 real(REAL_KIND) :: G2_DSB_threshold = 15
 
-totDSB = sum(cp%DSB)
-if (negligent_G2_CP .and. (totDSB < G2_DSB_threshold)) then
+if (use_DSB_CP) then
+    N_DSB = sum(cp%DSB)
+    k3 = K_ATR(iph,3)
+    k4 = K_ATR(iph,4)
+    th = k3*N_DSB/(k4 + N_DSB)
+    if (kcell_now < 10) write(*,'(a,4f8.3)') 'N_DSB,k3,k4,th: ',N_DSB,k3,k4,th
+    t = 3600*th
+    return
+endif
+if (negligent_G2_CP .and. (sum(cp%DSB) < G2_DSB_threshold)) then
     th_ATM = 0
 else
     th_ATM = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*cp%pATM))
 endif
 th_ATR = K_ATR(iph,3)*(1 - exp(-K_ATR(iph,4)*cp%pATR))
-if (kcell_now <= 100) then
-    write(nflog,'(a,i6,4f8.4)') 'cell, pATM, pATR, th_ATM, th_ATR: ',kcell_now, cp%pATM,cp%pATR,th_ATM,th_ATR
-    write(*,'(a,i6,4f8.4)') 'cell, pATM, pATR, th_ATM, th_ATR: ',kcell_now, cp%pATM,cp%pATR,th_ATM,th_ATR
-endif
+!if (kcell_now <= 100) then
+!    write(nflog,'(a,i6,4f8.4)') 'cell, pATM, pATR, th_ATM, th_ATR: ',kcell_now, cp%pATM,cp%pATR,th_ATM,th_ATR
+!    write(*,'(a,i6,4f8.4)') 'cell, pATM, pATR, th_ATM, th_ATR: ',kcell_now, cp%pATM,cp%pATR,th_ATM,th_ATR
+!endif
 th = th_ATM + th_ATR
 totG2delay = th + totG2delay
 nG2delay = nG2delay + 1
@@ -541,8 +565,17 @@ subroutine get_slowdown_factors(cp,iph,fATM,fATR)
 type(cell_type), pointer :: cp
 integer :: iph
 real(REAL_KIND) :: fATM, fATR
-real(REAL_KIND) :: pATM, pATR, k3, k4
+real(REAL_KIND) :: pATM, pATR, k3, k4, N_DSB
 
+if (use_DSB_CP) then
+    N_DSB = sum(cp%DSB)
+    k3 = K_ATM(iph,3)
+    k4 = K_ATM(iph,4)
+    fATR = 1
+!    if (kcell_now == 1) write(*,'(a,i6,4f8.3)') 'k3,k4,N_DSB: ',kcell_now,k3,k4,N_DSB,k3*N_DSB/(k4 + N_DSB)
+    fATM = max(0.01,1 - k3*N_DSB/(k4 + N_DSB))
+    return
+endif
 pATM = cp%pATM
 k3 = K_ATM(iph,3)
 k4 = K_ATM(iph,4)
@@ -595,6 +628,7 @@ else
             fslow = max(0.0,fATM + fATR - 1)
         else
             fslow = fATM*fATR
+            if (kcell_now == 1) write(*,'(a,i6,i4,f6.3)') 'fslow: ',kcell_now,iph,fslow
         endif
         dtCPdelay = dt*(1 - fslow)
         totSdelay = totSdelay + dtCPdelay
@@ -614,6 +648,8 @@ if (cp%phase == G1_phase) then
 !    write(*,'(a,i6,f8.3)') 'G1 CP_delay: ',kcell_now,cp%CP_delay/3600
 elseif (cp%phase == G2_phase) then
     cp%CP_delay = G2_checkpoint_time(cp)
+!    write(*,'(a,i6,f8.3)') 'G2 CP_delay: ',kcell_now,cp%CP_delay/3600
+!    write(nflog,'(a,i6,f8.3)') 'G2 CP_delay: ',kcell_now,cp%CP_delay/3600
 endif
 end subroutine
 

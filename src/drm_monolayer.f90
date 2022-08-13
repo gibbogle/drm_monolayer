@@ -1782,6 +1782,7 @@ type(cell_type), pointer :: cp
 integer :: phase_count(0:4)
 real(REAL_KIND) :: total, tadjust
 real(REAL_KIND) :: fATM, fATR, fCP, dtCPdelay, dtATMdelay, dtATRdelay, ATM_DSB, DNA_rate
+real(REAL_KIND) :: pATM_sum, pATR_sum
 logical :: PEST_OK
 logical :: ok = .true.
 logical :: dbug
@@ -1990,25 +1991,22 @@ if (dbug .or. mod(istep,nthour) == 0) then
         nphaseh(i) = nphaseh(i) + 1
     enddo
     nphase(hour,:) = nphaseh
-!    write(logmsg,'(a,8i6,i8)') 'nphase: ',nphase,Ncells
-!	call logger(logmsg)
 	ntphase = nphaseh + ntphase
-!	write(logmsg,'(a,8f6.3)') 'ntphase: ',real(ntphase)/sum(ntphase)
-!	call logger(logmsg)
 	write(logmsg,'(a,i6,i4,a,i8,a,i8,a,i8,4f8.3,a,e12.3)') 'istep, hour: ',istep,hour,' Nlive: ',Ncells,' Nviable: ',sum(Nviable),' NPsurvive: ',NPsurvive    !, &
 	call logger(logmsg)
-!                write(*,*) 'hour,next_phase_hour: ',hour,next_phase_hour,phase_hour(next_phase_hour),compute_cycle
-!	if (hourly_cycle_dist) then     ! this should always be set true
-! It is a mistake to put get_phase_distribution() here in the case when phase_hour is not an integer (e.g. for CC-11 with 0.5h)
-!	if (compute_cycle) then
-!	    call get_phase_distribution(phase_count)
-!	    total = sum(phase_count)
-!	    phase_dist = 100*phase_count/total
-!	endif
+	write(nfphase,'(a,2f8.3)') 'S-phase k1, k2: ', K_ATR(2,1),K_ATR(2,2)
 !	if (output_DNA_rate) then
 !	    call get_DNA_synthesis_rate(DNA_rate)
 !	endif
 	if (use_synchronise) then
+	    pATM_sum = 0
+	    pATR_sum = 0
+	    do kcell = 1,nlist
+            cp => cell_list(kcell)
+            pATM_sum = pATM_sum + cp%pATM
+            pATR_sum = pATR_sum + cp%pATR
+        enddo
+        write(nfphase,'(a,i4,2f8.4)') 'hour, ave pATM, pATR: ',hour,pATM_sum/nlist, pATR_sum/nlist
 !        write(*,'(a,i4,f6.3,i4)') 'phase, progress: ',cp%phase, cp%progress, next_phase_hour
 !        write(nfphase,'(2i4,2f6.1,2f6.3)') hour,cp%phase,tnow/3600,cp%G2_time/3600,cp%V/Vdivide0,cp%divide_volume/Vdivide0
     endif

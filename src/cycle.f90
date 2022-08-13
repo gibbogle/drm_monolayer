@@ -93,6 +93,7 @@ elseif (cp%phase == G2_phase) then
         cp%V = cp%divide_volume     ! correct for slight volume discrepancy here, to maintain correct cell volume
     endif
 elseif (cp%phase == M_phase) then
+    ! We never get here - in grower() %phase is changed to dividing
     ! do nothing - in new_growcells the phase is immediately changed to cp%dividing, and the mitosis timer starts
 elseif (cp%phase == G1_checkpoint) then
     cp%progress = cp%progress + dt/cp%CP_delay

@@ -660,6 +660,8 @@ do kcell = 1,nlist0
         call log_timestep(cp, ccp, dt)
 !    endif
     if (cp%phase == M_phase) then
+!        write(nflog,'(a,i6,f6.3)') 'Enter M_phase: kcell, time: ',kcell_now,t_simulation/3600
+!        write(nflog,*)
 		cp%mitosis = 0
 		cp%t_start_mitosis = tnow
 		ncells_mphase = ncells_mphase + 1
@@ -682,6 +684,8 @@ do kcell = 1,nlist0
 		
         if (cp%mitosis >= 1) then
 !            if (kcell == 20) write(nflog,*) 'new_grower: divide cell: ',kcell
+!            write(nflog,'(a,i6,f6.3)') 'Exit M_phase: kcell, time: ',kcell_now,t_simulation/3600
+!         write(nflog,*)
 			divide = .true.
 			! Post-IR, and this cell has not previously had %Psurvive computed
 			! i.e. this is first mitosis post-IR
