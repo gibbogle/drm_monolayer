@@ -92,7 +92,7 @@ logical :: use_G2_pATM_Nindependent = .false.
 logical :: output_DNA_rate = .false.
 logical :: FIX_katm1s_eq_katm1g2 = .false.  ! handle this in the input files, making katm1g2 = katm1s
 logical :: negligent_G2_CP = .false.
-logical :: use_DSB_CP = .true.
+logical :: use_DSB_CP = .false.
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHRsimple, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 

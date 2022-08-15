@@ -2174,7 +2174,7 @@ real(REAL_KIND) :: sftot(4), sfsum, sfmax
 integer :: tadjust
 type(cell_type), pointer :: cp
 logical :: only_M_phase = .false.
-logical :: PDS4 = .true.
+logical :: PDS4 = .false.
 real(REAL_KIND) :: phi, PDS4_M(3) = [0.191, 0.414286, 0.732812]
 
 if (compute_cycle) then
