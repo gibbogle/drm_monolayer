@@ -219,10 +219,12 @@ elseif (iphase_hours == -6) then    ! this is the output_DNA_rate case
     compute_cycle = .false.
     output_DNA_rate = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
-    nphase_hours = 10  ! To generate DNA synthesis factor from S ATM parameters
-    phase_hour(1:10) = [0.05,0.1,0.16666,0.33333,0.5,0.75,1.25,2.25,3.25,4.25]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
-!    nphase_hours = 5    ! To fit S ATM parameters to EDU data
-!    phase_hour(1:5) = [0.75,1.25,2.25,3.25,4.25]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+! Generating DNA synthesis data
+!    nphase_hours = 10  ! To generate DNA synthesis factor from S ATM parameters
+!    phase_hour(1:10) = [0.05,0.1,0.16666,0.33333,0.5,0.75,1.25,2.25,3.25,4.25]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+! EDU fitting
+    nphase_hours = 5    ! To fit S ATM parameters to EDU data
+    phase_hour(1:5) = [0.75,1.25,2.25,3.25,4.25]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
     next_phase_hour = 1
 elseif (iphase_hours == -3) then
     use_SF = .true.     ! in this case SFave is recorded and there are multiple phase distribution recording times
