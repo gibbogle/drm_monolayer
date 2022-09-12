@@ -110,10 +110,11 @@ elseif (cp%phase == S_checkpoint) then
     endif 
 elseif (cp%phase == G2_checkpoint) then
     cp%progress = cp%progress + dt/cp%CP_delay
+    if (kcell_now == 1) write(*,'(a,3f10.2)') 'G2_checkpoint, dt,delay,progress: ',dt,cp%CP_delay,cp%progress
     if (cp%progress >= 1) then
         cp%phase = M_phase
         cp%progress = 0
-!        write(*,'(a,i6)') 'G2 -> M: ',kcell_now
+        if (kcell_now == 1) write(*,'(a,i6)') 'G2 -> M: ',kcell_now
     endif 
 endif
 20  continue

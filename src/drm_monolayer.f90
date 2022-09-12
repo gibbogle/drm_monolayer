@@ -37,6 +37,7 @@ integer :: ichemo, error, kcell, idrug, ityp
 real(REAL_KIND) :: tgrowth(MAX_CELLTYPES)
 type(cycle_parameters_type),pointer :: ccp
 type(metabolism_type), pointer :: mp
+logical :: isopen
 
 ok = .true.
 initialized = .false.
@@ -50,8 +51,8 @@ call ReadCellParams(ok)
 if (.not.ok) return
 call logger("did ReadCellParams")
 
-open(nfphase, file='phase.log',status='replace')
-
+!write(nflog,*) 'Open: phase.log: ', synch_fraction
+!open(nfphase, file='phase.log',status='replace')
 start_wtime = wtime()
 
 if (ncpu == 0) then
@@ -1318,6 +1319,11 @@ if (kcell <= 10) then
     write(*,'(a,i4,9f8.3)') 'kcell,fg,Tc,sum: ',kcell,fg(:),Tc/3600,(T_G1+T_S+T_G2+T_M)/3600
 endif
 if (use_synchronise) then
+    if (kcell == 1) then
+        write(nfphase,'(a,i4,f6.3)') 'synch_phase, synch_fraction: ',synch_phase, synch_fraction
+        write(nflog,'(a,i4,f6.3)') 'synch_phase, synch_fraction: ',synch_phase, synch_fraction
+        write(*,'(a,i4,f6.3)') 'synch_phase, synch_fraction: ',synch_phase, synch_fraction
+    endif
     if (synch_phase == G1_phase) then
         t = synch_fraction*T_G1
     elseif (synch_phase == S_phase) then
@@ -1782,7 +1788,7 @@ type(cell_type), pointer :: cp
 integer :: phase_count(0:4)
 real(REAL_KIND) :: total, tadjust
 real(REAL_KIND) :: fATM, fATR, fCP, dtCPdelay, dtATMdelay, dtATRdelay, ATM_DSB, DNA_rate
-real(REAL_KIND) :: pATM_sum, pATR_sum
+real(REAL_KIND) :: pATM_sum, pATR_sum, DSB_sum
 logical :: PEST_OK
 logical :: ok = .true.
 logical :: dbug
@@ -1965,6 +1971,7 @@ endif
 if (compute_cycle .or. output_DNA_rate) then
     if (next_phase_hour > 0) then  ! check if this is a phase_hour
         if (real(istep)/nthour >= phase_hour(next_phase_hour)) then   ! record phase_dist
+            write(*,*) 'Reached phase hour: ',next_phase_hour,phase_hour(next_phase_hour)
 	        if (compute_cycle) then
 !	            call get_phase_distribution(phase_count)
 !	            total = sum(phase_count)
@@ -1981,6 +1988,21 @@ if (compute_cycle .or. output_DNA_rate) then
     endif
 endif
 
+	if (use_synchronise) then
+	    pATM_sum = 0
+	    pATR_sum = 0
+	    DSB_sum = 0
+	    do kcell = 1,nlist
+            cp => cell_list(kcell)
+            pATM_sum = pATM_sum + cp%pATM
+            pATR_sum = pATR_sum + cp%pATR
+            DSB_sum = DSB_sum + sum(cp%DSB)
+        enddo
+        write(nfphase,'(a,f8.3,2f8.4,f8.1)') 'hour, ave pATM, pATR, DSB: ',istep*DELTA_T/3600.,pATM_sum/nlist, pATR_sum/nlist, DSB_sum/nlist
+!        write(*,'(a,i4,f6.3,i4)') 'phase, progress: ',cp%phase, cp%progress, next_phase_hour
+!        write(nfphase,'(2i4,2f6.1,2f6.3)') hour,cp%phase,tnow/3600,cp%G2_time/3600,cp%V/Vdivide0,cp%divide_volume/Vdivide0
+    endif
+
 
 if (dbug .or. mod(istep,nthour) == 0) then
     hour = istep/nthour
@@ -1994,11 +2016,11 @@ if (dbug .or. mod(istep,nthour) == 0) then
 	ntphase = nphaseh + ntphase
 	write(logmsg,'(a,i6,i4,a,i8,a,i8,a,i8,4f8.3,a,e12.3)') 'istep, hour: ',istep,hour,' Nlive: ',Ncells,' Nviable: ',sum(Nviable),' NPsurvive: ',NPsurvive    !, &
 	call logger(logmsg)
-	write(nfphase,'(a,2f8.3)') 'S-phase k1, k2: ', K_ATR(2,1),K_ATR(2,2)
+!	write(nfphase,'(a,2f8.3)') 'S-phase k1, k2: ', K_ATR(2,1),K_ATR(2,2)
 !	if (output_DNA_rate) then
 !	    call get_DNA_synthesis_rate(DNA_rate)
 !	endif
-	if (use_synchronise) then
+	if (use_synchronise .and. .false.) then
 	    pATM_sum = 0
 	    pATR_sum = 0
 	    do kcell = 1,nlist
@@ -2215,7 +2237,9 @@ if (compute_cycle) then
 !        enddo
     endif
     write(*,'(a,3f8.3)') 'Average G1, S, G2 CP delays: ',totG1delay/nG1delay,totSdelay/(3600.*nSdelay),totG2delay/nG2delay
-    write(*,'(a,2f8.3)') 'Average G2 ATM, ATR delay: ',G2thsum/NG2th
+    write(*,'(a,3f8.3)') 'Average G2 delay: pATM, pATR, total: ',G2thsum/NG2th,sum(G2thsum)/NG2th
+    write(nfphase,'(a,3f8.3)') 'Average G2 delay: pATM, pATR, total: ',G2thsum/NG2th,sum(G2thsum)/NG2th
+    write(nfphase,'(a,i6)') 'Number of cells averaged: ',NG2th
     return
 endif
 if (output_DNA_rate) then
@@ -2416,6 +2440,8 @@ use, intrinsic :: iso_c_binding
 character(c_char), intent(in) :: infile_array(*), outfile_array(*)
 integer(c_int) :: ncpu, inbuflen, outbuflen, res
 character*(2048) :: infile, outfile
+character*(12) :: fname
+character*(1) :: numstr
 logical :: ok, success, isopen
 integer :: i
 
@@ -2437,6 +2463,16 @@ if (isopen) then
 endif
 open(nflog,file='drm_monolayer.log',status='replace')
 
+write(nflog,*) 'irun: ',res
+write(numstr,'(i1)') res
+fname = 'phase'//numstr//'.log'
+write(nflog,'(a)') fname
+inquire(unit=nfphase,OPENED=isopen)
+if (isopen) close(nfphase)
+open(nfphase,file=fname,status='replace')
+
+
+res = 0
 #ifdef GFORTRAN
     write(logmsg,'(a)') 'Built with GFORTRAN'
 	call logger(logmsg)

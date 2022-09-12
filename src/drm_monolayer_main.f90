@@ -78,9 +78,9 @@ else
 endif
 
 ! Synchronisation of cell IR
-use_synchronise = .false.
-synch_phase = S_phase
-synch_fraction = 0.6
+use_synchronise = .true.
+synch_phase = G2_phase
+synch_fraction = 0.0
 G2_katm3_factor = 1.0
 G2_katm4_factor = 1.0
 G2_katr3_factor = 1.0
@@ -91,8 +91,8 @@ compute_cycle = .true.
 !call get_dimensions(NX,NY,NZ,nsteps,DELTA_T, MAX_CHEMO, cused);
 i_hypoxia_cutoff = 3
 i_growth_cutoff = 1
-do irun = 1,1
-!    synch_fraction = (irun-1)*0.2
+do irun = 1,5
+    synch_fraction = (irun-1)*0.2
     if (use_synchronise) then
     	write(*,'(a,2i4,f6.1)') 'irun, synch_phase, synch_fraction: ',irun,synch_phase,synch_fraction
     endif
@@ -101,6 +101,7 @@ do irun = 1,1
 	write(*,*) 'call execute'
 !	write(nfrun,*) 'infile: ',infile
 !	write(nfrun,*) 'outfile: ',outfile
+    res = irun
 	call execute(ncpu,infile,inbuflen,outfile,outbuflen,res)
 	if (res /= 0) stop
 	!call cpu_time(t1)

@@ -567,7 +567,7 @@ real(REAL_KIND) :: mitosis_std = 0.0    ! as a fraction of mean T_M
 
 !DEC$ ATTRIBUTES DLLEXPORT :: nsteps, DELTA_T, use_PEST, PEST_outputfile, simulate_colony
 !DEC$ ATTRIBUTES DLLEXPORT :: SFave, S_phase_RR, S_phase_RR_progress, G1_delay, S_delay, G2_delay, use_fixed_CP, compute_cycle
-!DEC$ ATTRIBUTES DLLEXPORT :: use_synchronise, synch_phase, synch_fraction
+!DEC$ ATTRIBUTES DLLEXPORT :: use_synchronise, synch_phase, synch_fraction, nfphase
 !DEC$ ATTRIBUTES DLLEXPORT :: G2_katm3_factor, G2_katm4_factor, G2_katr3_factor, G2_katr4_factor
 contains
 

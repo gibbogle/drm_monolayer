@@ -57,6 +57,7 @@ real(8) :: MDRfid
 logical :: use_phase_dependent_CP_parameters
 real(8) :: K_ATM(3,4) ! = [0.076, 0.3, 1.0, 1.0]    ! (1) and (2) are the parameters of kinase kinetics, (3) and (4) are CP slowdown parameters
 real(8) :: K_ATR(3,4) ! = [0.005, 0.3, 1.0, 1.0]
+real(8) :: Ztime = 2    ! hours
 
 ! DNA-PK inhibition parameters
 real(8) :: Chalf    ! inhibitor concentration that halves repair rate 
@@ -447,7 +448,7 @@ end subroutine
 subroutine updateATM(iph,pATM,ATM_DSB,dth)
 integer :: iph
 real(8) :: pATM, ATM_DSB, dth, pATM0
-real(8) :: r, kdecay
+real(8) :: r, t, fz, kdecay
 
 pATM0 = pATM
 if (use_G2_pATM_Nindependent .and. iph == G2_phase) then
@@ -455,6 +456,13 @@ if (use_G2_pATM_Nindependent .and. iph == G2_phase) then
 else
     r = K_ATM(iph,1)*ATM_DSB   ! rate of production of pATM
 endif
+t = (tnow - t_irradiation)/3600
+if (t > Ztime) then
+    fz = 0
+else
+    fz = 1 - t/Ztime
+endif
+r = fz*r
 kdecay = max(1.0e-8,K_ATM(iph,2))  ! decay rate constant
 pATM = r/kdecay + (pATM - r/kdecay)*exp(-kdecay*dth)
 if (isnan(pATM)) then
@@ -475,17 +483,24 @@ end subroutine
 subroutine updateATR(iph,pATR,ATR_DSB,dth)
 integer :: iph
 real(8) :: pATR, ATR_DSB, dth
-real(8) :: r, k1, k2, x, xmax, km, xf
+real(8) :: r, t, fz, k1, k2, x, xmax, km, xf
 
 k1 = K_ATR(iph,1)
 r = k1*ATR_DSB   ! rate of production of pATR
+t = (tnow - t_irradiation)/3600
+if (t > Ztime) then
+    fz = 1
+else
+    fz = t/Ztime
+endif
+r = fz*r
 k2 = K_ATR(iph,2)  ! decay rate constant
 if (k2 == 0) then
     write(*,*) 'updateATR: k2 = 0: iph,K_ATR(iph,2): ',iph,K_ATR(iph,2)
     stop
 endif
 pATR = r/k2 + (pATR - r/k2)*exp(-k2*dth)
-if (kcell_now == 1) write(nfphase,'(a,i4,6f8.3)') 'updateATR: k1,r,k2,r/k2,ATR_DSB,pATR: ',kcell_now,k1,r,k2,r/k2,ATR_DSB,pATR
+!if (kcell_now == 1) write(nfphase,'(a,i4,6f8.3)') 'updateATR: k1,r,k2,r/k2,ATR_DSB,pATR: ',kcell_now,k1,r,k2,r/k2,ATR_DSB,pATR
 !if (pATR > 0) write(*,'(a,i4,5f8.4)') 'updateATR: r,k,r/k,ATR_DSB,pATR: ',kcell_now,r,k,r/k,ATR_DSB,pATR
 end subroutine
 
@@ -551,6 +566,11 @@ th_ATR = K_ATR(iph,3)*(1 - exp(-K_ATR(iph,4)*cp%pATR))
 th = th_ATM + th_ATR
 totG2delay = th + totG2delay
 nG2delay = nG2delay + 1
+if (kcell_now <= 10) then
+    write(nfphase,'(a,i6,3f6.2)') 'G2_checkpoint_time: ',kcell_now,th_ATM,th_ATR,th
+    write(nfphase,'(a,4f8.3)') 'pATM,katm3g2,katm4g2,1-exp(-katm4g2*pATM): ',cp%pATM,K_ATM(iph,3),K_ATM(iph,4),1-exp(-K_ATM(iph,4)*cp%pATM)
+    write(nfphase,'(a,4f8.3)') 'pATR,katr3g2,katr4g2,1-exp(-katr4g2*pATR): ',cp%pATR,K_ATR(iph,3),K_ATR(iph,4),1-exp(-K_ATR(iph,4)*cp%pATR)
+endif
 t = 3600*th
 if (is_radiation) then
     G2thsum(1) = G2thsum(1) + th_ATM
