@@ -1785,7 +1785,7 @@ real(REAL_KIND) :: DELTA_T_save, t_sim_0, SFlive
 real(REAL_KIND) :: C_O2, HIF1, PDK1
 type(metabolism_type), pointer :: mp
 type(cell_type), pointer :: cp
-integer :: phase_count(0:4)
+integer :: phase_count(0:4), nG2
 real(REAL_KIND) :: total, tadjust
 real(REAL_KIND) :: fATM, fATR, fCP, dtCPdelay, dtATMdelay, dtATRdelay, ATM_DSB, DNA_rate
 real(REAL_KIND) :: pATM_sum, pATR_sum, DSB_sum
@@ -1992,13 +1992,17 @@ endif
 	    pATM_sum = 0
 	    pATR_sum = 0
 	    DSB_sum = 0
+	    nG2 = 0
 	    do kcell = 1,nlist
             cp => cell_list(kcell)
-            pATM_sum = pATM_sum + cp%pATM
-            pATR_sum = pATR_sum + cp%pATR
-            DSB_sum = DSB_sum + sum(cp%DSB)
+            if (cp%phase == G2_phase) then
+                nG2 = nG2+1
+                pATM_sum = pATM_sum + cp%pATM
+                pATR_sum = pATR_sum + cp%pATR
+                DSB_sum = DSB_sum + sum(cp%DSB)
+            endif
         enddo
-        write(nfphase,'(a,f8.3,2f8.4,f8.1)') 'hour, ave pATM, pATR, DSB: ',istep*DELTA_T/3600.,pATM_sum/nlist, pATR_sum/nlist, DSB_sum/nlist
+        write(nfphase,'(a,f8.3,2f8.4,f8.1)') 'hour, (G2) ave pATM, pATR, DSB: ',istep*DELTA_T/3600.,pATM_sum/nG2, pATR_sum/nG2, DSB_sum/nG2
 !        write(*,'(a,i4,f6.3,i4)') 'phase, progress: ',cp%phase, cp%progress, next_phase_hour
 !        write(nfphase,'(2i4,2f6.1,2f6.3)') hour,cp%phase,tnow/3600,cp%G2_time/3600,cp%V/Vdivide0,cp%divide_volume/Vdivide0
     endif

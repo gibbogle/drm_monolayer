@@ -94,6 +94,7 @@ logical :: output_DNA_rate = .false.
 logical :: FIX_katm1s_eq_katm1g2 = .false.  ! handle this in the input files, making katm1g2 = katm1s
 logical :: negligent_G2_CP = .false.
 logical :: use_DSB_CP = .false.
+logical :: use_D_model = .true.
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHRsimple, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
@@ -390,6 +391,9 @@ if (phase == G1_phase) then
         Ndead(ityp) = Ndead(ityp) + 1
 !        write(*,*) 'apoptotic death: ',kcell_now, phase
     endif
+elseif (phase == G2_phase .and. use_D_model) then
+    cp%pATM = K_ATM(3,1)*totDSB0/(K_ATM(3,2) + totDSB0)
+    cp%pATR = K_ATR(3,1)*totDSB0/(K_ATR(3,2) + totDSB0)
 endif
 !if (kcell_now == 1) then
 !if (phase == G1_phase) then
@@ -464,12 +468,16 @@ else
 endif
 r = fz*r
 kdecay = max(1.0e-8,K_ATM(iph,2))  ! decay rate constant
+if ((iph == 3) .and. use_D_model) then
+    r = 0
+    kdecay = max(1.0e-8,K_ATM(iph,3))  ! decay rate constant
+endif
 pATM = r/kdecay + (pATM - r/kdecay)*exp(-kdecay*dth)
 if (isnan(pATM)) then
     write(*,*) 'NAN in updateATM: ',iph, r, kdecay, r/kdecay
     stop
 endif
-!if (kcell_now == 1) write(*,'(a,i4,5f8.2)') 'updateATM: r,k,r/k,ATM_DSB,pATM: ',kcell_now,r,k,r/k,ATM_DSB,pATM
+if (kcell_now == 1) write(*,'(a,i4,6f6.2)') 'updateATM: fz,r,k,r/k,ATM_DSB,pATM: ',kcell_now,fz,r,kdecay,r/kdecay,ATM_DSB,pATM
 !write(*,'(a,i3,6f8.4)') 'updateATM: ',iph,ATM_DSB,r,k,r/k,pATM
 !if (iph == 2) stop
 end subroutine
@@ -495,6 +503,10 @@ else
 endif
 r = fz*r
 k2 = K_ATR(iph,2)  ! decay rate constant
+if ((iph == 3) .and. use_D_model) then
+    r = 0
+    k2 = max(1.0e-8,K_ATR(iph,3))  ! decay rate constant
+endif
 if (k2 == 0) then
     write(*,*) 'updateATR: k2 = 0: iph,K_ATR(iph,2): ',iph,K_ATR(iph,2)
     stop
@@ -544,21 +556,26 @@ real(REAL_KIND) :: t, th, th_ATM, th_ATR, N_DSB, k3, k4
 integer :: iph = 3
 real(REAL_KIND) :: G2_DSB_threshold = 15
 
-if (use_DSB_CP) then
-    N_DSB = sum(cp%DSB)
-    k3 = K_ATR(iph,3)
-    k4 = K_ATR(iph,4)
-    th = k3*N_DSB/(k4 + N_DSB)
-    if (kcell_now < 10) write(*,'(a,4f8.3)') 'N_DSB,k3,k4,th: ',N_DSB,k3,k4,th
-    t = 3600*th
-    return
-endif
-if (negligent_G2_CP .and. (sum(cp%DSB) < G2_DSB_threshold)) then
-    th_ATM = 0
+if (use_D_model) then
+    th_ATM = cp%pATM
+    th_ATR = cp%pATR
 else
-    th_ATM = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*cp%pATM))
+    if (use_DSB_CP) then
+        N_DSB = sum(cp%DSB)
+        k3 = K_ATR(iph,3)
+        k4 = K_ATR(iph,4)
+        th = k3*N_DSB/(k4 + N_DSB)
+        if (kcell_now < 10) write(*,'(a,4f8.3)') 'N_DSB,k3,k4,th: ',N_DSB,k3,k4,th
+        t = 3600*th
+        return
+    endif
+    if (negligent_G2_CP .and. (sum(cp%DSB) < G2_DSB_threshold)) then
+        th_ATM = 0
+    else
+        th_ATM = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*cp%pATM))
+    endif
+    th_ATR = K_ATR(iph,3)*(1 - exp(-K_ATR(iph,4)*cp%pATR))
 endif
-th_ATR = K_ATR(iph,3)*(1 - exp(-K_ATR(iph,4)*cp%pATR))
 !if (kcell_now <= 100) then
 !    write(nflog,'(a,i6,4f8.4)') 'cell, pATM, pATR, th_ATM, th_ATR: ',kcell_now, cp%pATM,cp%pATR,th_ATM,th_ATR
 !    write(*,'(a,i6,4f8.4)') 'cell, pATM, pATR, th_ATM, th_ATR: ',kcell_now, cp%pATM,cp%pATR,th_ATM,th_ATR
@@ -567,6 +584,7 @@ th = th_ATM + th_ATR
 totG2delay = th + totG2delay
 nG2delay = nG2delay + 1
 if (kcell_now <= 10) then
+    write(nfphase,*)
     write(nfphase,'(a,i6,3f6.2)') 'G2_checkpoint_time: ',kcell_now,th_ATM,th_ATR,th
     write(nfphase,'(a,4f8.3)') 'pATM,katm3g2,katm4g2,1-exp(-katm4g2*pATM): ',cp%pATM,K_ATM(iph,3),K_ATM(iph,4),1-exp(-K_ATM(iph,4)*cp%pATM)
     write(nfphase,'(a,4f8.3)') 'pATR,katr3g2,katr4g2,1-exp(-katr4g2*pATR): ',cp%pATR,K_ATR(iph,3),K_ATR(iph,4),1-exp(-K_ATR(iph,4)*cp%pATR)
