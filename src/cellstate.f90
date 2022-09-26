@@ -173,7 +173,7 @@ counts = 0
 		    Nradiation_tag(ityp) = Nradiation_tag(ityp) + 1
 			call celldies(cp,.false.)
 		endif
-#endif       
+#endif
     enddo
 !endif
 !call check_radiation
@@ -1009,6 +1009,11 @@ cp1%totMis = 0
 ndoublings = ndoublings + 1
 doubling_time_sum = doubling_time_sum + tnow - cp1%t_divide_last
 cp1%t_divide_last = tnow
+
+! Jaiswal
+cp1%CC_act = CC_act0
+cp1%ATR_act = 0
+cp1%ATM_act = 0
 
 ! Second cell
 cp2 = cp1

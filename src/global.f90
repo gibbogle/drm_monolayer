@@ -222,6 +222,9 @@ type cell_type
 	integer :: phase0
 	real(8) :: pATM, pATR, DSB(NP), totDSB0, totMis
 	real(8) :: Nlethal, Psurvive
+	
+	! Jaiswal section (26/09/22)
+	real(REAL_KIND) :: CC_act, ATR_act, ATM_act
 
 end type
 

@@ -75,6 +75,11 @@ real(8) :: SSA_fid_fraction = 0.5
 logical :: read_SSA_parameters = .false.
 logical :: alt_EJ_suppressed = .false.
 
+! Jaiswal formulation (26/09/22)
+real(8) :: Kcc2a, Kcc2e, Kd2e, Kd2t, Ke2cc, Km1, Km2, Km10, Kt2cc, Kti2t, Km10t
+real(8) :: CC_tot, ATR_tot, ATM_tot, CC_act0, CC_threshold, norm_factor
+logical :: use_Jaiswal = .true.
+
 real(8) :: ATMsum, ATRsum, Sthsum, G2thsum(2)
 integer :: NSth, NG2th
 real(8) :: repRateFactor(NP)
@@ -153,7 +158,7 @@ elseif (nCPparams == 3) then
     ! Hard code katm1s = katm1g2
     if (FIX_katm1s_eq_katm1g2) then
         K_ATM(2,1) = K_ATM(3,1)
-    endif
+    endif    
 else
     write(*,*) 'ERROR: wrong nCPparams: ',nCPparams
     stop
@@ -165,19 +170,34 @@ read(nfin,*) Chalf
 read(nfin,*) Preass
 read(nfin,*) MDRrep
 read(nfin,*) MDRfid
-if (use_SSA .and. read_SSA_parameters) then
-    read(nfin,*) SSA_fraction
-    read(nfin,*) SSA_rep_fraction
-    read(nfin,*) SSA_fid_fraction
-endif
+!if (use_SSA .and. read_SSA_parameters) then
+!    read(nfin,*) SSA_fraction
+!    read(nfin,*) SSA_rep_fraction
+!    read(nfin,*) SSA_fid_fraction
+!endif
 repRate(4) = MDRrep
 fidRate(4) = MDRfid
-!read(nfin,*) KmaxInhibitRate
-!read(nfin,*) b_exp
-!read(nfin,*) b_hill
-!read(nfin,*) iuse_exp
-!use_exp_inhibit = (iuse_exp == 1)
-!misrepRate(1) = Kaber*misrepRate(1)
+
+if (use_Jaiswal) then
+    read(nfin,*) Kcc2a
+    read(nfin,*) Kcc2e
+    read(nfin,*) Kd2e
+    read(nfin,*) Kd2t
+    read(nfin,*) Ke2cc
+    read(nfin,*) Km1
+    read(nfin,*) Km10
+    read(nfin,*) Kt2cc
+    read(nfin,*) Kti2t
+    read(nfin,*) Km10t
+    read(nfin,*) CC_tot
+    read(nfin,*) ATR_tot
+    read(nfin,*) ATM_tot
+    read(nfin,*) CC_act0
+    read(nfin,*) CC_threshold
+    read(nfin,*) norm_factor
+    CC_threshold = CC_threshold*CC_tot
+    Km2 = Km1
+endif
 
 if (use_SSA) then
     repRate(SSA) = SSA_rep_fraction*repRate(MDR)
@@ -372,7 +392,8 @@ DSB0(NHEJs) = (1 - Pcomplex)*NNHEJ
 !DSB0(NHEJs) = (1-Pcomplex)*(1-PHR)*(1 + f_S)*NG1
 
 !baseDSB = DSB_Gy*dose
-
+cp%pATM = 0
+cp%pATR = 0
 if (phase == G1_phase) then
 !    totDSB0 = baseDSB
 !    DSB0(NHEJs) = (1 - Pcomplex)*totDSB0
@@ -391,10 +412,19 @@ if (phase == G1_phase) then
         Ndead(ityp) = Ndead(ityp) + 1
 !        write(*,*) 'apoptotic death: ',kcell_now, phase
     endif
-elseif (phase == G2_phase .and. use_D_model) then
-    cp%pATM = K_ATM(3,1)*totDSB0/(K_ATM(3,2) + totDSB0)
-    cp%pATR = K_ATR(3,1)*totDSB0/(K_ATR(3,2) + totDSB0)
+elseif (phase == G2_phase) then
+    if (use_Jaiswal) then
+        ! nothing needed to be done here
+    elseif (use_D_model) then
+        cp%pATM = K_ATM(3,1)*totDSB0/(K_ATM(3,2) + totDSB0)
+        cp%pATR = K_ATR(3,1)*totDSB0/(K_ATR(3,2) + totDSB0)
+        if (cp%pATR > 0) then
+            write(*,*) 'cp%pATR: ', kcell_now,K_ATR(3,1),cp%pATR
+            stop
+        endif
+    endif
 endif
+
 !if (kcell_now == 1) then
 !if (phase == G1_phase) then
 !    write(*,'(a,i4,f8.3,5f8.2)') 'IR: phase,f_S,DSB0: ',phase, f_S, DSB0(1:3), totDSB0,sum(DSB0(1:2))
@@ -477,7 +507,7 @@ if (isnan(pATM)) then
     write(*,*) 'NAN in updateATM: ',iph, r, kdecay, r/kdecay
     stop
 endif
-if (kcell_now == 1) write(*,'(a,i4,6f6.2)') 'updateATM: fz,r,k,r/k,ATM_DSB,pATM: ',kcell_now,fz,r,kdecay,r/kdecay,ATM_DSB,pATM
+!if (kcell_now == 1) write(*,'(a,i4,6f6.2)') 'updateATM: fz,r,k,r/k,ATM_DSB,pATM: ',kcell_now,fz,r,kdecay,r/kdecay,ATM_DSB,pATM
 !write(*,'(a,i3,6f8.4)') 'updateATM: ',iph,ATM_DSB,r,k,r/k,pATM
 !if (iph == 2) stop
 end subroutine
@@ -493,6 +523,7 @@ integer :: iph
 real(8) :: pATR, ATR_DSB, dth
 real(8) :: r, t, fz, k1, k2, x, xmax, km, xf
 
+if (iph == G2_phase .and. use_Jaiswal) return
 k1 = K_ATR(iph,1)
 r = k1*ATR_DSB   ! rate of production of pATR
 t = (tnow - t_irradiation)/3600
@@ -505,7 +536,7 @@ r = fz*r
 k2 = K_ATR(iph,2)  ! decay rate constant
 if ((iph == 3) .and. use_D_model) then
     r = 0
-    k2 = max(1.0e-8,K_ATR(iph,3))  ! decay rate constant
+    k2 = max(1.0e-12,K_ATR(iph,3))  ! decay rate constant
 endif
 if (k2 == 0) then
     write(*,*) 'updateATR: k2 = 0: iph,K_ATR(iph,2): ',iph,K_ATR(iph,2)
@@ -556,9 +587,14 @@ real(REAL_KIND) :: t, th, th_ATM, th_ATR, N_DSB, k3, k4
 integer :: iph = 3
 real(REAL_KIND) :: G2_DSB_threshold = 15
 
+if (use_Jaiswal) then
+    write(*,*) 'ERROR: G2_checkpoint_time not used with Jaiswal'
+    stop
+endif
 if (use_D_model) then
     th_ATM = cp%pATM
-    th_ATR = cp%pATR
+!    th_ATR = cp%pATR
+    th_ATR = 0  ! if effect of pATR is disabled
 else
     if (use_DSB_CP) then
         N_DSB = sum(cp%DSB)
@@ -668,7 +704,7 @@ else
             fslow = max(0.0,fATM + fATR - 1)
         else
             fslow = fATM*fATR
-            if (kcell_now == 1) write(*,'(a,i6,i4,f6.3)') 'fslow: ',kcell_now,iph,fslow
+!            if (kcell_now == 1) write(*,'(a,i6,i4,f6.3)') 'fslow: ',kcell_now,iph,fslow
         endif
         dtCPdelay = dt*(1 - fslow)
         totSdelay = totSdelay + dtCPdelay
@@ -686,11 +722,48 @@ type(cell_type), pointer :: cp
 if (cp%phase == G1_phase) then
     cp%CP_delay = G1_checkpoint_time(cp)
 !    write(*,'(a,i6,f8.3)') 'G1 CP_delay: ',kcell_now,cp%CP_delay/3600
-elseif (cp%phase == G2_phase) then
+elseif (cp%phase == G2_phase .and. .not.use_Jaiswal) then
     cp%CP_delay = G2_checkpoint_time(cp)
 !    write(*,'(a,i6,f8.3)') 'G2 CP_delay: ',kcell_now,cp%CP_delay/3600
 !    write(nflog,'(a,i6,f8.3)') 'G2 CP_delay: ',kcell_now,cp%CP_delay/3600
 endif
+end subroutine
+
+!------------------------------------------------------------------------
+! Note: DNA repair is happening in updateRepair (pathwayRepair), and since 
+! misrepair is computed at the same time, best to leave that as it is.  This
+! means that DSB(:) is being updated with the full time step, not using the
+! reduced time step employed for the Jaiswal equations.  Therefore damage D
+! is assumed to be fixed for this updating.
+!------------------------------------------------------------------------
+subroutine G2_Jaiswal_update(cp, dth)
+type(cell_type), pointer :: cp
+real(8) :: dth
+real(8) :: dt = 0.01
+real(8) :: D, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact
+real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt
+integer :: it, Nt
+
+Nt = dth/dt
+D = sum(cp%DSB(1:3))*norm_factor
+CC_act = cp%CC_act
+ATR_act = cp%ATR_act
+ATM_act = cp%ATM_act
+do it = 1,Nt
+    CC_inact = CC_tot - CC_act
+    ATR_inact = ATR_tot - ATR_act
+    ATM_inact = ATM_tot - ATM_act
+    dCC_act_dt = (Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact) - Kt2cc * ATM_act * CC_act / (Km10t + CC_act) - Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
+    dATR_act_dt = Kd2e * D * ATR_inact / (Km10 + ATR_inact) - Kcc2e * ATR_act * CC_act / (Km10 + CC_act)
+    dATM_act_dt = Kd2t * D * ATM_inact / (Km1 + ATM_inact) - Kti2t * ATM_act / (Km1 + ATM_act)
+    
+    CC_act = CC_act + dt * dCC_act_dt
+    ATR_act = ATR_act + dt * dATR_act_dt
+    ATM_act = ATM_act + dt * dATM_act_dt
+enddo
+cp%CC_act = CC_act
+cp%ATR_act = ATR_act
+cp%ATM_act = ATM_act
 end subroutine
 
 !--------------------------------------------------------------------------
@@ -807,8 +880,12 @@ ATR_DSB = DSB(HR)
 !else
     if (iph >= 7) iph = iph - 6     ! checkpoint phase numbers --> phase number, to continue pATM and pATR processes through checkpoints
     if (iph <= G2_phase) then      ! not for 4 (M_phase) or 5 (dividing)
-        call updateATM(iph,cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth
-        if (iph > G1_phase) call updateATR(iph,cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth
+        if (iph == G2_phase .and. use_Jaiswal) then
+            call G2_Jaiswal_update(cp, dth)
+        else
+            call updateATM(iph,cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth
+            if (iph > G1_phase) call updateATR(iph,cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth
+        endif
     endif
 !endif
 

@@ -152,8 +152,8 @@ end function
 !----------------------------------------------------------------------------------
 function glucose_metab(C) result(metab)
 real(REAL_KIND) :: C, metab
-real(REAL_KIND) :: Kmin, Kmax, Km1
-real(REAL_KIND) :: Vmax1, Vmax2, Km2, n1, n2
+real(REAL_KIND) :: Kmin, Kmax, Kmm1
+real(REAL_KIND) :: Vmax1, Vmax2, Kmm2, n1, n2
 real(REAL_KIND) :: fV = 0.6
 real(REAL_KIND) :: fK = 0.08
 real(REAL_KIND) :: fboost = 2
@@ -169,16 +169,16 @@ endif
 if (use_boost) then
 
 elseif (double_Km) then
-	Km1 = Hill_Km_G
-	Km2 = fK*Km1
+	Kmm1 = Hill_Km_G
+	Kmm2 = fK*Kmm1
 	n1 = Hill_N_G
 	n2 = 1
-	metab = fV*C**n1/(Km1**n1 + C**n1) + (1 - fV)*C**n2/(Km2**n2 + C**n2)
+	metab = fV*C**n1/(Kmm1**n1 + C**n1) + (1 - fV)*C**n2/(Kmm2**n2 + C**n2)
 elseif (variable_Km) then
 	Kmax = Hill_Km_G	! These are completely arbitrary values
 	Kmin = Kmax/15
-	Km1 = 1*Kmin
-	metab = C*(Km1 + C)/(Kmin*Km1 + Kmax*C + C*(Km1 + C))
+	Kmm1 = 1*Kmin
+	metab = C*(Kmm1 + C)/(Kmin*Kmm1 + Kmax*C + C*(Kmm1 + C))
 else
 	metab = C**Hill_N_G /(C**Hill_N_G + Hill_Km_G**Hill_N_G)
 endif

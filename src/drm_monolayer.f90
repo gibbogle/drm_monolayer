@@ -375,6 +375,7 @@ else
 	read(nfcell,*) gui_run_version				! program run version number
 endif
 read(nfcell,*) dll_run_version				! DLL run version number 
+write(*,*) dll_run_version
 !read(nfcell,*) NX							! size of grid
 read(nfcell,*) initial_count				! initial number of tumour cells
 read(nfcell,*) iuse_lognormal
@@ -1224,6 +1225,11 @@ cp%CFSE = generate_CFSE(1.d0)
 !cp%ndt = ndt
 cp%Psurvive = -1    ! flags Psurvive not yet computed
 !if (cp%phase == G1_phase) write(*,'(a,i6,f8.3)') 'G1_phase cell: ',kcell,cp%progress
+
+! Jaiswal
+cp%CC_act = CC_act0
+cp%ATR_act = 0
+cp%ATM_act = 0
 end subroutine
 
 !--------------------------------------------------------------------------------

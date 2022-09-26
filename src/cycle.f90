@@ -77,20 +77,29 @@ elseif (cp%phase == S_phase) then
         nSdelay = nSdelay + 1   ! only S doesn't use stops
     endif
 elseif (cp%phase == G2_phase) then
-    cp%progress = cp%progress + cp%fp*dt/ccp%T_G2
-!    if (kcell_now < 10) write(*,*) 'phase, progress: ',kcell_now, cp%phase,cp%progress
-    if (cp%progress >= 1) then
-!        if (kcell_now <= 10) write(nflog,'(a,i6,2e12.3)') 'To M_phase, V, divide_volume: ',kcell_now, cp%V, cp%divide_volume
-        if (use_G2_stop) then
-            ! At start of CP, need to compute CP delay
-            call get_CP_delay(cp)
-            cp%phase = G2_checkpoint
+    if (use_Jaiswal) then
+        cp%progress = (cp%CC_act - CC_act0)/(CC_threshold - CC_act0)    ! not really needed
+        if (cp%CC_act >= CC_threshold) then
+            cp%phase = M_phase
             cp%progress = 0
-            goto 20
+            cp%V = cp%divide_volume     ! set volume here, to maintain correct cell volume at cell division
         endif
-        cp%phase = M_phase
-        cp%progress = 0
-        cp%V = cp%divide_volume     ! correct for slight volume discrepancy here, to maintain correct cell volume
+    else
+        cp%progress = cp%progress + cp%fp*dt/ccp%T_G2
+    !    if (kcell_now < 10) write(*,*) 'phase, progress: ',kcell_now, cp%phase,cp%progress
+        if (cp%progress >= 1) then
+    !        if (kcell_now <= 10) write(nflog,'(a,i6,2e12.3)') 'To M_phase, V, divide_volume: ',kcell_now, cp%V, cp%divide_volume
+            if (use_G2_stop) then
+                ! At start of CP, need to compute CP delay
+                call get_CP_delay(cp)
+                cp%phase = G2_checkpoint
+                cp%progress = 0
+                goto 20
+            endif
+            cp%phase = M_phase
+            cp%progress = 0
+            cp%V = cp%divide_volume     ! correct for slight volume discrepancy here, to maintain correct cell volume
+        endif
     endif
 elseif (cp%phase == M_phase) then
     ! We never get here - in grower() %phase is changed to dividing
