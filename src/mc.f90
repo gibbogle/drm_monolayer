@@ -265,7 +265,7 @@ elseif (iphase_hours == -7) then    ! this is the compute_cycle case for CA-135,
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 25
     next_phase_hour = 1
-    phase_hour(1:25) = [0.5,1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,8.5,9.0,9.5,10.0,10.5,11.0,11.5,12.0,24]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+    phase_hour(1:25) = [0.5,1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,8.5,9.0,9.5,10.0,10.5,11.0,11.5,12.0,24.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 else
     if (use_PEST) then
         write(*,*) 'Error: ReadMcParameters: with PEST iphase_hours must be -1,-2,-3'
