@@ -527,6 +527,7 @@ integer :: rad_count(6)
 logical :: use_synchronise != .false.   ! now set in main
 integer :: synch_phase
 real(REAL_KIND) :: synch_fraction
+logical :: single_cell
 
 ! DRM section
 logical :: DRM = .true.
@@ -538,11 +539,11 @@ real(8), allocatable :: Psurvive(:)
 !logical, parameter :: phase_dist = .true.
 real(REAL_KIND) :: t_irradiation, SFave
 logical :: use_SF = .true.
-real(REAL_KIND) :: phase_hour(20)
+real(REAL_KIND) :: phase_hour(30)
 integer :: nphase_hours, next_phase_hour
 real(REAL_KIND) :: phase_dist(0:4)    ! % of cells in each phase
-real(REAL_KIND) :: recorded_phase_dist(20,0:4)   ! % of cells in each phase phase_hour after IR
-real(REAL_KIND) :: recorded_DNA_rate(20)         ! average S-phase DNA rate in each phase_hour after IR
+real(REAL_KIND) :: recorded_phase_dist(30,0:4)   ! % of cells in each phase phase_hour after IR
+real(REAL_KIND) :: recorded_DNA_rate(30)         ! average S-phase DNA rate in each phase_hour after IR
 integer, allocatable :: nphase(:,:)
 logical, parameter :: hourly_cycle_dist = .true.
 logical, parameter :: track_cell_phase = .true.

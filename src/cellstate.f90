@@ -122,7 +122,7 @@ counts = 0
 !	    endif
 !    enddo
 !else
-    allocate(Psurvive(4*Ncells))
+!    allocate(Psurvive(4*Ncells))
     NPsurvive = 0
     Napop = 0
     tmin = 1.0      ! for now...

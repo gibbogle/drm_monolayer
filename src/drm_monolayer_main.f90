@@ -1,4 +1,33 @@
+subroutine syncher(Np,phase,progress)
+real(8) :: progress(30), cyc(4), p, h
+integer :: ih, iph, phase(30), Np
 
+cyc(1:4) = [5.36, 9.51, 3.41, 0.43]
+
+ih = 0
+h = 0
+do
+    if (h < cyc(1)) then
+        iph = 1
+        p = h/cyc(1)
+    elseif (h < (cyc(1) + cyc(2))) then
+        iph = 2
+        p = (h - cyc(1))/cyc(2)
+    elseif (h < (cyc(1) + cyc(2) + cyc(3))) then
+        iph = 3
+        p = (h - cyc(1) - cyc(2))/cyc(3)
+    else
+        exit
+    endif
+    phase(ih+1) = iph
+    progress(ih+1) = p
+    ih = ih+1
+    h = h+1
+enddo
+Np = ih
+end subroutine
+        
+!-----------------------------------------------------------------------------------------
 ! Main program
 !-----------------------------------------------------------------------------------------
 PROGRAM monolayer_main
@@ -17,6 +46,9 @@ real(8) :: t1, t2
 !logical :: simulate_colony
 integer :: idist, ndist = 40
 real(8) :: PE, colony_days, dist(40), ddist = 50
+
+real(8) :: progress(30)
+integer :: phase(30), Nph
 
 call disableTCP
 
@@ -79,6 +111,12 @@ endif
 
 ! Synchronisation of cell IR
 use_synchronise = .false.
+if (use_synchronise) then
+    call syncher(Nph, phase, progress)
+    do i = 1,Nph
+        write(*,'(2i6,f6.3)') i-1, phase(i), progress(i)
+    enddo
+endif
 synch_phase = G2_phase
 synch_fraction = 0.0
 G2_katm3_factor = 1.0
@@ -91,8 +129,8 @@ compute_cycle = .true.
 !call get_dimensions(NX,NY,NZ,nsteps,DELTA_T, MAX_CHEMO, cused);
 i_hypoxia_cutoff = 3
 i_growth_cutoff = 1
-do irun = 1,1
-    synch_fraction = (irun-1)*0.2
+do irun = 1,1   !16,19
+    synch_fraction = progress(irun)    !(irun-1)*0.2
     if (use_synchronise) then
     	write(*,'(a,2i4,f6.1)') 'irun, synch_phase, synch_fraction: ',irun,synch_phase,synch_fraction
     endif

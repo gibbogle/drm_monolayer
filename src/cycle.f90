@@ -78,11 +78,12 @@ elseif (cp%phase == S_phase) then
     endif
 elseif (cp%phase == G2_phase) then
     if (use_Jaiswal) then
-        cp%progress = (cp%CC_act - CC_act0)/(CC_threshold - CC_act0)    ! not really needed
+        !cp%progress = (cp%CC_act - CC_act0)/(CC_threshold - CC_act0)    ! not really needed, and not correct
         if (cp%CC_act >= CC_threshold) then
             cp%phase = M_phase
             cp%progress = 0
             cp%V = cp%divide_volume     ! set volume here, to maintain correct cell volume at cell division
+            if (use_synchronise) write(*,*) 'Reached mitosis at: ',t_simulation/3600
         endif
     else
         cp%progress = cp%progress + cp%fp*dt/ccp%T_G2

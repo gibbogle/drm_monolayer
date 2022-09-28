@@ -259,6 +259,13 @@ elseif (iphase_hours == -4) then    ! this is the synchronised IR case
     nphase_hours = 1
     next_phase_hour = 1
     phase_hour(1:5) = [40, 0, 0, 0, 0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+elseif (iphase_hours == -7) then    ! this is the compute_cycle case for CA-135, multiple times
+    CC11 = .true.
+    compute_cycle = .true.
+    use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
+    nphase_hours = 25
+    next_phase_hour = 1
+    phase_hour(1:25) = [0.5,1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,8.5,9.0,9.5,10.0,10.5,11.0,11.5,12.0,24]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 else
     if (use_PEST) then
         write(*,*) 'Error: ReadMcParameters: with PEST iphase_hours must be -1,-2,-3'
@@ -401,6 +408,7 @@ if (phase == G1_phase) then
     ! Apoptosis in G1
     Pbase = exp(-baseRate*totDSB0)   ! this is 1 - Pdie
     Pdie = 1 - Pbase 
+    if (single_cell) Pdie = 0
     R = par_uni(kpar)
     if (R < Pdie) then  ! cell dies of apoptosis
         cp%state = DEAD
@@ -415,6 +423,7 @@ if (phase == G1_phase) then
 elseif (phase == G2_phase) then
     if (use_Jaiswal) then
         ! nothing needed to be done here
+        !if (cp%CC_act > 0) write(*,*) 'Cell in G2 at IR, CC_act: ',kcell_now, cp%CC_act
     elseif (use_D_model) then
         cp%pATM = K_ATM(3,1)*totDSB0/(K_ATM(3,2) + totDSB0)
         cp%pATR = K_ATR(3,1)*totDSB0/(K_ATR(3,2) + totDSB0)
@@ -704,6 +713,7 @@ else
             fslow = max(0.0,fATM + fATR - 1)
         else
             fslow = fATM*fATR
+!            fslow = fATR
 !            if (kcell_now == 1) write(*,'(a,i6,i4,f6.3)') 'fslow: ',kcell_now,iph,fslow
         endif
         dtCPdelay = dt*(1 - fslow)
@@ -739,9 +749,9 @@ end subroutine
 subroutine G2_Jaiswal_update(cp, dth)
 type(cell_type), pointer :: cp
 real(8) :: dth
-real(8) :: dt = 0.01
+real(8) :: dt = 0.001
 real(8) :: D, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact
-real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt
+real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t
 integer :: it, Nt
 
 Nt = dth/dt
@@ -764,6 +774,9 @@ enddo
 cp%CC_act = CC_act
 cp%ATR_act = ATR_act
 cp%ATM_act = ATM_act
+t = t_simulation/3600.
+!cp%progress = (cp%CC_act - CC_act0)/(CC_threshold - CC_act0)
+if (single_cell) write(*,'(a,f6.2,4e12.3)') 'G2_J: t, vars: ',t,cp%CC_act,cp%ATR_act,cp%ATM_act,D
 end subroutine
 
 !--------------------------------------------------------------------------
@@ -863,7 +876,7 @@ endif
 
 DSB0 = DSB     ! initial DSBs for this time step
 totDSB0 = sum(DSB0)
-if (totDSB0 == 0) return
+!if (totDSB0 == 0) return
 
 !if (kcell_now == 1) write(*,'(a,2i6,3f8.2)') 'updateRepair: kcell, phase, DSB0: ',kcell_now,cp%phase,cp%DSB(1:3)
 
@@ -992,7 +1005,7 @@ else    ! M_phase or dividing
     cp%Psurvive = Pmit*Msurvival
 endif
 NPsurvive = NPsurvive + 1   ! this is the count of cells for which Psurvive has been computed
-Psurvive(NPsurvive) = cp%Psurvive
+!Psurvive(NPsurvive) = cp%Psurvive
 
 ATMsum = ATMsum + cp%pATM
 ATRsum = ATRsum + cp%pATR

@@ -512,6 +512,8 @@ endif
 close(nfcell)
 call logger('Finished reading input data')
 
+single_cell = (use_synchronise .and. initial_count==1)
+
 ! Rescale
 chemo(OXYGEN)%membrane_diff_in = chemo(OXYGEN)%membrane_diff_in*Vsite_cm3/60		! /min -> /sec
 chemo(OXYGEN)%membrane_diff_out = chemo(OXYGEN)%membrane_diff_out*Vsite_cm3/60		! /min -> /sec
@@ -1153,6 +1155,12 @@ call set_divide_volume(cp, V0)  ! sets %divide_volume and %divide_time
 cp%metab = phase_metabolic(1)
 !cp%metab%I_rate = r_Iu	! this is just to ensure that initial growth rate is not 0
 cp%metab%C_GlnEx_prev = 0
+
+! Jaiswal
+cp%CC_act = CC_act0
+cp%ATR_act = 0
+cp%ATM_act = 0
+
 !if (use_volume_method) then
 !    !cp%divide_volume = Vdivide0
 !    if (initial_count == 1) then
@@ -1226,10 +1234,6 @@ cp%CFSE = generate_CFSE(1.d0)
 cp%Psurvive = -1    ! flags Psurvive not yet computed
 !if (cp%phase == G1_phase) write(*,'(a,i6,f8.3)') 'G1_phase cell: ',kcell,cp%progress
 
-! Jaiswal
-cp%CC_act = CC_act0
-cp%ATR_act = 0
-cp%ATM_act = 0
 end subroutine
 
 !--------------------------------------------------------------------------------
@@ -1289,7 +1293,7 @@ type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
 integer :: ityp, kpar = 0
 real(REAL_KIND) :: Tc, Tmean, scale, b, t, R, tswitch(3), rVmax, V0, Vprev, fg(4), metab, f_CP, fp(4)
-real(REAL_KIND) :: T_G1, T_S, T_G2, T_M, tleft, Vleft, Vphase
+real(REAL_KIND) :: T_G1, T_S, T_G2, T_M, tleft, Vleft, Vphase, dth
 
 if (use_exponential_cycletime) then
     write(*,*) 'SetInitialCellCycleStatus: Must use log-normal cycle time!'
@@ -1298,7 +1302,8 @@ endif
 ityp = cp%celltype
 ccp => cc_parameters(ityp)
 !if (S_phase_RR) then
-if (use_synchronise .and. (initial_count == 1)) then
+!if (use_synchronise .and. (initial_count == 1)) then
+if (single_cell) then
     Tc = divide_time_mean(1)
 else
     Tc = cp%divide_time         ! log-normal, implies %fg
@@ -1378,6 +1383,7 @@ elseif (t < tswitch(3)) then
     tleft = tswitch(3) - t
     Vleft = cp%dVdt*tleft
     Vphase = rVmax*T_G2*fp(3)
+    if (cp%progress < 0.01) write(*,'(a,i6,f6.3)') 'SetInitialCellCycleStatus: kcell, progress: ',kcell,cp%progress
 !    if (kcell <= 10) then
 !        write(*,*)
 !        write(*,*) 'SetInitialCellCycleStatus'
@@ -1388,6 +1394,13 @@ elseif (t < tswitch(3)) then
 !        write(*,'(a,4e12.3,f6.3)') 'Vleft,Vphase,Vend,Vdivide0,progress: ',Vleft, Vphase, cp%V + Vleft, Vdivide0, cp%progress
 !        if (kcell == 4) stop
 !    endif
+    if (use_Jaiswal) then   ! need to initialise CC_act
+        cp%DSB = 0
+        dth = (t - tswitch(2))/3600
+        if (single_cell) write(*,*) 'SetInitialCellCycleStatus: dth: ',dth
+        call G2_Jaiswal_update(cp,dth)
+        if (single_cell) write(*,*) 'SetInitialCellCycleStatus: initial CC_act: ',cp%CC_act
+    endif
 else
     cp%phase = M_phase
 !    cp%fp = metab*f_CP/fg(M_phase)      ! not used
@@ -1516,9 +1529,8 @@ end subroutine
 !----------------------------------------------------------------------------------
 !----------------------------------------------------------------------------------
 subroutine ProcessEvent(radiation_dose)
-real(REAL_KIND) :: radiation_dose
 integer :: kevent, ichemo, idrug, im, nmetab
-real(REAL_KIND) :: V, C(MAX_CHEMO)
+real(REAL_KIND) :: V, C(MAX_CHEMO), radiation_dose
 type(event_type) :: E
 logical :: full
 logical :: is_event
@@ -1977,7 +1989,7 @@ endif
 if (compute_cycle .or. output_DNA_rate) then
     if (next_phase_hour > 0) then  ! check if this is a phase_hour
         if (real(istep)/nthour >= phase_hour(next_phase_hour)) then   ! record phase_dist
-            write(*,*) 'Reached phase hour: ',next_phase_hour,phase_hour(next_phase_hour)
+!            write(*,*) 'Reached phase hour: ',next_phase_hour,phase_hour(next_phase_hour)
 	        if (compute_cycle) then
 !	            call get_phase_distribution(phase_count)
 !	            total = sum(phase_count)
@@ -2450,8 +2462,8 @@ use, intrinsic :: iso_c_binding
 character(c_char), intent(in) :: infile_array(*), outfile_array(*)
 integer(c_int) :: ncpu, inbuflen, outbuflen, res
 character*(2048) :: infile, outfile
-character*(12) :: fname
-character*(1) :: numstr
+character*(13) :: fname
+character*(2) :: numstr
 logical :: ok, success, isopen
 integer :: i
 
@@ -2474,7 +2486,7 @@ endif
 open(nflog,file='drm_monolayer.log',status='replace')
 
 write(nflog,*) 'irun: ',res
-write(numstr,'(i1)') res
+write(numstr,'(i2)') res
 fname = 'phase'//numstr//'.log'
 write(nflog,'(a)') fname
 inquire(unit=nfphase,OPENED=isopen)
