@@ -523,6 +523,7 @@ do i = 0,np_survive
     endif
 !    write(nflog,'(i4,2f8.5)') i,p_survive,SFlookup(i)
 enddo
+write(nflog,*) 'did GenerateSFlookup: ityp: ',ityp
 end subroutine
 
 !--------------------------------------------------------------------------------

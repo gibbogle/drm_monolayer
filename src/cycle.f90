@@ -46,6 +46,7 @@ real(REAL_KIND) :: dt
 !	stop
 !endif
 !if (kcell_now == 1) write(*,'(a,2i4,8f7.3)') 'kcell, phase: ',kcell_now,cp%phase, cp%progress, cp%fp
+!if (kcell_now <= 10) write(nflog,'(a,2i4,f6.3)') 'kcell_now, phase, progress: ',kcell_now,cp%phase,cp%progress
 10 continue
 if (cp%phase == G1_phase) then
     cp%progress = cp%progress + cp%fp*dt/ccp%T_G1
@@ -75,6 +76,9 @@ elseif (cp%phase == S_phase) then
         cp%phase = G2_phase
         cp%progress = 0
         nSdelay = nSdelay + 1   ! only S doesn't use stops
+        if (single_cell) then
+            write(*,*) 'G2 entry: N_DSB: ',sum(cp%DSB(1:3))
+        endif
     endif
 elseif (cp%phase == G2_phase) then
     if (use_Jaiswal) then
@@ -83,7 +87,12 @@ elseif (cp%phase == G2_phase) then
             cp%phase = M_phase
             cp%progress = 0
             cp%V = cp%divide_volume     ! set volume here, to maintain correct cell volume at cell division
-            if (use_synchronise) write(*,*) 'Reached mitosis at: ',t_simulation/3600
+            if (single_cell) write(*,*) 'Reached mitosis at: ',t_simulation/3600
+!            if (kcell_now <= 10) write(nflog,'(a,i4,3f8.3)') 'Exit G2: CC_act, threshold, t: ',kcell_now,cp%CC_act,CC_threshold,t_simulation/3600
+!            if (cp%generation == 1) then
+!                npet = npet+1
+!                phase_exit_time_sum = t_simulation + phase_exit_time_sum + dt
+!            endif
         endif
     else
         cp%progress = cp%progress + cp%fp*dt/ccp%T_G2

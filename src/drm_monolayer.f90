@@ -178,6 +178,9 @@ call averages
 call GenerateSFlookup(1)
 use_permute = .true.
 rad_count = 0
+! To compute average phase time
+phase_exit_time_sum = 0
+npet = 0
 end subroutine
 
 !----------------------------------------------------------------------------------------- 
@@ -746,7 +749,7 @@ call logger(logmsg)
 call SteelMethod(ityp)
 
 total = ccp%T_G1 + ccp%T_S + ccp%T_G2 + ccp%T_M
-write(nflog,'(a,8f8.2)') 'T_G1,T_S,T_G2,T_M, total: ',ccp%T_G1,ccp%T_S,ccp%T_G2,ccp%T_M, total
+write(nflog,'(a,8f8.3)') 'T_G1,T_S,T_G2,T_M, total: ',ccp%T_G1,ccp%T_S,ccp%T_G2,ccp%T_M, total
 ccp%T_G1 = 3600*ccp%T_G1                    ! hours -> seconds
 ccp%T_S = 3600*ccp%T_S
 ccp%T_G2 = 3600*ccp%T_G2
@@ -1810,7 +1813,11 @@ real(REAL_KIND) :: pATM_sum, pATR_sum, DSB_sum
 logical :: PEST_OK
 logical :: ok = .true.
 logical :: dbug
-	
+
+!call test_Jaiswal
+!res = 1
+!return
+
 mp => master_cell%metab
 
 t_simulation = istep*DELTA_T	! seconds
@@ -1984,7 +1991,7 @@ if (compute_cycle) then
     total = sum(phase_count)
     phase_dist = 100*phase_count/total
     tadjust = event(1)%time/3600    ! if the RADIATION event is #1
-    write(nflog,'(a,f8.3,i8,f8.3)') 'hour, count, M%: ',real(istep)/nthour - tadjust,phase_count(M_phase),phase_dist(M_phase)
+!    write(nflog,'(a,f8.3,i8,f8.3)') 'hour, count, M%: ',real(istep)/nthour - tadjust,phase_count(M_phase),phase_dist(M_phase)
 endif
 if (compute_cycle .or. output_DNA_rate) then
     if (next_phase_hour > 0) then  ! check if this is a phase_hour
@@ -2262,6 +2269,7 @@ if (compute_cycle) then
     write(*,'(a,3f8.3)') 'Average G2 delay: pATM, pATR, total: ',G2thsum/NG2th,sum(G2thsum)/NG2th
     write(nfphase,'(a,3f8.3)') 'Average G2 delay: pATM, pATR, total: ',G2thsum/NG2th,sum(G2thsum)/NG2th
     write(nfphase,'(a,i6)') 'Number of cells averaged: ',NG2th
+    if (npet > 0) write(*,'(a,i6,f6.3)') 'Average phase time: ',npet,phase_exit_time_sum/(3600*npet)
     return
 endif
 if (output_DNA_rate) then

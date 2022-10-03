@@ -88,10 +88,9 @@ real(8) :: totPmit, totPaber, tottotDSB, totNlethal
 
 real(8) :: tCPdelay, tATMdelay, tATRdelay
 logical :: use_addATMATRtimes = .false.
-logical :: use_stops = .true.
-logical :: use_G1_stop = .true.
+logical :: use_G1_stop = .false.
 logical :: use_S_stop = .false.
-logical :: use_G2_stop = .true.
+logical :: use_G2_stop = .false.
 real(8) :: totG1delay, totSdelay, totG2delay
 integer :: nG1delay, nSdelay, nG2delay
 logical :: use_G2_pATM_Nindependent = .false.
@@ -645,6 +644,7 @@ end function
 !------------------------------------------------------------------------
 ! Only G2 is affected by pATR
 ! Best to turn off pATR in S-phase by setting katr1s = katr3s = 0
+! Now slowdown is acting only in S-phase
 !------------------------------------------------------------------------
 subroutine get_slowdown_factors(cp,iph,fATM,fATR)
 type(cell_type), pointer :: cp
@@ -652,6 +652,11 @@ integer :: iph
 real(REAL_KIND) :: fATM, fATR
 real(REAL_KIND) :: pATM, pATR, k3, k4, N_DSB
 
+fATR = 1
+if (iph /= S_phase) then
+    fATM = 1
+    return
+endif
 if (use_DSB_CP) then
     N_DSB = sum(cp%DSB)
     k3 = K_ATM(iph,3)
@@ -665,15 +670,16 @@ pATM = cp%pATM
 k3 = K_ATM(iph,3)
 k4 = K_ATM(iph,4)
 fATM = max(0.01,1 - k3*pATM/(k4 + pATM))
-!write(*,'(a,i3,4f8.4)') 'fATM: ',iph,k1,k2,pATM,fATM
-if (iph > G1_phase) then
-    pATR = cp%pATR
-    k3 = K_ATR(iph,3)   !*G2_katr3_factor
-    k4 = K_ATR(iph,4)   !*G2_katr4_factor
-    fATR = max(0.01,1 - k3*pATR/(k4 + pATR))
-else
-    fATR = 1.0
-endif
+!write(*,'(a,i3,4f8.4)') 'fATM: ',iph,k3,k4,pATM,fATM
+!if (iph > G1_phase) then
+!    pATR = cp%pATR
+!    k3 = K_ATR(iph,3)   !*G2_katr3_factor
+!    k4 = K_ATR(iph,4)   !*G2_katr4_factor
+!    fATR = max(0.01,1 - k3*pATR/(k4 + pATR))
+!else
+!    fATR = 1.0
+!endif
+!write(*,'(a,i3,4f8.4)') 'fATR: ',iph,k3,k4,pATR,fATR
 end subroutine
 
 !------------------------------------------------------------------------
@@ -713,7 +719,6 @@ else
             fslow = max(0.0,fATM + fATR - 1)
         else
             fslow = fATM*fATR
-!            fslow = fATR
 !            if (kcell_now == 1) write(*,'(a,i6,i4,f6.3)') 'fslow: ',kcell_now,iph,fslow
         endif
         dtCPdelay = dt*(1 - fslow)
@@ -754,7 +759,8 @@ real(8) :: D, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact
 real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t
 integer :: it, Nt
 
-Nt = dth/dt
+Nt = int(dth/dt + 0.5)
+!write(nflog,*) 'G2_Jaiswal_update: Nt: ',Nt
 D = sum(cp%DSB(1:3))*norm_factor
 CC_act = cp%CC_act
 ATR_act = cp%ATR_act
@@ -770,6 +776,9 @@ do it = 1,Nt
     CC_act = CC_act + dt * dCC_act_dt
     ATR_act = ATR_act + dt * dATR_act_dt
     ATM_act = ATM_act + dt * dATM_act_dt
+    
+    t = it*dt
+!    write(nflog,'(i6,f8.4,2f10.6)') it,t,CC_act,dCC_act_dt
 enddo
 cp%CC_act = CC_act
 cp%ATR_act = ATR_act
@@ -777,6 +786,31 @@ cp%ATM_act = ATM_act
 t = t_simulation/3600.
 !cp%progress = (cp%CC_act - CC_act0)/(CC_threshold - CC_act0)
 if (single_cell) write(*,'(a,f6.2,4e12.3)') 'G2_J: t, vars: ',t,cp%CC_act,cp%ATR_act,cp%ATM_act,D
+if (kcell_now == 1) write(nflog,'(a,f6.2,4e12.3)') 'G2_J: t, vars: ',t,cp%CC_act,dCC_act_dt
+end subroutine
+
+!------------------------------------------------------------------------
+!------------------------------------------------------------------------
+subroutine test_Jaiswal
+real(8) :: t, dth
+integer :: it, Nt
+type(cell_type), pointer :: cp
+
+dth = 0.1
+!Nt = int(20./dth)
+Nt = 1
+cp => cell_list(1)
+cp%CC_act = 0
+cp%DSB = 0
+cp%ATM_act = 0
+cp%ATR_act = 0
+t = 0
+write(nflog,*) 'test_Jaiswal: Nt: ',Nt
+do it = 1,Nt
+    call G2_Jaiswal_update(cp, dth)
+    t = t + dth
+    write(nflog,'(2f8.4)') t,cp%CC_act
+enddo
 end subroutine
 
 !--------------------------------------------------------------------------

@@ -561,6 +561,9 @@ logical :: CC11 = .false.
 
 real(REAL_KIND) :: mitosis_std = 0.0    ! as a fraction of mean T_M
 
+real(REAL_KIND) :: phase_exit_time_sum
+integer :: npet
+
 !integer :: icentral !extracellular variable index corresponding to a central site (NX/2,NY/2,NZ/2)
 
 ! Off-lattice parameters, in the input file but unused here

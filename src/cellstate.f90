@@ -790,6 +790,10 @@ endif
 ! Here compute the progress factor %fp, used in cycle.f90
 ! This is definitive
 f_CP = slowdown(cp)
+if (.not.is_radiation .and. f_CP < 1.0) then
+    write(*,*) 'growcell: f_CP < 1'
+    stop
+endif
 !write(*,'(a,i6,3e12.3)') 'growcell: ',kcell_now,metab,f_CP,cp%fg(cp%phase)
 cp%fp = metab*f_CP/cp%fg(cp%phase)
 cp%dVdt = cp%fp*max_growthrate(ityp)
