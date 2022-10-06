@@ -644,7 +644,7 @@ end function
 !------------------------------------------------------------------------
 ! Only G2 is affected by pATR
 ! Best to turn off pATR in S-phase by setting katr1s = katr3s = 0
-! Now slowdown is acting only in S-phase
+! Now slowdown is acting only in S-phase, and only affected by pATM
 !------------------------------------------------------------------------
 subroutine get_slowdown_factors(cp,iph,fATM,fATR)
 type(cell_type), pointer :: cp

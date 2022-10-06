@@ -1145,7 +1145,8 @@ cp%totMis = 0
 !cp%nspheres = 1
 ! Set cell's mitosis duration as a Gaussian rv
 R = par_rnor(kpar)	! N(0,1)
-cp%mitosis_duration = (1 + mitosis_std*R)*ccp%T_M
+!cp%mitosis_duration = (1 + mitosis_std*R)*ccp%T_M
+cp%mitosis_duration = get_mitosis_duration()
 
 V0 = Vdivide0/2
 !cp%divide_volume = get_divide_volume(ityp, V0, Tdiv, gfactor)

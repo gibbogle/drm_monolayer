@@ -559,7 +559,8 @@ logical :: use_fixed_CP != .false.
 logical :: compute_cycle
 logical :: CC11 = .false.
 
-real(REAL_KIND) :: mitosis_std = 0.0    ! as a fraction of mean T_M
+!real(REAL_KIND) :: mitosis_std = 0.0    ! as a fraction of mean T_M
+real(REAL_KIND) :: mitosis_std = 0.1336*3600     ! Chao 2019, Erlang k=14, L = 28, hours -> seconds
 
 real(REAL_KIND) :: phase_exit_time_sum
 integer :: npet
@@ -955,6 +956,18 @@ real(REAL_KIND) :: R
 ! Gaussian distribution
 R = par_rnor(kpar)	! N(0,1)
 generate_CFSE = (1 + CFSE_std*R)*average
+end function
+
+!-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+function get_mitosis_duration() result(t)
+real(REAL_KIND) :: t
+type(cycle_parameters_type), pointer :: ccp
+integer :: ityp = 1
+ccp => cc_parameters(ityp)
+t = rv_normal(ccp%T_M, mitosis_std, 0)
+t = max(t,0.0)
+write(*,'(a,f8.3)') 'mitosis_duration: ',t/3600
 end function
 
 !-----------------------------------------------------------------------------------------

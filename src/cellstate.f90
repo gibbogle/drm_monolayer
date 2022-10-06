@@ -960,8 +960,9 @@ call set_divide_volume(cp1, V0)
 !	cp1%metab%Itotal = 0
 !endif
 ! Set cell's mitosis duration as a Gaussian rv
-R = par_rnor(kpar)	! N(0,1)
-cp1%mitosis_duration = (1 + mitosis_std*R)*ccp%T_M
+!R = par_rnor(kpar)	! N(0,1)
+!cp1%mitosis_duration = (1 + mitosis_std*R)*ccp%T_M
+cp1%mitosis_duration = get_mitosis_duration()
 cp1%mitosis = 0
 cfse0 = cp1%CFSE
 cp1%CFSE = generate_CFSE(cfse0/2)
@@ -1037,7 +1038,8 @@ cp2 = cp1
 
 ! Set cell's mitosis duration as a Gaussian rv
 R = par_rnor(kpar)	! N(0,1)
-cp2%mitosis_duration = (1 + mitosis_std*R)*ccp%T_M
+!cp2%mitosis_duration = (1 + mitosis_std*R)*ccp%T_M
+cp2%mitosis_duration = get_mitosis_duration()
 kcell_now = kcell2
 call set_divide_volume(cp2, V0)
 !cp2%dVdt = dVdt/cp2%fg
