@@ -967,7 +967,7 @@ integer :: ityp = 1
 ccp => cc_parameters(ityp)
 t = rv_normal(ccp%T_M, mitosis_std, 0)
 t = max(t,0.0)
-write(*,'(a,f8.3)') 'mitosis_duration: ',t/3600
+!write(*,'(a,f8.3)') 'mitosis_duration: ',t/3600
 end function
 
 !-----------------------------------------------------------------------------------------

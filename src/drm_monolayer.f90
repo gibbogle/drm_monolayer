@@ -2228,6 +2228,7 @@ type(cell_type), pointer :: cp
 logical :: only_M_phase = .false.
 logical :: PDS4 = .false.
 real(REAL_KIND) :: phi, PDS4_M(3) = [0.191, 0.414286, 0.732812]
+real(REAL_KIND) :: normalised_phase_dist(30,0:4)   
 
 if (compute_cycle) then
     write(nflog,*) 'Completed compute cycle'
@@ -2259,7 +2260,16 @@ if (compute_cycle) then
         if (only_M_phase) then
             write(nfres,'(20e15.6)') (recorded_phase_dist(i,4),i=1,nphase_hours)
         else
-            write(nfres,'(20e15.6)') (recorded_phase_dist(i,1:4),i=1,nphase_hours)
+            if (normalise) then
+                write(*,*) 'Normalising PDs'
+                do i = 1,nphase_hours
+                    normalised_phase_dist(i,1:4) = recorded_phase_dist(i,1:4)/control_ave(1:4)
+                enddo
+                write(nfres,'(20e15.6)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
+            else
+                write(*,*) 'Not normalising PDs'
+                write(nfres,'(20e15.6)') (recorded_phase_dist(i,1:4),i=1,nphase_hours)
+            endif
         endif
 !        do i = 1,nphase_hours
 !            write(nfres,'(f6.1,4x,4f6.1)') phase_hour(i)-tadjust,recorded_phase_dist(i,1:4)
@@ -2352,10 +2362,7 @@ if (use_PEST) then
         write(nfres,'(e15.6)') log10(SFave)
     endif
     if (nphase_hours > 0) then
-!        do i = 1,nphase_hours
-!            write(nfres,'(16e15.6)') (recorded_phase_dist(i,0:3),i=1,4)
-            write(nfres,'(20e15.6)') (recorded_phase_dist(i,1:4),i=1,nphase_hours)
-!        enddo
+        write(nfres,'(20e15.6)') (recorded_phase_dist(i,1:4),i=1,nphase_hours)
     endif
 endif
 end subroutine

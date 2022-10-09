@@ -100,6 +100,10 @@ logical :: negligent_G2_CP = .false.
 logical :: use_DSB_CP = .false.
 logical :: use_D_model = .true.
 
+! Normalisation
+real(8) :: control_ave(4) = [35.746, 48.898, 13.735, 1.621]
+logical :: normalise, M_only
+
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHRsimple, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
 contains
@@ -109,7 +113,7 @@ contains
 !--------------------------------------------------------------------------
 subroutine ReadMcParameters(nfin)
 integer :: nfin
-integer :: iuse_baserate, iuse_exp, iphase_hours, nCPparams, iph, j
+integer :: iuse_baserate, iuse_exp, iphase_hours, icase, nCPparams, iph, j
 write(*,*) 'ReadMcParameters:'
 read(nfin,*) iphase_hours
 write(*,*) 'iphase_hours: ',iphase_hours
@@ -219,23 +223,26 @@ nphase_hours = 0
 next_phase_hour = 0
 phase_hour(:) = 0
 output_DNA_rate = .false.
-if (iphase_hours == -1) then
+normalise = .false.
+M_only = .false.
+if (iphase_hours == 1) then
     use_SF = .true.     ! in this case SFave only is recorded
     compute_cycle = .false.
-elseif (iphase_hours == -2) then    ! this is the compute_cycle case for CA-135
+!elseif (iphase_hours == -2 .or. iphase_hours == -102 .or. iphase_hours == -112) then    ! this is the compute_cycle case for CA-135
+elseif (mod(iphase_hours,10) == 2) then    ! this is the compute_cycle case for CA-135
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 3
     next_phase_hour = 1
     phase_hour(1:5) = [5.0, 8.5, 11.5, 0.0, 0.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
-elseif (iphase_hours == -5) then    ! this is the compute_cycle case for CC-11
+elseif (mod(iphase_hours,10) == 5) then    ! this is the compute_cycle case for CC-11
     CC11 = .true.
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 5
     next_phase_hour = 1
     phase_hour(1:5) = [1.0, 1.5, 2.5, 3.5, 4.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
-elseif (iphase_hours == -6) then    ! this is the output_DNA_rate case
+elseif (iphase_hours == 6) then    ! this is the output_DNA_rate case
     CC11 = .true.
     compute_cycle = .false.
     output_DNA_rate = .true.
@@ -247,31 +254,49 @@ elseif (iphase_hours == -6) then    ! this is the output_DNA_rate case
     nphase_hours = 5    ! To fit S ATM parameters to EDU data
     phase_hour(1:5) = [0.75,1.25,2.25,3.25,4.25]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
     next_phase_hour = 1
-elseif (iphase_hours == -3) then
+elseif (iphase_hours == 3) then
     use_SF = .true.     ! in this case SFave is recorded and there are multiple phase distribution recording times
     nphase_hours = 4
     next_phase_hour = 1
     phase_hour(1:4) = [8, 12, 18, 24]
-elseif (iphase_hours == -4) then    ! this is the synchronised IR case
+elseif (iphase_hours == 4) then    ! this is the synchronised IR case
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 1
     next_phase_hour = 1
     phase_hour(1:5) = [40, 0, 0, 0, 0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
-elseif (iphase_hours == -7) then    ! this is the compute_cycle case for CA-135, multiple times
+elseif (iphase_hours == 7) then    ! this is the compute_cycle case for multiple times, no PEST
     CC11 = .true.
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 25
     next_phase_hour = 1
-    phase_hour(1:25) = [0.5,1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,8.5,9.0,9.5,10.0,10.5,11.0,11.5,12.0,24.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+    phase_hour(1:25) = [0.5,1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,8.5,9.0,9.5,10.0,10.5,11.0,11.5,12.0,24.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)   
+elseif (mod(iphase_hours,10) == 8) then    ! this is the compute_cycle case for M%-only experiments
+    CC11 = .true.
+    compute_cycle = .true.
+    use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
+    nphase_hours = 5
+    next_phase_hour = 1
+    phase_hour(1:5) = [1.0, 1.5, 2.5, 3.5, 4.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 else
     if (use_PEST) then
-        write(*,*) 'Error: ReadMcParameters: with PEST iphase_hours must be -1,-2,-3'
-        write(nflog,*) 'Error: ReadMcParameters: with PEST iphase_hours must be -1,-2,-3'
+        write(*,*) 'Error: ReadMcParameters: with PEST iphase_hours must be 1 - 8'
+        write(nflog,*) 'Error: ReadMcParameters: with PEST iphase_hours must be 1 - 8'
         stop
     endif
 endif
+icase = iphase_hours/10
+if (icase == 10) normalise = .true.
+if (icase == 11) M_only = .true.
+if (icase == 12) then
+    normalise = .true.
+    M_only = .true.
+endif
+write(*,*) 'iphase_hours: ',iphase_hours,'    normalise: ',normalise, '    M_only: ',M_only
+write(*,*) 'nphase_hours: ',nphase_hours
+write(*,*) 'phase_hour:'
+write(*,'(10f6.2)') phase_hour(1:nphase_hours)
 write(*,*) 'did ReadMcParameters:'
 !repRate(1:2) = 0
 !write(*,*) '====================================================================='
