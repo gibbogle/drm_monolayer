@@ -734,10 +734,10 @@ read(nf,*) ccp%f_G2
 read(nf,*) ccp%f_M
 read(nf,*) ccp%Apoptosis_median
 read(nf,*) ccp%Apoptosis_shape
-control_ave(1) = ccp%f_G1
-control_ave(2) = ccp%f_S
-control_ave(3) = ccp%f_G2
-control_ave(4) = ccp%f_M
+control_ave(1) = 100*ccp%f_G1
+control_ave(2) = 100*ccp%f_S
+control_ave(3) = 100*ccp%f_G2
+control_ave(4) = 100*ccp%f_M
 
 divide_dist(ityp)%class = LOGNORMAL_DIST
 divide_time_median(ityp) = 60*60*divide_time_median(ityp)		! hours -> seconds
@@ -2275,10 +2275,12 @@ if (compute_cycle) then
         else
             if (normalise) then
                 write(*,*) 'Normalising PDs'
+                write(nflog,*) 'Normalising PDs'
                 do i = 1,nphase_hours
                     normalised_phase_dist(i,1:4) = recorded_phase_dist(i,1:4)/control_ave(1:4)
                 enddo
                 write(nfres,'(20e15.6)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
+                write(nflog,'(20e15.6)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
             else
                 write(*,*) 'Not normalising PDs'
                 write(nfres,'(20e15.6)') (recorded_phase_dist(i,1:4),i=1,nphase_hours)
