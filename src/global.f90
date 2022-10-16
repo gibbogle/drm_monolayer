@@ -749,6 +749,8 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 ! Changed from kcell argument to cp, because it can be a colony cell, in ccell_list.
 ! Assumes maximum growth rate.
+! S-phase duration is fixed.  
+! M-phase duration has already been assigned as cp%mitosis_duration
 !-----------------------------------------------------------------------------------------
 subroutine set_divide_volume(cp,V0)
 real(REAL_KIND) :: V0
@@ -787,17 +789,24 @@ if (use_exponential_cycletime) then
 else
 #endif
 ! Now set both T_S and T_M fixed
-fg(S_phase) = 1.0
+!fg(S_phase) = 1.0
 fg(M_phase) = 1.0
 T_S = ccp%T_S
-T_M = ccp%T_M
-Tfixed = T_S + T_M
+!T_M = ccp%T_M
+T_M = cp%mitosis_duration
+!Tfixed = T_S + T_M
+Tfixed = T_M
 Tdiv = DivideTime(ityp)     ! log-normally distributed
 !Tdiv = 26*3600
 Tgrowth = Tdiv - Tfixed
-T_G1 = Tgrowth*ccp%T_G1/(ccp%T_G1 + ccp%T_G2)
-T_G2 = Tgrowth*ccp%T_G2/(ccp%T_G1 + ccp%T_G2)
+!T_G1 = Tgrowth*ccp%T_G1/(ccp%T_G1 + ccp%T_G2)
+!T_G2 = Tgrowth*ccp%T_G2/(ccp%T_G1 + ccp%T_G2)
+T_G1 = Tgrowth*ccp%T_G1/(ccp%T_G1 + ccp%T_S + ccp%T_G2)
+T_S = Tgrowth*ccp%T_S/(ccp%T_G1 + ccp%T_S + ccp%T_G2)
+T_G2 = Tgrowth*ccp%T_G2/(ccp%T_G1 + ccp%T_S + ccp%T_G2)
+!if (kcell_now <= 100) write(*,'(a,i7,f6.3)') 'set_divide_volume: T_G2: ',kcell_now,T_G2/3600
 fg(G1_phase) = T_G1/ccp%T_G1
+fg(S_phase) = T_S/ccp%T_S
 fg(G2_phase) = T_G2/ccp%T_G2
 V = V0 + rVmax*(T_G1/fg(G1_phase) + T_S/fg(S_phase) + T_G2/fg(G2_phase))
 cp%divide_volume = V
@@ -959,13 +968,19 @@ generate_CFSE = (1 + CFSE_std*R)*average
 end function
 
 !-----------------------------------------------------------------------------------------
+! Seconds
 !-----------------------------------------------------------------------------------------
 function get_mitosis_duration() result(t)
 real(REAL_KIND) :: t
 type(cycle_parameters_type), pointer :: ccp
 integer :: ityp = 1
 ccp => cc_parameters(ityp)
-t = rv_normal(ccp%T_M, mitosis_std, 0)
+if (single_cell) then
+    t = ccp%T_M
+else
+    t = rv_normal(ccp%T_M, mitosis_std, 0)
+endif
+!t = 0.43*3600
 t = max(t,0.0)
 !write(*,'(a,f8.3)') 'mitosis_duration: ',t/3600
 end function

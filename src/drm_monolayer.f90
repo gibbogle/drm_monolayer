@@ -734,6 +734,10 @@ read(nf,*) ccp%f_G2
 read(nf,*) ccp%f_M
 read(nf,*) ccp%Apoptosis_median
 read(nf,*) ccp%Apoptosis_shape
+control_ave(1) = ccp%f_G1
+control_ave(2) = ccp%f_S
+control_ave(3) = ccp%f_G2
+control_ave(4) = ccp%f_M
 
 divide_dist(ityp)%class = LOGNORMAL_DIST
 divide_time_median(ityp) = 60*60*divide_time_median(ityp)		! hours -> seconds
@@ -770,8 +774,10 @@ Tc = divide_time_mean(ityp)/3600    ! seconds -> hours
 b = log(2.0)/Tc
 ccp%T_G1 = -(log(1-ccp%f_G1/2))/b
 ccp%T_S = -(log(1-(ccp%f_G1+ccp%f_S)/2))/b - ccp%T_G1
-ccp%T_G2 = -(log(1-(ccp%f_G1+ccp%f_S+ccp%f_G2)/2))/b - ccp%T_G1 - ccp%T_S
-ccp%T_M = Tc - ccp%T_G1 - ccp%T_S - ccp%T_G2
+ccp%T_M = log(1 + ccp%f_M)/b     ! Smith & Dendy
+ccp%T_G2 = Tc - ccp%T_G1 - ccp%T_S - ccp%T_M
+!ccp%T_G2 = -(log(1-(ccp%f_G1+ccp%f_S+ccp%f_G2)/2))/b - ccp%T_G1 - ccp%T_S
+!ccp%T_M = Tc - ccp%T_G1 - ccp%T_S - ccp%T_G2
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -1110,6 +1116,9 @@ do kcell = 1,initial_count
 	counts(phase) = counts(phase) + 1
 enddo
 write(*,*) 'Initial phase counts: ',counts
+write(*,'(a,4f6.2)') 'Initial phase %ages: ',100.0*real(counts)/sum(counts)
+!write(*,*) 'stopping...'
+!stop
 nlist = kcell-1
 Ncells = nlist
 Ncells0 = Ncells
@@ -1144,10 +1153,10 @@ cp%Iphase = .true.
 cp%totMis = 0
 !cp%nspheres = 1
 ! Set cell's mitosis duration as a Gaussian rv
-R = par_rnor(kpar)	! N(0,1)
+!R = par_rnor(kpar)	! N(0,1)
 !cp%mitosis_duration = (1 + mitosis_std*R)*ccp%T_M
 cp%mitosis_duration = get_mitosis_duration()
-
+!if (kcell <= 10) write(*,'(a,i6,2f6.3)') 'mitosis_duration: ',kcell,ccp%T_M/3600,cp%mitosis_duration/3600
 V0 = Vdivide0/2
 !cp%divide_volume = get_divide_volume(ityp, V0, Tdiv, gfactor)
 !cp%divide_time = Tdiv
@@ -1187,6 +1196,7 @@ cp%ATM_act = 0
 !    cp%irrepairable = .false.
     ! Need to assign phase, volume to complete phase, current volume
     call SetInitialCellCycleStatus(kcell,cp)
+!    if (cp%phase == M_phase) write(*,'(a,i8,f6.3)') 'mitosis_duration: ',kcell,cp%mitosis_duration/3600
 !endif
 !cp%dVdt = max_growthrate(ityp)
 !if (use_metabolism) then	! Fraction of I needed to divide = fraction of volume needed to divide
@@ -1328,10 +1338,11 @@ fp(:) = metab*f_CP/fg(:)
 T_G1 = ccp%T_G1/fp(1)
 T_S = ccp%T_S/fp(2)
 T_G2 = ccp%T_G2/fp(3)
-T_M = ccp%T_M/fp(4)
+!T_M = ccp%T_M/fp(4)
+T_M = cp%mitosis_duration
 
 if (kcell <= 10) then
-    write(*,'(a,i4,9f8.3)') 'kcell,fg,Tc,sum: ',kcell,fg(:),Tc/3600,(T_G1+T_S+T_G2+T_M)/3600
+    write(*,'(a,i4,9f8.3)') 'kcell,fg,Tc,T_M,sum: ',kcell,fg(:),Tc/3600,T_M/3600,(T_G1+T_S+T_G2+T_M)/3600
 endif
 if (use_synchronise) then
     if (kcell == 1) then
@@ -1342,9 +1353,9 @@ if (use_synchronise) then
     if (synch_phase == G1_phase) then
         t = synch_fraction*T_G1
     elseif (synch_phase == S_phase) then
-        t = (T_G1 + synch_fraction*T_S)
+        t = T_G1 + synch_fraction*T_S
     elseif (synch_phase == G2_phase) then
-        t = (T_G1 + T_S + synch_fraction*T_G2)
+        t = T_G1 + T_S + synch_fraction*T_G2
     else
         write(*,*) 'Error: SetInitialCellCycleStatus: bad synch_phase: ',synch_phase
         write(nflog,*) 'Error: SetInitialCellCycleStatus: bad synch_phase: ',synch_phase
@@ -1387,7 +1398,7 @@ elseif (t < tswitch(3)) then
     tleft = tswitch(3) - t
     Vleft = cp%dVdt*tleft
     Vphase = rVmax*T_G2*fp(3)
-    if (cp%progress < 0.01) write(*,'(a,i6,f6.3)') 'SetInitialCellCycleStatus: kcell, progress: ',kcell,cp%progress
+    !if (cp%progress < 0.01) write(*,'(a,i6,f6.3)') 'SetInitialCellCycleStatus: kcell, progress: ',kcell,cp%progress
 !    if (kcell <= 10) then
 !        write(*,*)
 !        write(*,*) 'SetInitialCellCycleStatus'
@@ -1403,7 +1414,8 @@ elseif (t < tswitch(3)) then
         dth = (t - tswitch(2))/3600
         if (single_cell) write(*,*) 'SetInitialCellCycleStatus: dth: ',dth
         call G2_Jaiswal_update(cp,dth)
-        if (single_cell) write(*,*) 'SetInitialCellCycleStatus: initial CC_act: ',cp%CC_act
+!        if (single_cell) write(*,*) 'SetInitialCellCycleStatus: initial CC_act: ',cp%CC_act
+        if (kcell <= 100) write(*,'(a,i6,2f6.3)') 'SetInitialCellCycleStatus: dth,initial CC_act: ',kcell,dth,cp%CC_act
     endif
 else
     cp%phase = M_phase
@@ -1413,11 +1425,12 @@ else
     R = par_uni(kpar)
 !    cp%t_start_mitosis = -R*ccp%T_M
     cp%t_start_mitosis = -R*cp%mitosis_duration
-    cp%progress = 1.0
+	ncells_mphase = ncells_mphase + 1
+    cp%phase = dividing
+!    cp%progress = 1.0
+    if (kcell <= 100) write(*,'(a,i6,2f6.3)') 'SetInitialCellCycleStatus: mitosis_duration, t_start: ',kcell,cp%mitosis_duration/3600,cp%t_start_mitosis/3600
 endif
-!if (kcell <= 10) write(*,*) 'kcell, phase, progress: ',kcell,cp%phase,cp%progress
 cp%t_divide_last = -t
-!if (kcell <= 10) write(*,'(a,i4,2f8.3)') 'kcell, V: ',kcell,cp%V/(2*V0),cp%progress
 end subroutine
 
 !--------------------------------------------------------------------------------

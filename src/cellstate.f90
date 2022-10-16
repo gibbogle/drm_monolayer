@@ -80,6 +80,9 @@ Nirradiated = Ncells
 t_irradiation = t_simulation
 write(logmsg,*) 'Irradiation: Nirradiated: ',Nirradiated
 call logger(logmsg)
+if (use_G1_CP_factor) then
+    G1_CP_time = G1_CP_factor*dose*3600
+endif
 counts = 0
 !call setupRadiation
 !if (use_volume_method) then
@@ -667,6 +670,7 @@ do kcell = 1,nlist0
 		ncells_mphase = ncells_mphase + 1
 		! Need to record clonogenic SP at first mitosis
         cp%phase = dividing
+!        if (kcell_now <= 10) write(*,'(a,i6,f6.3)') 'grower: ',kcell_now, mitosis_duration/3600
     endif
 	
     if (cp%phase == dividing) then
@@ -1037,7 +1041,7 @@ cp2 = cp1
 !if (kcell1 <= 10) write(*,*) 'divided: ',kcell1, kcell2,ncells
 
 ! Set cell's mitosis duration as a Gaussian rv
-R = par_rnor(kpar)	! N(0,1)
+!R = par_rnor(kpar)	! N(0,1)
 !cp2%mitosis_duration = (1 + mitosis_std*R)*ccp%T_M
 cp2%mitosis_duration = get_mitosis_duration()
 kcell_now = kcell2

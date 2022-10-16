@@ -79,6 +79,7 @@ logical :: alt_EJ_suppressed = .false.
 real(8) :: Kcc2a, Kcc2e, Kd2e, Kd2t, Ke2cc, Km1, Km2, Km10, Kt2cc, Kti2t, Km10t
 real(8) :: CC_tot, ATR_tot, ATM_tot, CC_act0, CC_threshold, norm_factor
 logical :: use_Jaiswal = .true.
+logical :: vary_km10 = .true.
 
 real(8) :: ATMsum, ATRsum, Sthsum, G2thsum(2)
 integer :: NSth, NG2th
@@ -101,8 +102,13 @@ logical :: use_DSB_CP = .false.
 logical :: use_D_model = .true.
 
 ! Normalisation
-real(8) :: control_ave(4) = [35.746, 48.898, 13.735, 1.621]
+!real(8) :: control_ave(4) = [35.746, 48.898, 13.735, 1.621]
+real(8) :: control_ave(4)   ! now set equal to ccp%f_G1, ...
 logical :: normalise, M_only
+
+! G1 checkpoint
+logical :: use_G1_CP_factor = .false.
+real(8) :: G1_CP_factor, G1_CP_time
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHRsimple, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
@@ -265,7 +271,7 @@ elseif (iphase_hours == 4) then    ! this is the synchronised IR case
     nphase_hours = 1
     next_phase_hour = 1
     phase_hour(1:5) = [40, 0, 0, 0, 0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
-elseif (iphase_hours == 7) then    ! this is the compute_cycle case for multiple times, no PEST
+elseif (mod(iphase_hours,10) == 7) then    ! this is the compute_cycle case for multiple times, no PEST
     CC11 = .true.
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
@@ -314,6 +320,8 @@ totG2delay = 0
 nG1delay = 0
 nSdelay = 0
 nG2delay = 0
+
+G1_CP_factor = 0.0
 
 ! Test changes to repRate(HR)
 !write(nflog,*) '!!!!!!!!!!!!!!!!!!!! changing repRate(HR) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
@@ -594,6 +602,10 @@ if (use_DSB_CP) then
     t = 0
     return
 endif
+if (use_G1_CP_factor) then
+    t = G1_CP_time
+    return
+endif
 th = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*cp%pATM))
 !if (kcell_now == 1) write(*,'(a,i6,2f8.3)') 'G1_checkpoint_time (h): ',kcell_now,cp%pATM,th
 if (isnan(th)) then
@@ -781,11 +793,20 @@ type(cell_type), pointer :: cp
 real(8) :: dth
 real(8) :: dt = 0.001
 real(8) :: D, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact
-real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t
+real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, T_G2, kkm10
 integer :: it, Nt
+type(cycle_parameters_type),pointer :: ccp
 
+if (vary_km10) then
+    ccp => cc_parameters(1)
+    T_G2 = ccp%T_G2*cp%fg(3)/3600
+    kkm10 = 5 + 3*(T_G2 - 2.5)
+!    write(*,'(a,3f8.3)') 'T_G2, fg(3), kkm10: ',T_G2,cp%fg(3),kkm10
+else
+    kkm10 = Km10
+endif
 Nt = int(dth/dt + 0.5)
-!write(nflog,*) 'G2_Jaiswal_update: Nt: ',Nt
+if (single_cell) write(nflog,*) 'G2_Jaiswal_update: Nt: ',Nt
 D = sum(cp%DSB(1:3))*norm_factor
 CC_act = cp%CC_act
 ATR_act = cp%ATR_act
@@ -794,8 +815,8 @@ do it = 1,Nt
     CC_inact = CC_tot - CC_act
     ATR_inact = ATR_tot - ATR_act
     ATM_inact = ATM_tot - ATM_act
-    dCC_act_dt = (Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact) - Kt2cc * ATM_act * CC_act / (Km10t + CC_act) - Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
-    dATR_act_dt = Kd2e * D * ATR_inact / (Km10 + ATR_inact) - Kcc2e * ATR_act * CC_act / (Km10 + CC_act)
+    dCC_act_dt = (Kcc2a + CC_act) * CC_inact / (kkm10 + CC_inact) - Kt2cc * ATM_act * CC_act / (Km10t + CC_act) - Ke2cc * ATR_act * CC_act / (kkm10 + CC_act)
+    dATR_act_dt = Kd2e * D * ATR_inact / (kkm10 + ATR_inact) - Kcc2e * ATR_act * CC_act / (kkm10 + CC_act)
     dATM_act_dt = Kd2t * D * ATM_inact / (Km1 + ATM_inact) - Kti2t * ATM_act / (Km1 + ATM_act)
     
     CC_act = CC_act + dt * dCC_act_dt

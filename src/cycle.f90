@@ -54,6 +54,7 @@ if (cp%phase == G1_phase) then
         if (use_G1_stop) then
             ! At start of CP, need to compute CP delay
             call get_CP_delay(cp)
+            if (kcell_now <= 10) write(*,'(a,i6,f8.1)') 'G1 CP_delay: ', kcell_now,cp%CP_delay
             cp%phase = G1_checkpoint
             cp%progress = 0
 !            write(*,'(a,i6)') 'G1 -> checkpoint: ',kcell_now
@@ -115,7 +116,11 @@ elseif (cp%phase == M_phase) then
     ! We never get here - in grower() %phase is changed to dividing
     ! do nothing - in new_growcells the phase is immediately changed to cp%dividing, and the mitosis timer starts
 elseif (cp%phase == G1_checkpoint) then
-    cp%progress = cp%progress + dt/cp%CP_delay
+    if (cp%CP_delay > 0) then
+        cp%progress = cp%progress + dt/cp%CP_delay
+    else
+        cp%progress = 1
+    endif
     if (cp%progress >= 1) then
         cp%phase = S_phase
         cp%progress = 0
