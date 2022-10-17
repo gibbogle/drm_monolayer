@@ -57,7 +57,7 @@ real(8) :: MDRfid
 logical :: use_phase_dependent_CP_parameters
 real(8) :: K_ATM(3,4) ! = [0.076, 0.3, 1.0, 1.0]    ! (1) and (2) are the parameters of kinase kinetics, (3) and (4) are CP slowdown parameters
 real(8) :: K_ATR(3,4) ! = [0.005, 0.3, 1.0, 1.0]
-real(8) :: Ztime = 2    ! hours
+real(8) :: Ztime = 0    ! hours
 
 ! DNA-PK inhibition parameters
 real(8) :: Chalf    ! inhibitor concentration that halves repair rate 
@@ -107,7 +107,7 @@ real(8) :: control_ave(4)   ! now set equal to ccp%f_G1, ...
 logical :: normalise, M_only
 
 ! G1 checkpoint
-logical :: use_G1_CP_factor = .true.
+logical :: use_G1_CP_factor = .false.
 real(8) :: G1_CP_factor, G1_CP_time
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHRsimple, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
@@ -532,10 +532,14 @@ else
     r = K_ATM(iph,1)*ATM_DSB   ! rate of production of pATM
 endif
 t = (tnow - t_irradiation)/3600
-if (t > Ztime) then
-    fz = 0
-else
-    fz = 1 - t/Ztime
+if (Ztime > 0) then
+    if (t > Ztime) then
+        fz = 0
+    else
+        fz = 1 - t/Ztime
+    endif
+else    ! no reduction in pATM production
+    fz = 1
 endif
 r = fz*r
 kdecay = max(1.0e-8,K_ATM(iph,2))  ! decay rate constant
