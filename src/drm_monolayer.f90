@@ -1564,7 +1564,7 @@ do kevent = 1,Nevents
 			radiation_dose = E%dose
 			write(logmsg,'(a,f8.0,f8.3)') 'RADIATION_EVENT: time, dose: ',t_simulation,E%dose
 			call logger(logmsg)
-            is_radiation = .true.
+            is_radiation = (radiation_dose > 0) !.true. to cover the case of dose = 0 (control)
             is_event = .true.
 		elseif (E%etype == MEDIUM_EVENT) then
 			write(logmsg,'(a,f8.0,f8.3,2f8.4)') 'MEDIUM_EVENT: time, volume, O2medium: ',t_simulation,E%volume,E%O2medium

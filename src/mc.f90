@@ -89,7 +89,7 @@ real(8) :: totPmit, totPaber, tottotDSB, totNlethal
 
 real(8) :: tCPdelay, tATMdelay, tATRdelay
 logical :: use_addATMATRtimes = .false.
-logical :: use_G1_stop = .false.
+logical :: use_G1_stop = .true.
 logical :: use_S_stop = .false.
 logical :: use_G2_stop = .false.
 real(8) :: totG1delay, totSdelay, totG2delay
@@ -107,7 +107,7 @@ real(8) :: control_ave(4)   ! now set equal to ccp%f_G1, ...
 logical :: normalise, M_only
 
 ! G1 checkpoint
-logical :: use_G1_CP_factor = .false.
+logical :: use_G1_CP_factor = .true.
 real(8) :: G1_CP_factor, G1_CP_time
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHRsimple, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
@@ -321,7 +321,7 @@ nG1delay = 0
 nSdelay = 0
 nG2delay = 0
 
-G1_CP_factor = 0.0
+G1_CP_factor = 0.5
 
 ! Test changes to repRate(HR)
 !write(nflog,*) '!!!!!!!!!!!!!!!!!!!! changing repRate(HR) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
@@ -773,7 +773,7 @@ type(cell_type), pointer :: cp
 
 if (cp%phase == G1_phase) then
     cp%CP_delay = G1_checkpoint_time(cp)
-!    write(*,'(a,i6,f8.3)') 'G1 CP_delay: ',kcell_now,cp%CP_delay/3600
+!    if (kcell_now <= 100) write(*,'(a,i6,f8.3)') 'G1 CP_delay: ',kcell_now,cp%CP_delay/3600
 elseif (cp%phase == G2_phase .and. .not.use_Jaiswal) then
     cp%CP_delay = G2_checkpoint_time(cp)
 !    write(*,'(a,i6,f8.3)') 'G2 CP_delay: ',kcell_now,cp%CP_delay/3600
@@ -797,7 +797,7 @@ real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, T_G2, kkm10
 integer :: it, Nt
 type(cycle_parameters_type),pointer :: ccp
 
-if (vary_km10) then
+if (vary_km10 .and. .not. is_radiation) then
     ccp => cc_parameters(1)
     T_G2 = ccp%T_G2*cp%fg(3)/3600
     kkm10 = 5 + 3*(T_G2 - 2.5)
