@@ -107,7 +107,7 @@ real(8) :: control_ave(4)   ! now set equal to ccp%f_G1, ...
 logical :: normalise, M_only
 
 ! G1 checkpoint
-logical :: use_G1_CP_factor = .false.
+logical :: use_G1_CP_factor = .true.
 real(8) :: G1_CP_factor = 0.5
 real(8) :: G1_CP_time
 
