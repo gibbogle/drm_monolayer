@@ -107,8 +107,9 @@ real(8) :: control_ave(4)   ! now set equal to ccp%f_G1, ...
 logical :: normalise, M_only
 
 ! G1 checkpoint
-logical :: use_G1_CP_factor = .false.
-real(8) :: G1_CP_factor, G1_CP_time
+logical :: use_G1_CP_factor = .true.
+real(8) :: G1_CP_factor = 0.5
+real(8) :: G1_CP_time
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHRsimple, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
@@ -320,8 +321,6 @@ totG2delay = 0
 nG1delay = 0
 nSdelay = 0
 nG2delay = 0
-
-G1_CP_factor = 0.5
 
 ! Test changes to repRate(HR)
 !write(nflog,*) '!!!!!!!!!!!!!!!!!!!! changing repRate(HR) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
