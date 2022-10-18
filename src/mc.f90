@@ -57,7 +57,8 @@ real(8) :: MDRfid
 logical :: use_phase_dependent_CP_parameters
 real(8) :: K_ATM(3,4) ! = [0.076, 0.3, 1.0, 1.0]    ! (1) and (2) are the parameters of kinase kinetics, (3) and (4) are CP slowdown parameters
 real(8) :: K_ATR(3,4) ! = [0.005, 0.3, 1.0, 1.0]
-real(8) :: Ztime = 2    ! hours
+real(8) :: Ztime = 0    ! hours
+logical :: use_exp_slowdown = .true.
 
 ! DNA-PK inhibition parameters
 real(8) :: Chalf    ! inhibitor concentration that halves repair rate 
@@ -107,8 +108,8 @@ real(8) :: control_ave(4)   ! now set equal to ccp%f_G1, ...
 logical :: normalise, M_only
 
 ! G1 checkpoint
-logical :: use_G1_CP_factor = .true.
-real(8) :: G1_CP_factor = 0.5
+logical :: use_G1_CP_factor = .false.
+real(8) :: G1_CP_factor = 0.1
 real(8) :: G1_CP_time
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHRsimple, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
@@ -709,7 +710,11 @@ endif
 pATM = cp%pATM
 k3 = K_ATM(iph,3)
 k4 = K_ATM(iph,4)
-fATM = max(0.01,1 - k3*pATM/(k4 + pATM))
+if (use_exp_slowdown) then
+    fATM = exp(-k4*pATM)
+else
+    fATM = max(0.01,1 - k3*pATM/(k4 + pATM))
+endif
 !write(*,'(a,i3,4f8.4)') 'fATM: ',iph,k3,k4,pATM,fATM
 !if (iph > G1_phase) then
 !    pATR = cp%pATR
