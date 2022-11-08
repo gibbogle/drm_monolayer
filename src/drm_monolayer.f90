@@ -1016,6 +1016,7 @@ do itime = 1,ntimes
 		if (use_PEST .and. nphase_hours > 0) then
 		    phase_hour(1:nphase_hours) = t + phase_hour(1:nphase_hours)
 		endif
+		write(nflog,'(a,i3,a,f6.1)') 'Radiation event: ', kevent,'  dose: ',dose
 	endif
 enddo
 Nevents = kevent
@@ -1562,7 +1563,7 @@ do kevent = 1,Nevents
 		write(nflog,'(a,i3,2f8.0,i3,2f10.4)') 'Event: ',E%etype,t_simulation,E%time,E%ichemo,E%volume,E%conc
 		if (E%etype == RADIATION_EVENT) then
 			radiation_dose = E%dose
-			write(logmsg,'(a,f8.0,f8.3)') 'RADIATION_EVENT: time, dose: ',t_simulation,E%dose
+			write(logmsg,'(a,i3,f8.0,f8.3)') 'RADIATION_EVENT: kevent, time, dose: ',kevent,t_simulation,E%dose
 			call logger(logmsg)
             is_radiation = (radiation_dose > 0) !.true. to cover the case of dose = 0 (control)
             is_event = .true.
@@ -2057,7 +2058,7 @@ if (dbug .or. mod(istep,nthour) == 0) then
     enddo
     nphase(hour,:) = nphaseh
 	ntphase = nphaseh + ntphase
-	write(logmsg,'(a,i6,i4,a,i8,a,i8,a,i8,4f8.3,a,e12.3)') 'istep, hour: ',istep,hour,' Nlive: ',Ncells,' Nviable: ',sum(Nviable),' NPsurvive: ',NPsurvive    !, &
+	write(logmsg,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells,' Nviable: ',sum(Nviable),' NPsurvive: ',NPsurvive,' Napop: ',Napop    !, &
 	call logger(logmsg)
 !	write(nfphase,'(a,2f8.3)') 'S-phase k1, k2: ', K_ATR(2,1),K_ATR(2,2)
 !	if (output_DNA_rate) then

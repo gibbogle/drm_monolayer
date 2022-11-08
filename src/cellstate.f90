@@ -690,12 +690,20 @@ do kcell = 1,nlist0
 !            if (kcell == 20) write(nflog,*) 'new_grower: divide cell: ',kcell
 !            write(nflog,'(a,i6,f6.3)') 'Exit M_phase: kcell, time: ',kcell_now,t_simulation/3600
 !         write(nflog,*)
-			divide = .true.
+!			divide = .true.
 			! Post-IR, and this cell has not previously had %Psurvive computed
 			! i.e. this is first mitosis post-IR
-			if (is_radiation .and. cp%Psurvive < 0) then
-			    ! compute survival probability (ala McMahon, mcradio)
-			    call survivalProbability(cp)
+			
+! if use_SF (i.e. we are computing SF_ave) then only cells not satisfying (is_radiation .and. cp%Psurvive < 0) need to divide
+			if (use_SF) then
+			    if (is_radiation .and. cp%Psurvive < 0) then
+			        ! compute survival probability (ala McMahon, mcradio)
+			        call survivalProbability(cp)
+			    else
+			        divide = .true.
+			    endif
+			else
+			    divide = .true.
 			endif
 		endif
 	endif
@@ -912,38 +920,16 @@ if (colony_simulation) then
     cp1 => ccell_list(kcell1)
 else
 	cp1 => cell_list(kcell1)
+!    if (kcell1 == 9) then
+!        write(*,'(a,2i6,e12.3)') 'divider: ',istep,kcell1, cell_list(kcell1)%Psurvive
+!    endif
+!	if (cp1%Psurvive >= 0) then
+!	    write(*,'(a,2i6,e12.3)') 'divider: kcell1, Psurvive: ',istep,kcell1,cp1%Psurvive
+!	    stop
+!	endif
 endif
 !stop
-if (ngaps > 0) then
-    kcell2 = gaplist(ngaps)
-    ngaps = ngaps - 1
-else
-	nlist = nlist + 1
-	if (nlist > MAX_NLIST) then
-		ok = .false.
-		call logger('Error: Maximum number of cells MAX_NLIST has been exceeded.  Increase and rebuild.')
-		return
-	endif
-	kcell2 = nlist
-endif
-if (colony_simulation .and. kcell2 > nColonyMax) then
-	ok = .false.
-	call logger('Error: Maximum number of colony cells nColonyMax has been exceeded.  Increase and rebuild.')
-	return
-endif
-!write(nflog,'(a,2i6,2f8.2,f8.1)') &
-!'Cell division: ',kcell1,kcell2,cp1%divide_time/3600,(tnow-cp1%t_divide_last)/3600,cp1%divide_time-(tnow-cp1%t_divide_last)
-    
-ncells = ncells + 1
-ityp = cp1%celltype
-ccp => cc_parameters(ityp)
-ncells_type(ityp) = ncells_type(ityp) + 1
-ncells_mphase = ncells_mphase - 1
-if (colony_simulation) then
-    cp2 => ccell_list(kcell2)
-else
-	cp2 => cell_list(kcell2)
-endif
+
 
 cp1%state = ALIVE
 cp1%generation = cp1%generation + 1
@@ -1024,7 +1010,39 @@ cp1%CC_act = CC_act0
 cp1%ATR_act = 0
 cp1%ATM_act = 0
 
+if (is_radiation .and. use_SF) return   ! in this case there is no need to actually have the cell divide
+
 ! Second cell
+if (ngaps > 0) then
+    kcell2 = gaplist(ngaps)
+    ngaps = ngaps - 1
+else
+	nlist = nlist + 1
+	if (nlist > MAX_NLIST) then
+		ok = .false.
+		call logger('Error: Maximum number of cells MAX_NLIST has been exceeded.  Increase and rebuild.')
+		return
+	endif
+	kcell2 = nlist
+endif
+if (colony_simulation .and. kcell2 > nColonyMax) then
+	ok = .false.
+	call logger('Error: Maximum number of colony cells nColonyMax has been exceeded.  Increase and rebuild.')
+	return
+endif
+!write(nflog,'(a,2i6,2f8.2,f8.1)') &
+!'Cell division: ',kcell1,kcell2,cp1%divide_time/3600,(tnow-cp1%t_divide_last)/3600,cp1%divide_time-(tnow-cp1%t_divide_last)
+    
+ncells = ncells + 1
+ityp = cp1%celltype
+ccp => cc_parameters(ityp)
+ncells_type(ityp) = ncells_type(ityp) + 1
+ncells_mphase = ncells_mphase - 1
+if (colony_simulation) then
+    cp2 => ccell_list(kcell2)
+else
+	cp2 => cell_list(kcell2)
+endif
 cp2 = cp1
 !cp2%ATP_tag = .false.
 !cp2%GLN_tag = .false.

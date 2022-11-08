@@ -109,7 +109,7 @@ logical :: normalise, M_only
 
 ! G1 checkpoint
 logical :: use_G1_CP_factor = .false.
-real(8) :: G1_CP_factor = 0.1
+real(8) :: G1_CP_factor = 0.0
 real(8) :: G1_CP_time
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHRsimple, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
