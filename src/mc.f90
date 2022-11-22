@@ -9,22 +9,22 @@ implicit none
 ! 2 = NHEJc slow pre-replication (complex)
 ! 3 = HRc slow post-replication (complex)
 ! 4 = HRs slow post-replication (simple)
-! 5 = MDR very slow post-replication (complex)
+! 5 = TMEJ very slow post-replication (complex)
 
 !! 3 = NHEJ fast post-replication (simple) --> NHEJs
 !! 4 = HR slow post-replication (complex)
 !! 5 = HR slow post-replication (simple)
 !! 6 = MMEJ very slow post-replication (complex)
 
-! There are 4 pathways:
+! There are 5 pathways:
 integer, parameter :: NHEJs = 1
 integer, parameter :: NHEJc = 2
 integer, parameter :: HR = 3
-integer, parameter :: MDR = 4   ! this is really alt-EJ
+integer, parameter :: TMEJ = 4   ! this is really alt-EJ (was MDR)
 integer, parameter :: SSA = 5
 !integer, parameter :: HRc = 3
 !integer, parameter :: HRs = 4
-!integer, parameter :: MDR = 5
+!integer, parameter :: TMEJ = 5
 
 ! Note: McMahon parameter values are from MEDRAS code, specifically medrascell.py
 !       ------------------------
@@ -36,7 +36,7 @@ character*(2) :: phaseName(4) = ['G1','S ','G2','M ']
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.008462]   ! by pathway
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.2604, 0.008462]   ! by pathway  with HR simple
 !real(8) :: repRate(NP) = [2.081, 0.2604, 0.2604, 0.2604, 0.008462]   ! by pathway  with HR simple
-real(8) :: repRate(NP) = [2.081, 0.2604, 0.2604, 0.008462, 0.0]   ! by pathway (MDR was 0.008462) (McMahon: fastRepair, slowRepair, verySlowRepair)
+real(8) :: repRate(NP) = [2.081, 0.2604, 0.2604, 0.008462, 0.0]   ! by pathway (TMEJ was 0.008462) (McMahon: fastRepair, slowRepair, verySlowRepair)
 !real(8) :: misrepRate(8) = [0.18875,0.18875,0.18247,0.18247,0.14264,0.14264,0.18875,0.18875]        ! by phase, Nlethal = 0.5*misrepRate*Nmis 
 !real(8) :: misrepRate(8) = [0.18875,0.0,0.18247,0.0,0.14264,0.0,0.18875,0.0]        ! by phase, Nlethal = 0.5*misrepRate*Nmis 
 !real(8) :: fidRate(NP)  = [0.98537, 0.98537, 0.98537, 1.0, 0.4393]  ! by pathway
@@ -50,8 +50,6 @@ real(8) :: mitRate  = 0.0141    ! (McMahon: mitoticRate)
 real(8) :: Msurvival = 0.05
 real(8) :: Kaber = 1.0          ! now fixed, McMahon has 1.  
 real(8) :: Klethal = 0.4
-real(8) :: MDRrep
-real(8) :: MDRfid
 !real(8) :: K_ATM(4) = [1.0, 0.076, 0.3, 10.6]   ! Now fix K_ATM(1), K_ATR(1) at 1.0
 !real(8) :: K_ATR(4) = [1.0, 0.005, 0.3, 3.4]
 logical :: use_phase_dependent_CP_parameters
@@ -70,11 +68,11 @@ real(8) :: Preass   ! rate of reassignment to pathway 4 (prob of reass/hour)
 
 ! SSA parameters
 logical :: use_SSA = .true.
-real(8) :: SSA_fraction = 0.1
-real(8) :: SSA_rep_fraction = 1.0
-real(8) :: SSA_fid_fraction = 0.5
-logical :: read_SSA_parameters = .false.
-logical :: alt_EJ_suppressed = .false.
+real(8) :: SSAfrac = 0.1
+!real(8) :: SSA_rep_fraction = 1.0
+!real(8) :: SSA_fid_fraction = 0.5
+!logical :: read_SSA_parameters = .false.
+!logical :: alt_EJ_suppressed = .false.
 
 ! Jaiswal formulation (26/09/22)
 real(8) :: Kcc2a, Kcc2e, Kd2e, Kd2t, Ke2cc, Km1, Km2, Km10, Kt2cc, Kti2t, Km10t
@@ -117,11 +115,13 @@ real(8) :: G1_CP_time
 contains
 
 !--------------------------------------------------------------------------
-! Note: decision about PEST output is based on iphase_hours.
+! Note: decision about PEST output is based on iphase_hours. 
 !--------------------------------------------------------------------------
 subroutine ReadMcParameters(nfin)
 integer :: nfin
 integer :: iuse_baserate, iuse_exp, iphase_hours, icase, nCPparams, iph, j
+real(8) :: TMEJrep, TMEJfid, SSArep, SSAfid
+
 write(*,*) 'ReadMcParameters:'
 read(nfin,*) iphase_hours
 write(*,*) 'iphase_hours: ',iphase_hours
@@ -130,26 +130,26 @@ write(*,*) 'baseRate: ',baseRate
 read(nfin,*) mitRate
 read(nfin,*) Msurvival
 read(nfin,*) Klethal
-read(nfin,*) nCPparams
-if (nCPparams == 1) then
-    iph = 1
-    use_phase_dependent_CP_parameters = .false.
-    read(nfin,*) K_ATM(iph,1)
-    read(nfin,*) K_ATM(iph,2)
-    read(nfin,*) K_ATM(iph,3)
-    read(nfin,*) K_ATM(iph,4)
-    read(nfin,*) K_ATR(iph,1)
-    read(nfin,*) K_ATR(iph,2)
-    read(nfin,*) K_ATR(iph,3)
-    read(nfin,*) K_ATR(iph,4)
-    do iph = 2,3        ! Note: doing this actually makes it unnecessary to set iph = 1 when .not. use_phase_dependent_CP_parameters
-        do j = 1,4
-            K_ATM(iph,j) = K_ATM(1,j)
-            K_ATR(iph,j) = K_ATR(1,j)
-        enddo
-    enddo
-elseif (nCPparams == 3) then
-    use_phase_dependent_CP_parameters = .true.
+!read(nfin,*) nCPparams
+!if (nCPparams == 1) then
+!    iph = 1
+!    use_phase_dependent_CP_parameters = .false.
+!    read(nfin,*) K_ATM(iph,1)
+!    read(nfin,*) K_ATM(iph,2)
+!    read(nfin,*) K_ATM(iph,3)
+!    read(nfin,*) K_ATM(iph,4)
+!    read(nfin,*) K_ATR(iph,1)
+!    read(nfin,*) K_ATR(iph,2)
+!    read(nfin,*) K_ATR(iph,3)
+!    read(nfin,*) K_ATR(iph,4)
+!    do iph = 2,3        ! Note: doing this actually makes it unnecessary to set iph = 1 when .not. use_phase_dependent_CP_parameters
+!        do j = 1,4
+!            K_ATM(iph,j) = K_ATM(1,j)
+!            K_ATR(iph,j) = K_ATR(1,j)
+!        enddo
+!    enddo
+!elseif (nCPparams == 3) then
+    use_phase_dependent_CP_parameters = .true.      ! now always true
     write(nflog,*) 'K_ATM'
     do j = 1,4
         do iph = 1,3
@@ -166,28 +166,29 @@ elseif (nCPparams == 3) then
             write(nflog,*) j,iph,K_ATR(iph,j)
         enddo
     enddo
-    ! Hard code katm1s = katm1g2
-    if (FIX_katm1s_eq_katm1g2) then
-        K_ATM(2,1) = K_ATM(3,1)
-    endif    
-else
-    write(*,*) 'ERROR: wrong nCPparams: ',nCPparams
-    stop
-endif
+!else
+!    write(*,*) 'ERROR: wrong nCPparams: ',nCPparams
+!    stop
+!endif
 
 read(nfin,*) Pcomplex
 read(nfin,*) PHRsimple
 read(nfin,*) Chalf
 read(nfin,*) Preass
-read(nfin,*) MDRrep
-read(nfin,*) MDRfid
+read(nfin,*) TMEJrep
+read(nfin,*) TMEJfid
+read(nfin,*) SSArep
+read(nfin,*) SSAfid
+read(nfin,*) SSAfrac
 !if (use_SSA .and. read_SSA_parameters) then
-!    read(nfin,*) SSA_fraction
+!    read(nfin,*) SSAfrac
 !    read(nfin,*) SSA_rep_fraction
 !    read(nfin,*) SSA_fid_fraction
 !endif
-repRate(4) = MDRrep
-fidRate(4) = MDRfid
+repRate(4) = TMEJrep
+fidRate(4) = TMEJfid
+repRate(5) = SSArep
+fidRate(5) = SSAfid
 
 if (use_Jaiswal) then
     read(nfin,*) Kcc2a
@@ -210,13 +211,13 @@ if (use_Jaiswal) then
     Km2 = Km1
 endif
 
-if (use_SSA) then
-    repRate(SSA) = SSA_rep_fraction*repRate(MDR)
-    fidRate(SSA) = SSA_fid_fraction*fidRate(MDR)
-    if (alt_EJ_suppressed) then
-        SSA_fraction = 1.0
-    endif
-endif
+!if (use_SSA) then
+!    repRate(SSA) = SSA_rep_fraction*repRate(TMEJ)
+!    fidRate(SSA) = SSA_fid_fraction*fidRate(TMEJ)
+!    if (alt_EJ_suppressed) then
+!        SSAfrac = 1.0
+!    endif
+!endif
 
 ATMsum = 0  ! to investigate ATM dependence on parameters
 ATRsum = 0  ! to investigate ATR dependence on parameters
@@ -874,7 +875,6 @@ end subroutine
 subroutine pathwayRepair(path, dth, N0, N)
 integer :: path
 real(8) :: dth, N0, N
-!real(8) :: Kreduction = 1.0
 
 if (dth >= 0) then
     N = N0*exp(-repRate(path)*dth*repRateFactor(path))  !!!! TESTING reducing repair rate
@@ -939,7 +939,7 @@ Cdrug = cp%Cin(DRUG_A)
 !    do k = 1,NP-1
 !        Nreassign = DSB(k)*inhibrate*dt
 !        DSB(k) = DSB(k) - Nreassign
-!        DSB(MDR) = DSB(MDR) + Nreassign
+!        DSB(TMEJ) = DSB(TMEJ) + Nreassign
 !    enddo
 !endif
 ! Now the effect of inhibition is to reduce the repair rate.
@@ -954,10 +954,10 @@ if (Preass > 0) then
         Nreassign = DSB(k)*Preass*dth
         DSB(k) = DSB(k) - Nreassign
         if (use_SSA) then
-            DSB(MDR) = DSB(MDR) + Nreassign*(1 - SSA_fraction)
-            DSB(SSA) = DSB(SSA) + Nreassign*SSA_fraction
+            DSB(TMEJ) = DSB(TMEJ) + Nreassign*(1 - SSAfrac)
+            DSB(SSA) = DSB(SSA) + Nreassign*SSAfrac
         else
-            DSB(MDR) = DSB(MDR) + Nreassign
+            DSB(TMEJ) = DSB(TMEJ) + Nreassign
         endif
     enddo
 endif

@@ -59,7 +59,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
  "DLL0.00",
  "DLL version number."},
 
-{"INITIAL_COUNT", 2000, 0, 0,
+{"INITIAL_COUNT", 10000, 0, 0,
 "Initial number of tumour cells",
 "Initial number of tumour cells"},
 
@@ -94,7 +94,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 "Randomise initial cell volumes",
 "The volumes of the initial cell population are randomised."},
 
-{"NDAYS", 4.0, 0.0, 30.0,
+{"NDAYS", 8.0, 0.0, 30.0,
 "Number of days",
 "Length of the simulation.\n\
 [days]"},
@@ -123,10 +123,6 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 {"FULLY_MIXED", 0, 0, 1,
 "Medium is fully mixed?",
 "The medium is fully mixed"},
-
-//{"UNSTIRRED_LAYER", 0.01, 0, 0,
-//"Unstirred layer width",
-//"Thickness of the unstirred layer around the spheroid (cm)."},
 
 {"VDIVIDE0", 1.6, 0, 0,
 "Nominal divide volume",
@@ -179,7 +175,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 "Second RNG seed",
 "The random number generator is seeded by a pair of integers.  Changing the seed generates a different Monte Carlo realization."},
 
-{"NCPU", 4, 1, 8,
+{"NCPU", 1, 1, 8,
 "Number of CPUs",
 "Number of CPUs to use for the simulation."},
 
@@ -303,125 +299,6 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
  "Hill function N",
  "Glucose uptake rate Hill function N"},
 
-//{"USE_LACTATE", 1, 0, 1,
-//"Use Lactate?",
-//"Lactate is simulated"},
-
-//    {"LACTATE_GROWTH", 1, 0, 1,
-//    "Lactate growth?",
-//    "The rate of growth of a cell is the maximum rate multiplied by the fractional rates of metabolism of both O2 and glucose, or something"},
-
-//    {"LACTATE_DIFF_COEF", 3.0e-7, 0, 0,
-//     "Spheroid diffusion coeff",
-//     "LACTATE diffusion coefficient"},
-
-//    {"LACTATE_MEDIUM_DIFF", 6.0e-6, 0, 0,
-//     "Medium diffusion coeff",
-//     "Constituent diffusion coefficient in the medium"},
-
-//    {"LACTATE_CELL_DIFF_IN", 400, 0, 0,
-//     "Membrane diff constant",
-//     "Cell membrane diffusion coefficient Kin"},
-
-//    {"LACTATE_CELL_DIFF_OUT", 400, 0, 0,
-//     "Membrane diff constant",
-//     "Cell membrane diffusion coefficient Kout"},
-
-//    {"LACTATE_BDRY_CONC", 0.4, 0, 0,
-//     "Boundary concentration",
-//     "LACTATE boundary concentration"},
-
-//    {"LACTATE_CONSUMPTION", 3.8e-17, 0, 0,
-//     "Max consumption rate",
-//     "LACTATE consumption rate"},
-
-//    {"LACTATE_MM_KM", 20, 0, 0,
-//     "Michaelis-Menten Km",
-//     "Michaelis-Menten Km (uM)"},
-
-//    {"LACTATE_HILL_N", 1, 1, 2,
-//     "Hill function N",
-//     "Lactate uptake rate Hill function N"},
-
-//{"USE_GLUTAMINE", 1, 0, 1,
-//"Use Glutamine?",
-//"Glutamine is simulated"},
-
-//{"GLUTAMINE_DIFF_COEF", 6.0e-7, 0, 0,
-// "Spheroid diffusion coeff",
-// "Glutamine diffusion coefficient"},
-
-//{"GLUTAMINE_MEDIUM_DIFF", 6.0e-6, 0, 0,
-// "Medium diffusion coeff",
-// "Constituent diffusion coefficient in the medium"},
-
-//{"GLUTAMINE_CELL_DIFF_IN", 100, 0, 0,
-// "Membrane diff constant",
-// "Cell membrane diffusion coefficient Kin"},
-
-//{"GLUTAMINE_CELL_DIFF_OUT", 100, 0, 0,
-// "Membrane diff constant",
-// "Cell membrane diffusion coefficient Kout"},
-
-//{"GLUTAMINE_BDRY_CONC", 1.0, 0, 0,
-// "Boundary concentration",
-// "Glutamine boundary concentration"},
-
-//{"GLUTAMINE_CONSTANT", 0, 0, 1,
-// "Constant concentration",
-// "Extracellular concentration to be held constant everywhere at the specified boundary value"},
-
-//{"GLUTAMINE_CONSUMPTION", 1.17e-16, 0, 0,
-// "Consumption rate",
-// "Glutamine consumption rate"},
-
-//{"GLUTAMINE_MM_KM", 30, 0, 0,
-// "Michaelis-Menten Km",
-// "Michaelis-Menten Km (uM)"},
-
-//{"GLUTAMINE_HILL_N", 2, 0, 2,
-// "Hill function N",
-// "Glutamine uptake rate Hill function N"},
-
-//    {"USE_OTHER", 1, 0, 1,
-//    "Use Othernutrient?",
-//    "Other nutrient is simulated"},
-
-//    {"OTHER_DIFF_COEF", 6.0e-7, 0, 0,
-//     "Spheroid diffusion coeff",
-//     "Other nutrient diffusion coefficient"},
-
-//    {"OTHER_MEDIUM_DIFF", 6.0e-6, 0, 0,
-//     "Medium diffusion coeff",
-//     "Constituent diffusion coefficient in the medium"},
-
-//    {"OTHER_CELL_DIFF_IN", 100, 0, 0,
-//     "Membrane diff constant",
-//     "Cell membrane diffusion coefficient Kin"},
-
-//    {"OTHER_CELL_DIFF_OUT", 100, 0, 0,
-//     "Membrane diff constant",
-//     "Cell membrane diffusion coefficient Kout"},
-
-//    {"OTHER_BDRY_CONC", 2.6, 0, 0,
-//     "Boundary concentration",
-//     "Other nutrient boundary concentration"},
-
-//    {"OTHER_CONSTANT", 0, 0, 1,
-//     "Constant concentration",
-//     "Extracellular concentration to be held constant everywhere at the specified boundary value"},
-
-//    {"OTHER_CONSUMPTION", 1.67e-16, 0, 0,
-//     "Consumption rate",
-//     "Other nutrient consumption rate"},
-
-//    {"OTHER_MM_KM", 100, 0, 0,
-//     "Michaelis-Menten Km",
-//     "Michaelis-Menten Km (uM)"},
-
-//    {"OTHER_HILL_N", 1, 0, 2,
-//     "Hill function N",
-//     "Other nutrient uptake rate Hill function N"},
 
 //==========================
 // Radiotherapy parameters
@@ -447,18 +324,6 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 "Km for radiosensitivity",
 "Oxygen concentration for half maximal radiosensitivity relative to hypoxic cell exposure"},
 
-//{"RADIATION_DEATH_PROB_1", 1.0, 0, 0,
-//"Death prob",
-//"Probability of death at mitosis for a cell tagged for damage by radiation"},
-
-//{"RADIATION_GROWTH_DELAY_FACTOR_1", 0.0, 0, 0,
-//"Growth delay factor",
-//"For a damaged cell, cell cycle is delayed for a number of hours given by this factor x radiation dose"},
-
-//{"RADIATION_GROWTH_DELAY_N_1", 0, 0, 0,
-//"Growth delay cycles",
-//"For a damaged cell, cell cycle delay persists for a number of cell cycles"},
-
 {"RADIATION_ALPHA_H_2", 0.0473, 0, 0,
 "Alpha (hypoxia)",
 "alpha for irradiation of cells under anoxia (zero oxygen)"},
@@ -479,22 +344,6 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 "Km for radiosensitivity",
 "Oxygen concentration for half maximal radiosensitivity relative to hypoxic cell exposure"},
 
-//{"RADIATION_DEATH_PROB_2", 1.0, 0, 0,
-//"Death prob",
-//"Probability of death at mitosis for a cell tagged for damage by radiation"},
-
-//{"RADIATION_GROWTH_DELAY_FACTOR_2", 0.0, 0, 0,
-//"Growth delay factor",
-//"For a damaged cell, cell cycle is delayed for a number of hours given by this factor x radiation dose"},
-
-//{"RADIATION_GROWTH_DELAY_N_2", 0, 0, 0,
-//"Growth delay cycles",
-//"For a damaged cell, cell cycle delay persists for a number of cell cycles"},
-
-//{"RADIATION_GROWTH_DELAY_ALL", 0, 0, 0,
-//"Delay growth of all cells",
-//"Cell cycle delay is also applied to cells that are not fated to die"},
-
     {"USE_CELL_CYCLE", 1,0,1,
      "Use cell cycle with G1, S, G2, M phases",
      "Cell cycle parameters determine the time spent in each phase.\n\
@@ -504,34 +353,21 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
      "Synchronise cell cycles?",
      "Synchronise initial cell phases to start of M phase"},
 
-     {"T_G1_1", 5.03, 0, 0,
-     "G1 phase base time (h)",
-     "Deterministic component of time spent in phase G1"},
+     {"F_G1_1", 0.36, 0, 0,
+     "G1 phase base fraction",
+     "Fraction of cycle spent in phase G1"},
 
-     {"T_S_1", 7.69, 0, 0,
-     "S phase base time (h)",
-     "Time spent in phase S"},
+     {"F_S_1", 0.49, 0, 0,
+     "S phase base fraction",
+     "Fraction of cycle spent in phase S"},
 
-     {"T_G2_1", 5.48, 0, 0,
-     "G2 phase base time (h)",
-     "Deterministic component of time spent in phase G2"},
+     {"F_G2_1", 0.13, 0, 0,
+     "G2 phase base fraction",
+     "Fraction of cycle spent in phase G2"},
 
-     {"T_M_1", 0.5, 0, 0,
-     "M phase base time (h)",
-     "Time spent in phase M"},
-
-//     {"G1_MEAN_DELAY_1", 1.5, 0, 0,
-//     "G1 mean delay (h)",
-//     "Mean of the random component of time spent in phase G1 (exponentially distributed)"},
-
-//     {"S_MEAN_DELAY_1", 1.0, 0, 0,
-//     "S mean delay (h)",
-//     "Mean of the random component of time spent in phase S (exponentially distributed)"},
-
-//     {"G2_DELAY_FACTOR_1", 1, 0, 0,
-//     "G2 delay factor (h/Gy)",
-//     "G2/M checkpoint delay on first mitosis = factor*dose"},
-//     "Mean of the random component of time spent in phase G2 (exponentially distributed)"},
+     {"F_M_1", 0.02, 0, 0,
+     "M phase base fraction",
+     "Fraction of cycle spent in phase M"},
 
      {"APOPTOSIS_MEDIAN_1", 4, 0, 0,
      "Apoptosis median (hr)",
@@ -541,93 +377,22 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
      "Apoptosis shape",
      "Shape parameter for log-normal apoptosis delay variate"},
 
-//     {"ARREST_THRESHOLD_1", 0.1, 0, 0,
-//     "Arrest threshold",
-//     "Threshold level of fraction of maximum growth rate that causes arrest in S phase"},
+      {"F_G1_2", 0.36, 0, 0,
+      "G1 phase base fraction)",
+      "Fraction of cycle spent in phase G1"},
 
-//     {"RMR_ETA_PL_1", 5, 0, 0,
-//     "PL lesion creation rate",
-//     "Coefficient of rate of creation of potentially lethal lesions: eta_PL"},
+      {"F_S_2", 0.49, 0, 0,
+      "S phase base fraction",
+      "Fraction of cycle spent in phase S"},
 
-//     {"RMR_ETA_IRL_1", 0.05, 0, 0,
-//     "IRL creation rate",
-//     "Coefficient of rate of creation of irrepairable lesions: eta_IRL"},
+      {"F_G2_2",0.13, 0, 0,
+      "G2 phase base fraction",
+      "Fraction of cycle spent in phase G2"},
 
-//     {"RMR_HRR_REP_MAX_1", 1.0, 0, 0,
-//     "Max HRR PL lesion repair rate",
-//     "Maximum rate of repair of potentially lethal lesions: HRR_repair_max (Curtis's epsilon_PL)\n\
-//     The true repair rate varies linearly from 0 to HRR_repair_max over the S phase"},
+      {"F_M_2", 0.02, 0, 0,
+      "M phase base fraction",
+      "Fraction of cycle spent in phase M"},
 
-//     {"RMR_NHEJ_REP_1", 1.0, 0, 0,
-//     "NHEJ PL lesion repair rate",
-//     "NHEJ coefficient of rate of repair of potentially lethal lesions: NHEJ_repair"},
-
-//     {"RMR_NHEJ_KMIS_1", 0.0001, 0, 0,
-//     "NHEJ lesion misrepair rate",
-//     "Coefficient of rate of NHEJ misrepair of PL lesions to Ch1 and Ch2 lesions: NHEJ_misrepair"},
-
-//     {"RMR_DIM_KMIS_1", 0.0001, 0, 0,
-//     "DIM lesion misrepair rate",
-//      "Coefficient of rate of DIM misrepair of PL lesions to Ch1 and Ch2 lesions: DIM_misrepair"},
-
-//     {"RMR_F_CH1_1", 0.8, 0, 0,
-//     "Ch1 fraction of misrepair",
-//     "Fraction of misrepaired lesions that are Ch1: fraction_Ch1"},
-
-//     {"RMR_PSURVIVE1_1", 0.9, 0, 0,
-//     "Ch1 prob of mitosis survival",
-//     "Probability that a cell with one Ch1 lesion survives mitosis: psurvive_Ch1"},
-
-//     {"RMR_PSURVIVE2_1", 0.1, 0, 0,
-//     "Ch2 prob of mitosis survival",
-//     "Probability that a cell with one Ch2 lesion survives mitosis: psurvive_Ch2"},
-
-//     {"RMR_PSURVIVE_PL_1", 0.95, 0, 0,
-//     "PL prob of mitosis survival",
-//     "Probability that a cell with one PL or IRL lesion survives mitosis: psurvive_PL"},
-
-//     {"RMR_ATCP_1", 50, 0, 0,
-//     "TCP Hill a",
-//     "TCP, the maximum time spent in the checkpoint, is a Hill function of # of L1 lesions, n. TCP(n) = b.n/(a + n)"},
-
-//      {"RMR_BTCP_1", 25, 0, 0,
-//      "TCP Hill b",
-//      "TCP, the maximum time spent in the checkpoint, is a Hill function of # of L1 lesions, n. TCP(n) = b.n/(a + n)"},
-
-//     {"RMR_KCP_1", 0.13, 0, 0,
-//     "Checkpoint time limit factor",
-//     "Factor for computing maximum time spent in the checkpoint, as a function of # of L1 lesions: Kcp"},
-
-      {"T_G1_2", 6, 0, 0,
-      "G1 phase base time (h)",
-      "Deterministic component of time spent in phase G1"},
-
-      {"T_S_2", 8, 0, 0,
-      "S phase base time (h)",
-      "Time spent in phase S"},
-
-      {"T_G2_2", 1, 0, 0,
-      "G2 phase base time (h)",
-      "Deterministic component of time spent in phase G2"},
-
-      {"T_M_2", 0.5, 0, 0,
-      "M phase base time (h)",
-      "Time spent in phase M"},
-
-//      {"G1_MEAN_DELAY_2", 1.5, 0, 0,
-//      "G1 mean delay (h)",
-//      "Mean of the random component of time spent in phase G1 (exponentially distributed)"},
-
-//      {"S_MEAN_DELAY_2", 1.0, 0, 0,
-//      "S mean delay (h)",
-//      "Mean of the random component of time spent in phase S (exponentially distributed)"},
-
-//      {"G2_DELAY_FACTOR_2", 1, 0, 0,
-//      "G2 delay factor (h/Gy)",
-//      "G2/M checkpoint delay on first mitosis = factor*dose"},
-//      {"G2_MEAN_DELAY_2", 1, 0, 0,
-//      "G2 mean delay (h)",
-//      "Mean of the random component of time spent in phase G2 (exponentially distributed)"},
 
       {"APOPTOSIS_MEDIAN_2", 4, 0, 0,
       "Apoptosis median (hr)",
@@ -637,348 +402,199 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
       "Apoptosis shape",
       "Shape parameter for log-normal apoptosis delay variate"},
 
-     {"PHASE_HOURS", 24, 0, 0,
-     "Phase distn save time",
-     "Phase distn save time"},
+     {"PHASE_HOURS", 1, 0, 0,
+     "PEST run case",
+     "PEST run case"},
 
-     {"BASERATE", 0.000739, 0, 0,
+     {"BASERATE", 0.0007, 0, 0,
      "Base apoptosis rate parameter",
      "Base apoptosis rate parameter"},
 
-     {"MITRATE", 0.0141, 0, 0,
+     {"MITRATE", 0.000067, 0, 0,
      "Mitosis rate parameter",
      "Mitosis rate parameter"},
 
-     {"KABER", 1.0, 0, 0,
-     "Lethal aberration rate parameter",
-     "Lethal aberration rate parameter"},
+     {"MSURVIVAL", 0.0016, 0, 0,
+     "Mitosis survival probability",
+     "Mitosis survival probability"},
 
-     {"KLETHAL", 1.65, 0, 0,
+     {"KLETHAL", 0.0944, 0, 0,
      "MisrepRate scaling factor",
      "MisrepRate scaling factor"},
 
-     {"KATM_1", 0.076, 0, 0,
-     "K_ATM(1) parameter",
-     "pATM production rate parameter: rate = K_ATM(1)*ATM_DSB"},
+//     {"NCPPARAMS", 3, 0, 0,
+//     "Fixed",
+//     "Fixed"},
 
-     {"KATM_2", 0.3, 0, 0,
-     "K_ATM(2) parameter",
-     "pATM decay rate constant"},
+     {"KATM1G1", 0, 0, 0,
+     "KATM1G1 parameter",
+     "G1 pATM production rate parameter: rate = KATM1G1*ATM_DSB"},
 
-     {"KATM_3", 1.0, 0, 0,
-     "K_ATM(3) parameter",
-     "With k1=K_ATM(3), k2=K_ATM(4), x = pATM, ATM slowdown factor = 1 - k1*x/(k2+x)"},
+     {"KATM1S", 0.01, 0, 0,
+     "KATM1S parameter",
+     "S pATM production rate parameter: rate = KATM1S*ATM_DSB"},
 
-     {"KATM_4", 1.0, 0, 0,
-     "K_ATM(4) parameter",
-     "With k1=K_ATM(3), k2=K_ATM(4), x = pATM, ATM slowdown factor = 1 - k1*x/(k2+x)"},
+     {"KATM1G2", 0.01, 0, 0,
+     "KATM1G2 parameter",
+     "G2 pATM production rate parameter: rate = KATM1G2*ATM_DSB"},
 
-     {"KATR_1", 0.005, 0, 0,
-     "K_ATR(1) parameter",
-     "pATR production rate parameter: rate = K_ATR(1)*ATR_DSB"},
+     {"KATM2G1", 0, 0, 0,
+     "KATM2G1 parameter",
+     "G1 pATM decay rate constant"},
 
-     {"KATR_2", 0.3, 0, 0,
-     "K_ATR(2) parameter",
+     {"KATM2S", 7.1, 0, 0,
+     "KATM2S parameter",
+     "S pATM decay rate constant"},
+
+     {"KATM2G2", 0.3465, 0, 0,
+     "KATM2G2 parameter",
+     "G2 pATM decay rate constant"},
+
+     {"KATM3G1", 0, 0, 0,
+     "KATM3G1 parameter",
+     "With k1=KATM3, k2=KATM4, x = pATM, ATM slowdown factor = 1 - k1*x/(k2+x)"},
+
+     {"KATM3S", 2.86, 0, 0,
+     "KATM3S parameter",
+     "With k1=KATM3, k2=KATM4, x = pATM, ATM slowdown factor = 1 - k1*x/(k2+x)"},
+
+     {"KATM3G2", 3.14, 0, 0,
+     "KATM3G2 parameter",
+     "With k1=KATM3, k2=KATM4, x = pATM, ATM slowdown factor = 1 - k1*x/(k2+x)"},
+
+     {"KATM4G1", 0, 0, 0,
+     "KATM4G1 parameter",
+     "With k1=KATM3, k2=KATM4, x = pATM, ATM slowdown factor = 1 - k1*x/(k2+x)"},
+
+     {"KATM4S", 3.0, 0, 0,
+     "KATM4S parameter",
+     "With k1=KATM3, k2=KATM4, x = pATM, ATM slowdown factor = 1 - k1*x/(k2+x)"},
+
+     {"KATM4G2", 59.1, 0, 0,
+     "KATM4G2 parameter",
+     "With k1=KATM3, k2=KATM4, x = pATM, ATM slowdown factor = 1 - k1*x/(k2+x)"},
+
+     {"KATR1S", 0, 0, 0,
+     "KATR1S parameter",
+     "pATR production rate parameter: rate = KATR1*ATR_DSB"},
+
+     {"KATR1G2", 0, 0, 0,
+     "KATR1G2 parameter",
+     "pATR production rate parameter: rate = KATR1*ATR_DSB"},
+
+     {"KATR2S", 0.167, 0, 0,
+     "KATR2S parameter",
      "pATR decay rate constant"},
 
-     {"KATR_3", 1.0, 0, 0,
-     "K_ATR(3) parameter",
-     "With k1=K_ATR(3), k2=K_ATR(4), x = pATR, ATR slowdown factor = 1 - k1*x/(k2+x)"},
+     {"KATR2G2", 1.53, 0, 0,
+     "KATR2G2 parameter",
+     "pATR decay rate constant"},
 
-     {"KATR_4", 1.0, 0, 0,
-     "K_ATR(4) parameter",
-     "With k1=K_ATR(3), k2=K_ATR(4), x = pATR, ATR slowdown factor = 1 - k1*x/(k2+x)"},
+     {"KATR3S", 0.0001, 0, 0,
+     "KATR3S parameter",
+     "With k1=KATR3, k2=KATR4, x = pATR, ATR slowdown factor = 1 - k1*x/(k2+x)"},
 
-     {"PCOMPLEX", 0.4337, 0, 0,
+     {"KATR3G2", 33.6, 0, 0,
+     "KATR3G2 parameter",
+     "With k1=KATR3, k2=KATR4, x = pATR, ATR slowdown factor = 1 - k1*x/(k2+x)"},
+
+     {"KATR4S", 0.0002, 0, 0,
+     "KATR4S parameter",
+     "With k1=KATR3, k2=KATR4, x = pATR, ATR slowdown factor = 1 - k1*x/(k2+x)"},
+
+     {"KATR4G2", 0.0296, 0, 0,
+     "KATR4G2 parameter",
+     "With k1=KATR3, k2=KATR4, x = pATR, ATR slowdown factor = 1 - k1*x/(k2+x)"},
+
+     {"PCOMPLEX", 0.85, 0, 0,
      "PCOMPLEX parameter",
      "PCOMPLEX parameter"},
 
-     {"PHRSIMPLE", 0.5, 0, 0,
+     {"PHRSIMPLE", 0.033, 0, 0,
      "PHRSIMPLE parameter",
      "PHRSIMPLE parameter"},
 
-     {"KMAXINHIBIT", 0.8, 0, 0,
-     "KMAXINHIBIT parameter",
-     "KMAXINHIBIT parameter"},
+     {"CHALF", 0.2, 0, 0,
+     "CHALF parameter",
+     "CHALF parameter"},
 
-     {"B_EXP", 1.0, 0, 0,
-     "B_EXP parameter",
-     "B_EXP parameter"},
+     {"PREASS", 0.066, 0, 0,
+     "PREASS parameter",
+     "PREASS parameter"},
 
-     {"B_HILL", 0.5, 0, 0,
-     "B_HILL parameter",
-     "B_HILL parameter"},
+     {"MDRREP", 0.55, 0, 0,
+     "MDRREP parameter",
+     "MDRREP parameter"},
 
-     {"USE_EXP", 1, 0, 0,
-     "Use exponential function",
-     "Use exponential or Hill function"},
+     {"MDRFID", 0.5, 0, 0,
+     "MDRFID parameter",
+     "MDRFID parameter"},
 
-     {"USE_BASERATE", 1, 0, 0,
-     "Use baserate for apoptosis",
-     "Use baserate or apoprate"},
 
+     {"KCC2A", 4.0, 0, 0,
+     "KCC2A parameter",
+     "KCC2A parameter"},
 
-//      {"ARREST_THRESHOLD_2", 0.1, 0, 0,
-//      "Arrest threshold",
-//      "Threshold level of fraction of maximum growth rate that causes arrest in S phase"},
+     {"KCC2E", 0, 0, 0,
+     "KCC2E parameter",
+     "KCC2E parameter"},
 
-//      {"RMR_ETA_PL_2", 5, 0, 0,
-//      "PL lesion creation rate",
-//      "Coefficient of rate of creation of potentially lethal lesions: eta_PL"},
+     {"KD2E", 0, 0, 0,
+     "KD2E parameter",
+     "KD2E parameter"},
 
-//      {"RMR_ETA_IRL_2", 0.05, 0, 0,
-//      "IRL creation rate",
-//      "Coefficient of rate of creation of irrepairable lesions: eta_IRL"},
+     {"KD2T", 0.785, 0, 0,
+     "KD2T parameter",
+     "KD2T parameter"},
 
-//      {"RMR_HRR_REP_MAX_2", 1.0, 0, 0,
-//      "Max HRR PL lesion repair rate",
-//      "Maximum rate of repair of potentially lethal lesions: HRR_repair_max (Curtis's epsilon_PL)\n\
-//      The true repair rate varies linearly from 0 to HRR_repair_max over the S phase"},
+     {"KE2CC", 0.0005, 0, 0,
+     "KE2CC parameter",
+     "KE2CC parameter"},
 
-//      {"RMR_NHEJ_REP_2", 1.0, 0, 0,
-//      "NHEJ PL lesion repair rate",
-//      "NHEJ coefficient of rate of repair of potentially lethal lesions: NHEJ_repair"},
+     {"KM1", 108, 0, 0,
+     "KM1 parameter",
+     "KM1 parameter"},
 
-//      {"RMR_NHEJ_KMIS_2", 0.0001, 0, 0,
-//      "NHEJ lesion misrepair rate",
-//      "Coefficient of rate of NHEJ misrepair of PL lesions to Ch1 and Ch2 lesions: NHEJ_misrepair"},
+     {"KM10", 7.83, 0, 0,
+     "KM10 parameter",
+     "KM10 parameter"},
 
-//      {"RMR_DIM_KMIS_2", 0.0001, 0, 0,
-//      "DIM lesion misrepair rate",
-//       "Coefficient of rate of DIM misrepair of PL lesions to Ch1 and Ch2 lesions: DIM_misrepair"},
+     {"KT2CC", 4.47, 0, 0,
+     "KT2CC parameter",
+     "KT2CC parameter"},
 
-//      {"RMR_F_CH1_2", 0.8, 0, 0,
-//      "Ch1 fraction of misrepair",
-//      "Fraction of misrepaired lesions that are Ch1: fraction_Ch1"},
+     {"KTI2T", 9.61, 0, 0,
+     "KTI2T parameter",
+     "KTI2T parameter"},
 
-//      {"RMR_PSURVIVE1_2", 0.9, 0, 0,
-//      "Ch1 prob of mitosis survival",
-//      "Probability that a cell with one Ch1 lesion survives mitosis: psurvive_Ch1"},
+     {"KM10T", 0.002, 0, 0,
+     "KM10T parameter",
+     "KM10T parameter"},
 
-//      {"RMR_PSURVIVE2_2", 0.1, 0, 0,
-//      "Ch2 prob of mitosis survival",
-//      "Probability that a cell with one Ch2 lesion survives mitosis: psurvive_Ch2"},
+     {"CC_TOT", 5, 0, 0,
+     "CC_TOT parameter",
+     "CC_TOT parameter"},
 
-//       {"RMR_PSURVIVE_PL_2", 0.95, 0, 0,
-//       "PL prob of mitosis survival",
-//       "Probability that a cell with one PL or IRL lesion survives mitosis: psurvive_PL"},
+     {"ATR_TOT", 10, 0, 0,
+     "ATR_TOT parameter",
+     "ATR_TOT parameter"},
 
-//       {"RMR_ATCP_2", 50, 0, 0,
-//       "TCP Hill a",
-//       "TCP, the maximum time spent in the checkpoint, is a Hill function of # of L1 lesions, n. TCP(n) = b.n/(a + n)"},
+     {"ATM_TOT", 10, 0, 0,
+     "ATM_TOT parameter",
+     "ATM_TOT parameter"},
 
-//       {"RMR_BTCP_2", 25, 0, 0,
-//       "TCP Hill b",
-//       "TCP, the maximum time spent in the checkpoint, is a Hill function of # of L1 lesions, n. TCP(n) = b.n/(a + n)"},
+     {"CC_ACT0", 0, 0, 0,
+     "CC_ACT0 parameter",
+     "CC_ACT0 parameter"},
 
+     {"CC_THRESHOLD", 0.9, 0, 0,
+     "CC_THRESHOLD parameter",
+     "CC_THRESHOLD parameter"},
 
-//      {"RMR_KCP_2", 0.13, 0, 0,
-//      "Checkpoint time limit factor",
-//      "Factor for computing maximum time spent in the checkpoint, as a function of # of L1 lesions: Kcp"},
+     {"NORM_FACTOR", 0.01, 0, 0,
+     "NORM_FACTOR parameter",
+     "NORM_FACTOR parameter"},
 
-// Metabolism parameters
-
-//      {"USE_METABOLISM", 1,0,1,
-//       "Use glucose metabolism",
-//       "If metabolism is turned on, cell cycle is used, and lactate is simulated.  If metabolism is turned off, lactate is not simulated"},
-
-//       {"F_GNORM_1", 0.15, 0, 0,
-//       "Normal fraction of glycolysis -> intermediates",
-//       "Fraction of glycolysis (r_G) going to make intermediates under conditions of full nutrition"},
-
-//       {"F_PNORM_1", 0.5, 0, 0,
-//       "Normal fraction of pyruvate -> intermediates",
-//        "Fraction of pyruvate (r_P) going to make intermediates under conditions of full nutrition"},
-
-//       {"F_GLNNORM_1", 0.25, 0, 0,
-//       "Normal fraction of glutamine -> intermediates",
-//        "Fraction of glutamine (r_Gn) going to make intermediates under conditions of full nutrition"},
-
-//       {"F_ONNORM_1", 0.35, 0, 0,
-//       "Normal fraction of ON -> intermediates",
-//        "Fraction of other nutrients ON (r_ONn) going to make intermediates under conditions of full nutrition"},
-
-//      {"N_GA_1", 2, 0, 0,
-//      "ATP moles produced per glucose mole",
-//      "Number of ATP moles produced by the glycolysis of one glucose mole"},
-
-//      {"N_PA_1", 14, 0, 0,
-//      "ATP moles produced per pyruvate mole",
-//      "Number of ATP moles produced by the oxidation of one pyruvate mole"},
-
-//       {"N_GLNA_1", 10, 0, 0,
-//       "ATP moles produced per glutamine mole",
-//       "Number of ATP moles produced by the oxidation of one glutamine mole"},
-
-//       {"N_ONA_1", 4, 0, 0,
-//       "ATP moles produced per othernutrient mole",
-//       "Number of ATP moles produced by the oxidation of one othernutrient mole"},
-
-//       {"N_GP_1", 2, 0, 0,
-//       "Pyruvate moles produced per glucose mole",
-//       "Number of pyruvate moles produced by the glycolysis of one glucose mole (no intermediates produced)"},
-
-//      {"N_GI_1", 1, 0, 0,
-//      "Intermediate moles produced per glucose mole",
-//      "Number of moles of anabolic intermediates produced the glycolysis of one glucose mole"},
-
-//      {"N_PI_1", 3, 0, 0,
-//      "Intermediate moles produced per pyruvate mole",
-//      "Number of moles of anabolic intermediates produced the oxidation of one pyruvate mole"},
-
-//       {"N_GLNI_1", 0.7, 0, 0,
-//       "Intermediate moles produced per glutamine mole",
-//       "Number of moles of anabolic intermediates produced the oxidation of one glutamine mole"},
-
-//       {"N_ONI_1", 1.1, 0, 0,
-//       "Intermediate moles produced per othernutrient mole",
-//       "Number of moles of anabolic intermediates produced the oxidation of one other nutrient mole"},
-
-//      {"N_PO_1", 0.88, 0, 0,
-//      "Oxygen moles consumed per pyruvate mole",
-//      "Number of moles of oxygen consumed the oxidation of one pyruvate mole"},
-
-//       {"N_GLNO_1", 0.88, 0, 0,
-//       "Oxygen moles consumed per glutamine mole",
-//       "Number of moles of oxygen consumed the oxidation of one glutamine mole"},
-
-//      {"K_H1_1", 8, 0, 0,
-//      "Exponent N_H in Hss equation",
-//      "With x = C_O/C_O_max, steady-state HIF-1 level is Hss = (1-x)^N_H, where C_O = oxygen concentration"},
-
-//      {"K_H2_1", 5e-5, 0, 0,
-//      "HIF-1 rate constant K_H",
-//      "The rate of change of HIF-1 level H is given by: dH/dt = K_H*(Hss - H), where C_O = oxygen concentration, Hss is steady-state level for C_O"},
-
-//      {"K_HB_1", 3, 0, 0,
-//      "K_HB",
-//      "Glycolysis rate = K_HA*(1 + K_HB*H)*C_G^N/(C_G^N + Km^N)\n\
-//        where: H = HIF-1 level, C_G = glucose concentration, K_HA is maximum glucose consumption rate when H=0, Km and N are the glucose consumption Hill function parameters"},
-
-//      {"K_PDK_1", 4.63e-5, 0, 0,
-//      "K_PDK",
-//      "Representing PDK1 factor level by y in the range (PDKmin,1), the rate of change of y is: dy/dt = -K_PDK*(y - 1 + cH) where H = HIF-1 level, and c = 1 - PDKmin"},
-
-//       {"PDKMIN_1", 0.3, 0, 0,
-//       "PDKmin",
-//       "Minimum value of the PDK1 factor.\n\
-//       Representing PDK1 factor level by y in the range (PDKmin,1), the rate of change of y is: dy/dt = -K_PDK*(y - 1 + cH) where H = HIF-1 level, and c = 1 - PDKmin"},
-
-//       {"C_O2_NORM_1", 0.1, 0, 0,
-//       "Nominal normal IC O2 concentration",
-//       "Nominal normal IC O2 concentration, used to set normal metabolic rates for unconstrained growth"},
-
-//       {"C_G_NORM_1", 5.0, 0, 0,
-//       "Nominal normal IC glucose concentration",
-//       "Nominal normal IC glucose concentration, used to set normal metabolic rates for unconstrained growth"},
-
-//       {"C_L_NORM_1", 0.4, 0, 0,
-//       "Nominal normal IC lactate concentration",
-//       "Nominal normal IC lactate concentration, used to set normal metabolic rates for unconstrained growth"},
-
-//        {"C_GLN_NORM_1", 1.0, 0, 0,
-//        "Nominal normal IC glutamine concentration",
-//        "Nominal normal IC glutamine concentration, used to set normal metabolic rates for unconstrained growth"},
-
-//        {"C_ON_NORM_1", 1.0, 0, 0,
-//        "Nominal normal IC ON concentration",
-//        "Nominal normal IC other nutrient concentration, used to set normal metabolic rates for unconstrained growth"},
-
-//      {"ATP_S_1", 0.1, 0, 0,
-//      "ATP survival threshold (fraction of normal)",
-//      "Cell death occurs when the ATP production rate falls below the fraction ATP_S of the normal (unconstrainted) production rate"},
-
-//      {"ATP_G_1", 0.3, 0, 0,
-//       "ATP growth threshold (fraction of normal)",
-//       "Cell growth stops when the ATP production rate falls below the fraction ATP_G of the normal (unconstrainted) production rate"},
-////        Intermediates production from glycolysis and pyruvate ramps down when ATP rate is below ATPramp*ATP_G, to 0 when ATP rate = ATP_G."},
-
-////      {"ATP_RAMP_1", 1.3, 0, 0,
-////        "Ramp factor for reducing r_G, r_P based on ATP",
-////       "Fractional rates of production of intermediates from glycolysis (r_G) and pyruvate (r_P) are reduced as ATP production rate falls.\n\
-////        If the normal ATP rate is r_An, and the current rate is r_A, then the fractional production rate f_A = r_A/r_An.\n\
-////        A multiplying factor on both r_G and r_P, f, is calculated as a ramp from 0 - 1 as f_A varies from ATP_G - ATPramp*ATP_G\n\
-////        i.e. the reduction starts when f_A = ATPramp*ATP_G (f = 1), and when f_A = ATP_G, f = 0.  f_G = f*f_Gn, f_P = f*f_Pn"},
-
-//       {"K_PL_1", 0.1, 0, 0,
-//       "Pyruvate -> lactate rate constant",
-//       "The forward rate constant K_PL of the pyruvate-lactate reaction, i.e. the rate constant for conversion of pyruvate to lactate"},
-
-//      {"K_LP_1", 0.01, 0, 0,
-//      "Lactate -> pyruvate rate constant",
-//      "The reverse rate constant K_LP of the pyruvate-lactate reaction, i.e. the rate constant for conversion of lactate to pyruvate"},
-
-//       {"C_GLN_CUT_1", 0.0, 0, 0,
-//       "Glutamine cutoff concentration (mM)",
-//       "When extracellular glutamine concentration falls below this value consumption of glutamine ceases.\n\
-//        In the simple model, this is C_Gln_min. With C0 = MM_KM for glutamine\n\
-//        and with C = C_GlnEx - C_Gln_min, w = C^2/(C0^2 + C^2) is the factor that multiplies f_Gu, f_Pu\n\
-//        and determines r_GlnI = Min(r_GlnI_max, w*(r_Iu - r_GI - r_PI))"},
-
-//       {"PASTEUR_MM_KM_1", 0.02, 0, 0,
-//       "Pasteur Effect M-M Km (normalised)",
-//       "The glycolysis rate is multiplied by cfactor, which is a function of the glucose concentration.\n\
-//        (remove it) ..."},
-
-//       {"GLUTAMINE_BASERATE_1", 0, 0, 0,
-//       "Glutamine base consumption rate",
-//       "To account for a possible base rate of metabolism of glutamine.  The rate of consumption is made of a fixed base rate, r_base, + a rate that depends on glucose conc C_G.\n\
-//       With fbase = r_base/Vmax, and gfactor = fbase + (1 - fbase)**Km_GG/(Km_GG + C_G), where Km_GG = 0.2*Km_G,\n\
-//       the glutamine rate becomes: r_Gln = fPDK*Vmax*gfactor*C_Gln/(Km_Gln + C_Gln)"},
-
-//       {"F_PP_1", 0.056, 0, 0,
-//       "Pyruvate fraction -> TCA",
-//       "The factor f_PP is the fraction of pyruvate production that goes to processing by TCA. Rest goes to lactate."},
-
-//        {"KM_RGLN_1", 1.0, 0, 0,
-//        "Glutamine max rate factor",
-//        "The factor multiplying the nominal glutamine max rate when glutamine is replacing glucose."},
-////        (was the factor Km_rGln_factor multiplies Vmax_Gln to give Km for the MM function of r_Gln used to compute r_ON (0.02))"},
-
-//        {"F_IN_1",0.1,0,0,
-//          "N-type fraction of intermediates",
-//          "Fraction of intermediates rate from glutamine (and possibly ON) that is N-type"},
-
-//       {"F_GP_SOLVER",1,0,0,
-//        "f_GP solver (1,2,3)",
-//        "Choices for f_GP solver: 1 = max ATP (tandem), 2 = max ATP (staged), 3 = survival (staged)"},
-
-//        {"C_GLN_LO",0.3,0,0,
-//         "C_Gln_lo",
-//         "Lower bound of ramp in r_Gln as a function of C_Gln"},
-
-//        {"C_GLN_HI",0.6,0,0,
-//         "C_Gln_hi",
-//         "Upper bound of ramp in r_Gln as a function of C_Gln"},
-
-//        {"F_RGLN_LO",0.1,0,0,
-//         "f_rGln_lo",
-//         "Low r_Gln factor - multiple of max rate to give r_Gln for C_Gln < C_Gln_lo"},
-
-//        {"F_RGLN_THRESHOLD",0.0018,0,0,
-//         "f_rN_threshold",
-//         "Survival threshold for rate of N-type intermediates is f_rN_threshold*r_Iu, where r_Iu is the unconstrained rate of I production"},
-
-//        {"F_RON_BASE",0.12,0,0,
-//         "f_rON_base",
-//         "Base level of r_ON, fraction of max rate. This is the rate when there are no growth constraints"},
-
-//        {"GLN_NSHARE",1.0,0,0,
-//         "Gln_Nshare",
-//         "Proportional N contribution from glutamine.  The rate of N-type intermediates production is:\n\
-//         r_N = f_IN*(Gln_Nshare*r_GlnI + (1-Gln_Nshare)*r_ONI) where f_IN is the fraction of glutamine (and ON) intermediates prodn that is N-type"},
-
-//        {"K_GLN_DECAY",1.38E-6,0,0,
-//         "k_glutamine_decay",
-//         "Glutamine decay constant"},
-
-//         {"F_APOPTOSIS_RATE_LO",0.5,0,0,
-//          "f_apoptosis_rate_lo",
-//          "Multiplying factor to get the low apoptosis rate from the high rate"},
-
-//         {"T_APOPTOSIS_HI",28,0,0,
-//          "t_apoptosis_hi (h)",
-//          "Duration of high apoptosis rate after tagging for metabolic death (hours)"},
 
 {"HYPOXIA_1", 0.1, 0, 0,
 "Hypoxia threshold 1",

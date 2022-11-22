@@ -20,7 +20,7 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>Vmonolayer ABM</string>
+   <string>drm_monolayer ABM</string>
   </property>
   <property name="windowIcon">
    <iconset>
@@ -82,7 +82,7 @@ padding: 8px
            <enum>QTabWidget::West</enum>
           </property>
           <property name="currentIndex">
-           <number>5</number>
+           <number>2</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideNone</enum>
@@ -341,14 +341,14 @@ padding: 8px
                </widget>
               </item>
               <item row="1" column="0">
-               <widget class="QMyLabel" name="label_T_G1_1">
+               <widget class="QMyLabel" name="label_F_G1_1">
                 <property name="text">
-                 <string>Base G1 time (h)</string>
+                 <string>Base G1 fraction</string>
                 </property>
                </widget>
               </item>
               <item row="1" column="1">
-               <widget class="QLineEdit" name="line_T_G1_1">
+               <widget class="QLineEdit" name="line_F_G1_1">
                 <property name="maximumSize">
                  <size>
                   <width>61</width>
@@ -361,7 +361,7 @@ padding: 8px
                </widget>
               </item>
               <item row="1" column="2">
-               <widget class="QLineEdit" name="line_T_G1_2">
+               <widget class="QLineEdit" name="line_F_G1_2">
                 <property name="maximumSize">
                  <size>
                   <width>61</width>
@@ -374,14 +374,14 @@ padding: 8px
                </widget>
               </item>
               <item row="2" column="0">
-               <widget class="QMyLabel" name="label_T_S_1">
+               <widget class="QMyLabel" name="label_F_S_1">
                 <property name="text">
-                 <string>Base S time (h)</string>
+                 <string>Base S fraction</string>
                 </property>
                </widget>
               </item>
               <item row="2" column="1">
-               <widget class="QLineEdit" name="line_T_S_1">
+               <widget class="QLineEdit" name="line_F_S_1">
                 <property name="maximumSize">
                  <size>
                   <width>61</width>
@@ -394,7 +394,7 @@ padding: 8px
                </widget>
               </item>
               <item row="2" column="2">
-               <widget class="QLineEdit" name="line_T_S_2">
+               <widget class="QLineEdit" name="line_F_S_2">
                 <property name="maximumSize">
                  <size>
                   <width>61</width>
@@ -407,14 +407,14 @@ padding: 8px
                </widget>
               </item>
               <item row="3" column="0">
-               <widget class="QMyLabel" name="label_T_G2_1">
+               <widget class="QMyLabel" name="label_F_G2_1">
                 <property name="text">
-                 <string>Base G2 time (h)</string>
+                 <string>Base G2 fraction</string>
                 </property>
                </widget>
               </item>
               <item row="3" column="1">
-               <widget class="QLineEdit" name="line_T_G2_1">
+               <widget class="QLineEdit" name="line_F_G2_1">
                 <property name="maximumSize">
                  <size>
                   <width>61</width>
@@ -427,7 +427,7 @@ padding: 8px
                </widget>
               </item>
               <item row="3" column="2">
-               <widget class="QLineEdit" name="line_T_G2_2">
+               <widget class="QLineEdit" name="line_F_G2_2">
                 <property name="maximumSize">
                  <size>
                   <width>61</width>
@@ -440,14 +440,14 @@ padding: 8px
                </widget>
               </item>
               <item row="4" column="0">
-               <widget class="QMyLabel" name="label_T_M_1">
+               <widget class="QMyLabel" name="label_F_M_1">
                 <property name="text">
-                 <string>Base M time (h)</string>
+                 <string>Base M fraction</string>
                 </property>
                </widget>
               </item>
               <item row="4" column="1">
-               <widget class="QLineEdit" name="line_T_M_1">
+               <widget class="QLineEdit" name="line_F_M_1">
                 <property name="maximumSize">
                  <size>
                   <width>61</width>
@@ -460,7 +460,7 @@ padding: 8px
                </widget>
               </item>
               <item row="4" column="2">
-               <widget class="QLineEdit" name="line_T_M_2">
+               <widget class="QLineEdit" name="line_F_M_2">
                 <property name="maximumSize">
                  <size>
                   <width>61</width>
@@ -4013,555 +4013,6 @@ padding: 8px
              </layout>
             </widget>
            </widget>
-           <widget class="QGroupBox" name="groupBox_radiation_RMR">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="geometry">
-             <rect>
-              <x>1170</x>
-              <y>10</y>
-              <width>361</width>
-              <height>371</height>
-             </rect>
-            </property>
-            <property name="title">
-             <string/>
-            </property>
-            <widget class="QWidget" name="gridLayoutWidget_7">
-             <property name="geometry">
-              <rect>
-               <x>10</x>
-               <y>10</y>
-               <width>341</width>
-               <height>356</height>
-              </rect>
-             </property>
-             <layout class="QGridLayout" name="gridLayout_3">
-              <item row="0" column="1">
-               <widget class="QLabel" name="alabel_rmrtype_1">
-                <property name="text">
-                 <string>Type 1</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="0">
-               <widget class="QLabel" name="alabel_radiation_rmr">
-                <property name="text">
-                 <string>Repair/misrepair parameters</string>
-                </property>
-               </widget>
-              </item>
-              <item row="5" column="0">
-               <widget class="QMyLabel" name="label_RMR_HRR_REP_MAX_1">
-                <property name="text">
-                 <string>Krepair_HRR_max</string>
-                </property>
-               </widget>
-              </item>
-              <item row="5" column="1">
-               <widget class="QLineEdit" name="line_RMR_HRR_REP_MAX_1">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="8" column="0">
-               <widget class="QMyLabel" name="label_RMR_NHEJ_KMIS_1">
-                <property name="text">
-                 <string>Kmisrepair_NHEJ</string>
-                </property>
-               </widget>
-              </item>
-              <item row="8" column="1">
-               <widget class="QLineEdit" name="line_RMR_NHEJ_KMIS_1">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="11" column="0">
-               <widget class="QMyLabel" name="label_RMR_PSURVIVE1_1">
-                <property name="text">
-                 <string>psurvive_Ch1</string>
-                </property>
-               </widget>
-              </item>
-              <item row="11" column="1">
-               <widget class="QLineEdit" name="line_RMR_PSURVIVE1_1">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="2">
-               <widget class="QLabel" name="alabel_rmrtype_2">
-                <property name="text">
-                 <string>Type 2</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="0">
-               <widget class="QMyLabel" name="label_RMR_ETA_PL_1">
-                <property name="text">
-                 <string>eta_PL</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
-               <widget class="QLineEdit" name="line_RMR_ETA_PL_1">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="2">
-               <widget class="QLineEdit" name="line_RMR_ETA_PL_2">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="7" column="0">
-               <widget class="QMyLabel" name="label_RMR_NHEJ_REP_1">
-                <property name="text">
-                 <string>Krepair_NHEJ</string>
-                </property>
-               </widget>
-              </item>
-              <item row="7" column="1">
-               <widget class="QLineEdit" name="line_RMR_NHEJ_REP_1">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="1">
-               <widget class="QLineEdit" name="line_RMR_ETA_IRL_1">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="0">
-               <widget class="QMyLabel" name="label_RMR_ETA_IRL_1">
-                <property name="text">
-                 <string>eta_IRL</string>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="2">
-               <widget class="QLineEdit" name="line_RMR_ETA_IRL_2">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="10" column="0">
-               <widget class="QMyLabel" name="label_RMR_F_CH1_1">
-                <property name="text">
-                 <string>fraction_Ch1</string>
-                </property>
-               </widget>
-              </item>
-              <item row="10" column="1">
-               <widget class="QLineEdit" name="line_RMR_F_CH1_1">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="10" column="2">
-               <widget class="QLineEdit" name="line_RMR_F_CH1_2">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="11" column="2">
-               <widget class="QLineEdit" name="line_RMR_PSURVIVE1_2">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="12" column="1">
-               <widget class="QLineEdit" name="line_RMR_PSURVIVE2_1">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="12" column="0">
-               <widget class="QMyLabel" name="label_RMR_PSURVIVE2_1">
-                <property name="text">
-                 <string>psurvive_Ch1</string>
-                </property>
-               </widget>
-              </item>
-              <item row="12" column="2">
-               <widget class="QLineEdit" name="line_RMR_PSURVIVE2_2">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="9" column="1">
-               <widget class="QLineEdit" name="line_RMR_DIM_KMIS_1">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="9" column="0">
-               <widget class="QMyLabel" name="label_RMR_DIM_KMIS_1">
-                <property name="text">
-                 <string>Kmisrepair_DIM</string>
-                </property>
-               </widget>
-              </item>
-              <item row="17" column="1">
-               <widget class="QPushButton" name="pushButton_TCP_1">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>50</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>Plot</string>
-                </property>
-               </widget>
-              </item>
-              <item row="17" column="2">
-               <widget class="QPushButton" name="pushButton_TCP_2">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>50</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>Plot</string>
-                </property>
-               </widget>
-              </item>
-              <item row="9" column="2">
-               <widget class="QLineEdit" name="line_RMR_DIM_KMIS_2">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="5" column="2">
-               <widget class="QLineEdit" name="line_RMR_HRR_REP_MAX_2">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="7" column="2">
-               <widget class="QLineEdit" name="line_RMR_NHEJ_REP_2">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="8" column="2">
-               <widget class="QLineEdit" name="line_RMR_NHEJ_KMIS_2">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="13" column="0">
-               <widget class="QMyLabel" name="label_RMR_PSURVIVE_PL_1">
-                <property name="text">
-                 <string>psurvive_PL</string>
-                </property>
-               </widget>
-              </item>
-              <item row="14" column="0">
-               <widget class="QMyLabel" name="label_RMR_ATCP_1">
-                <property name="text">
-                 <string>Tcp Hill a</string>
-                </property>
-               </widget>
-              </item>
-              <item row="15" column="0">
-               <widget class="QMyLabel" name="label_RMR_BTCP_1">
-                <property name="text">
-                 <string>Tcp Hill b</string>
-                </property>
-               </widget>
-              </item>
-              <item row="13" column="1">
-               <widget class="QLineEdit" name="line_RMR_PSURVIVE_PL_1">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="14" column="1">
-               <widget class="QLineEdit" name="line_RMR_ATCP_1">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="15" column="1">
-               <widget class="QLineEdit" name="line_RMR_BTCP_1">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="13" column="2">
-               <widget class="QLineEdit" name="line_RMR_PSURVIVE_PL_2">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="14" column="2">
-               <widget class="QLineEdit" name="line_RMR_ATCP_2">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="15" column="2">
-               <widget class="QLineEdit" name="line_RMR_BTCP_2">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </widget>
            <widget class="QLabel" name="alabel_radiation_parameters">
             <property name="geometry">
              <rect>
@@ -4586,8 +4037,8 @@ padding: 8px
              <rect>
               <x>530</x>
               <y>10</y>
-              <width>311</width>
-              <height>481</height>
+              <width>271</width>
+              <height>301</height>
              </rect>
             </property>
             <property name="title">
@@ -4598,8 +4049,8 @@ padding: 8px
               <rect>
                <x>10</x>
                <y>10</y>
-               <width>291</width>
-               <height>461</height>
+               <width>251</width>
+               <height>281</height>
               </rect>
              </property>
              <layout class="QGridLayout" name="gridLayout_7">
@@ -4638,137 +4089,7 @@ padding: 8px
                </widget>
               </item>
               <item row="3" column="1">
-               <widget class="QLineEdit" name="line_KABER">
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-              <item row="5" column="1">
-               <widget class="QLineEdit" name="line_KATM_1">
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-              <item row="6" column="1">
-               <widget class="QLineEdit" name="line_KATM_2">
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-              <item row="7" column="1">
-               <widget class="QLineEdit" name="line_KATM_3">
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-              <item row="8" column="1">
-               <widget class="QLineEdit" name="line_KATM_4">
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-              <item row="9" column="1">
-               <widget class="QLineEdit" name="line_KATR_1">
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-              <item row="10" column="1">
-               <widget class="QLineEdit" name="line_KATR_2">
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-              <item row="11" column="1">
-               <widget class="QLineEdit" name="line_KATR_3">
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-              <item row="12" column="1">
-               <widget class="QLineEdit" name="line_KATR_4">
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-              <item row="13" column="1">
-               <widget class="QLineEdit" name="line_PCOMPLEX">
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-              <item row="14" column="1">
-               <widget class="QLineEdit" name="line_PHRSIMPLE">
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-              <item row="15" column="1">
-               <widget class="QLineEdit" name="line_KMAXINHIBIT">
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-              <item row="16" column="1">
-               <widget class="QLineEdit" name="line_B_EXP">
-                <property name="maximumSize">
-                 <size>
-                  <width>51</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-              <item row="17" column="1">
-               <widget class="QLineEdit" name="line_B_HILL">
+               <widget class="QLineEdit" name="line_MSURVIVAL">
                 <property name="maximumSize">
                  <size>
                   <width>51</width>
@@ -4785,100 +4106,9 @@ padding: 8px
                </widget>
               </item>
               <item row="3" column="0">
-               <widget class="QMyLabel" name="label_KABER">
+               <widget class="QMyLabel" name="label_MSURVIVAL">
                 <property name="text">
-                 <string>label_KABER</string>
-                </property>
-               </widget>
-              </item>
-              <item row="5" column="0">
-               <widget class="QMyLabel" name="label_KATM_1">
-                <property name="text">
-                 <string>label_KATM_1</string>
-                </property>
-               </widget>
-              </item>
-              <item row="6" column="0">
-               <widget class="QMyLabel" name="label_KATM_2">
-                <property name="text">
-                 <string>label_KATM_2</string>
-                </property>
-               </widget>
-              </item>
-              <item row="7" column="0">
-               <widget class="QMyLabel" name="label_KATM_3">
-                <property name="text">
-                 <string>label_KATM_3</string>
-                </property>
-               </widget>
-              </item>
-              <item row="8" column="0">
-               <widget class="QMyLabel" name="label_KATM_4">
-                <property name="text">
-                 <string>label_KATM_4</string>
-                </property>
-               </widget>
-              </item>
-              <item row="9" column="0">
-               <widget class="QMyLabel" name="label_KATR_1">
-                <property name="text">
-                 <string>label_KATR_1</string>
-                </property>
-               </widget>
-              </item>
-              <item row="10" column="0">
-               <widget class="QMyLabel" name="label_KATR_2">
-                <property name="text">
-                 <string>label_KATR_2</string>
-                </property>
-               </widget>
-              </item>
-              <item row="11" column="0">
-               <widget class="QMyLabel" name="label_KATR_3">
-                <property name="text">
-                 <string>label_KATR_3</string>
-                </property>
-               </widget>
-              </item>
-              <item row="12" column="0">
-               <widget class="QMyLabel" name="label_KATR_4">
-                <property name="text">
-                 <string>label_KATR_4</string>
-                </property>
-               </widget>
-              </item>
-              <item row="13" column="0">
-               <widget class="QMyLabel" name="label_PCOMPLEX">
-                <property name="text">
-                 <string>label_PCOMPLEX</string>
-                </property>
-               </widget>
-              </item>
-              <item row="14" column="0">
-               <widget class="QMyLabel" name="label_PHRSIMPLE">
-                <property name="text">
-                 <string>label_PHRSIMPLE</string>
-                </property>
-               </widget>
-              </item>
-              <item row="15" column="0">
-               <widget class="QMyLabel" name="label_KMAXINHIBIT">
-                <property name="text">
-                 <string>label_KMAXINHIBIT</string>
-                </property>
-               </widget>
-              </item>
-              <item row="16" column="0">
-               <widget class="QMyLabel" name="label_B_EXP">
-                <property name="text">
-                 <string>label_B_EXP</string>
-                </property>
-               </widget>
-              </item>
-              <item row="17" column="0">
-               <widget class="QMyLabel" name="label_B_HILL">
-                <property name="text">
-                 <string>label_B_HILL</string>
+                 <string>label_MSURVIVAL</string>
                 </property>
                </widget>
               </item>
@@ -4899,14 +4129,116 @@ padding: 8px
                 </property>
                </widget>
               </item>
+              <item row="5" column="0">
+               <widget class="QMyLabel" name="label_PCOMPLEX">
+                <property name="text">
+                 <string>label_PCOMPLEX</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
+               <widget class="QLineEdit" name="line_PCOMPLEX">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0">
+               <widget class="QMyLabel" name="label_PHRSIMPLE">
+                <property name="text">
+                 <string>label_PHRSIMPLE</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="1">
+               <widget class="QLineEdit" name="line_PHRSIMPLE">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="1">
+               <widget class="QLineEdit" name="line_CHALF">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="0">
+               <widget class="QMyLabel" name="label_CHALF">
+                <property name="text">
+                 <string>label_CHALF</string>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="0">
+               <widget class="QMyLabel" name="label_PREASS">
+                <property name="text">
+                 <string>label_PREASS</string>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="1">
+               <widget class="QLineEdit" name="line_PREASS">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="9" column="0">
+               <widget class="QMyLabel" name="label_MDRREP">
+                <property name="text">
+                 <string>label_MDRREP</string>
+                </property>
+               </widget>
+              </item>
+              <item row="10" column="0">
+               <widget class="QMyLabel" name="label_MDRFID">
+                <property name="text">
+                 <string>label_MDRFID</string>
+                </property>
+               </widget>
+              </item>
+              <item row="9" column="1">
+               <widget class="QLineEdit" name="line_MDRREP">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="10" column="1">
+               <widget class="QLineEdit" name="line_MDRFID">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
            </widget>
            <widget class="QMyCheckBox" name="cbox_USE_EXP">
             <property name="geometry">
              <rect>
-              <x>530</x>
-              <y>500</y>
+              <x>540</x>
+              <y>330</y>
               <width>151</width>
               <height>17</height>
              </rect>
@@ -4921,8 +4253,8 @@ padding: 8px
            <widget class="QMyCheckBox" name="cbox_USE_BASERATE">
             <property name="geometry">
              <rect>
-              <x>700</x>
-              <y>500</y>
+              <x>540</x>
+              <y>350</y>
               <width>121</width>
               <height>17</height>
              </rect>
@@ -4933,6 +4265,693 @@ padding: 8px
             <property name="checked">
              <bool>true</bool>
             </property>
+           </widget>
+           <widget class="QGroupBox" name="groupBox_ATM">
+            <property name="geometry">
+             <rect>
+              <x>820</x>
+              <y>10</y>
+              <width>251</width>
+              <height>301</height>
+             </rect>
+            </property>
+            <property name="title">
+             <string/>
+            </property>
+            <widget class="QWidget" name="gridLayoutWidget_7">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>10</y>
+               <width>231</width>
+               <height>281</height>
+              </rect>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_3">
+              <item row="0" column="1">
+               <widget class="QLineEdit" name="line_KATM1G1">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QMyLabel" name="label_KATM1S">
+                <property name="text">
+                 <string>label_KATM1S</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="line_KATM1S">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QMyLabel" name="label_KATM1G2">
+                <property name="text">
+                 <string>label_KATM1G2</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QLineEdit" name="line_KATM1G2">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QLineEdit" name="line_KATM2G1">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QMyLabel" name="label_KATM2G1">
+                <property name="text">
+                 <string>label_KATM2G1</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QLineEdit" name="line_KATM2S">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QMyLabel" name="label_KATM2S">
+                <property name="text">
+                 <string>label_KATM2S</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
+               <widget class="QLineEdit" name="line_KATM2G2">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QMyLabel" name="label_KATM2G2">
+                <property name="text">
+                 <string>label_KATM2G2</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="1">
+               <widget class="QLineEdit" name="line_KATM3G1">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0">
+               <widget class="QMyLabel" name="label_KATM3G1">
+                <property name="text">
+                 <string>label_KATM3G1</string>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="1">
+               <widget class="QLineEdit" name="line_KATM3S">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="0">
+               <widget class="QMyLabel" name="label_KATM3S">
+                <property name="text">
+                 <string>label_KATM3S</string>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="1">
+               <widget class="QLineEdit" name="line_KATM3G2">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="0">
+               <widget class="QMyLabel" name="label_KATM3G2">
+                <property name="text">
+                 <string>label_KATM3G2</string>
+                </property>
+               </widget>
+              </item>
+              <item row="9" column="1">
+               <widget class="QLineEdit" name="line_KATM4G1">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="9" column="0">
+               <widget class="QMyLabel" name="label_KATM4G1">
+                <property name="text">
+                 <string>label_KATM4G1</string>
+                </property>
+               </widget>
+              </item>
+              <item row="10" column="1">
+               <widget class="QLineEdit" name="line_KATM4S">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="10" column="0">
+               <widget class="QMyLabel" name="label_KATM4S">
+                <property name="text">
+                 <string>label_KATM4S</string>
+                </property>
+               </widget>
+              </item>
+              <item row="11" column="1">
+               <widget class="QLineEdit" name="line_KATM4G2">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="11" column="0">
+               <widget class="QMyLabel" name="label_KATM4G2">
+                <property name="text">
+                 <string>label_KATM4G2</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QMyLabel" name="label_KATM1G1">
+                <property name="text">
+                 <string>label_KATM1G1</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </widget>
+           <widget class="QGroupBox" name="groupBox_ATR">
+            <property name="geometry">
+             <rect>
+              <x>820</x>
+              <y>310</y>
+              <width>251</width>
+              <height>191</height>
+             </rect>
+            </property>
+            <property name="title">
+             <string/>
+            </property>
+            <widget class="QWidget" name="gridLayoutWidget_15">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>10</y>
+               <width>231</width>
+               <height>171</height>
+              </rect>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_8">
+              <item row="0" column="0">
+               <widget class="QMyLabel" name="label_KATR1S">
+                <property name="text">
+                 <string>label_KATR1S</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLineEdit" name="line_KATR1S">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="line_KATR1G2">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QMyLabel" name="label_KATR1G1">
+                <property name="text">
+                 <string>label_KATR1G2</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QLineEdit" name="line_KATR2S">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QMyLabel" name="label_KATR2S">
+                <property name="text">
+                 <string>label_KATR2S</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QLineEdit" name="line_KATR2G2">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QMyLabel" name="label_KATR2G1">
+                <property name="text">
+                 <string>label_KATR2G2</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QLineEdit" name="line_KATR3S">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QMyLabel" name="label_KATR3S">
+                <property name="text">
+                 <string>label_KATR3S</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
+               <widget class="QLineEdit" name="line_KATR3G2">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QMyLabel" name="label_KATR3G1">
+                <property name="text">
+                 <string>label_KATR3G2</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="1">
+               <widget class="QLineEdit" name="line_KATR4S">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0">
+               <widget class="QMyLabel" name="label_KATR4S">
+                <property name="text">
+                 <string>label_KATR4S</string>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="1">
+               <widget class="QLineEdit" name="line_KATR4G2">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="0">
+               <widget class="QMyLabel" name="label_KATR4G1">
+                <property name="text">
+                 <string>label_KATR4G2</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </widget>
+           <widget class="QGroupBox" name="groupBox_Jaiswal">
+            <property name="geometry">
+             <rect>
+              <x>1080</x>
+              <y>10</y>
+              <width>241</width>
+              <height>401</height>
+             </rect>
+            </property>
+            <property name="title">
+             <string/>
+            </property>
+            <widget class="QWidget" name="gridLayoutWidget_16">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>10</y>
+               <width>231</width>
+               <height>381</height>
+              </rect>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_9">
+              <item row="0" column="0">
+               <widget class="QMyLabel" name="label_KCC2A">
+                <property name="text">
+                 <string>label_KCC2A</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLineEdit" name="line_KCC2A">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="line_KCC2E">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QMyLabel" name="label_KCC2E">
+                <property name="text">
+                 <string>label_KCC2E</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QLineEdit" name="line_KD2E">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QMyLabel" name="label_KD2E">
+                <property name="text">
+                 <string>label_KD2E</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QLineEdit" name="line_KD2T">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QMyLabel" name="label_KD2T">
+                <property name="text">
+                 <string>label_KD2T</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QLineEdit" name="line_KE2CC">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QMyLabel" name="label_KE2CC">
+                <property name="text">
+                 <string>label_KE2CC</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
+               <widget class="QLineEdit" name="line_KM1">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QMyLabel" name="label_KM1">
+                <property name="text">
+                 <string>label_KM1</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="1">
+               <widget class="QLineEdit" name="line_KM10">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0">
+               <widget class="QMyLabel" name="label_KM10">
+                <property name="text">
+                 <string>label_KM10</string>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="1">
+               <widget class="QLineEdit" name="line_KT2CC">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="0">
+               <widget class="QMyLabel" name="label_KT2CC">
+                <property name="text">
+                 <string>label_KT2CC</string>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="1">
+               <widget class="QLineEdit" name="line_KTI2T">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="0">
+               <widget class="QMyLabel" name="label_KTI2T">
+                <property name="text">
+                 <string>label_KTI2T</string>
+                </property>
+               </widget>
+              </item>
+              <item row="9" column="1">
+               <widget class="QLineEdit" name="line_KM10T">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="9" column="0">
+               <widget class="QMyLabel" name="label_KM10T">
+                <property name="text">
+                 <string>label_KM10T</string>
+                </property>
+               </widget>
+              </item>
+              <item row="10" column="1">
+               <widget class="QLineEdit" name="line_CC_TOT">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="10" column="0">
+               <widget class="QMyLabel" name="label_CC_TOT">
+                <property name="text">
+                 <string>label_CC_TOT</string>
+                </property>
+               </widget>
+              </item>
+              <item row="11" column="1">
+               <widget class="QLineEdit" name="line_ATR_TOT">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="11" column="0">
+               <widget class="QMyLabel" name="label_ATR_TOT">
+                <property name="text">
+                 <string>label_ATR_TOT</string>
+                </property>
+               </widget>
+              </item>
+              <item row="12" column="1">
+               <widget class="QLineEdit" name="line_ATM_TOT">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="12" column="0">
+               <widget class="QMyLabel" name="label_ATM_TOT">
+                <property name="text">
+                 <string>label_ATM_TOT</string>
+                </property>
+               </widget>
+              </item>
+              <item row="13" column="1">
+               <widget class="QLineEdit" name="line_CC_ACT0">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="13" column="0">
+               <widget class="QMyLabel" name="label_CC_ACT0">
+                <property name="text">
+                 <string>label_CC_ACT0</string>
+                </property>
+               </widget>
+              </item>
+              <item row="14" column="1">
+               <widget class="QLineEdit" name="line_CC_THRESHOLD">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="14" column="0">
+               <widget class="QMyLabel" name="label_CC_THRESHOLD">
+                <property name="text">
+                 <string>label_CC_THRESHOLD</string>
+                </property>
+               </widget>
+              </item>
+              <item row="15" column="1">
+               <widget class="QLineEdit" name="line_NORM_FACTOR">
+                <property name="maximumSize">
+                 <size>
+                  <width>51</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="15" column="0">
+               <widget class="QMyLabel" name="label_NORM_FACTOR">
+                <property name="text">
+                 <string>label_NORM_FACTOR</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
            </widget>
           </widget>
           <widget class="QWidget" name="tab_Drug">
