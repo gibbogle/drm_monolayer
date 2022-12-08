@@ -304,8 +304,9 @@ end subroutine
 !----------------------------------------------------------------------------------------
 !----------------------------------------------------------------------------------------
 subroutine CheckDrugPresence
-integer :: idrug, iparent, im, ichemo
+integer :: idrug, iparent, im, ichemo, nm
 
+nm = drug(1)%nmetabolites
 ! Check drugs and their metabolites
 do idrug = 1,ndrugs_used
 	iparent = DRUG_A + 2*(idrug-1)
@@ -313,11 +314,11 @@ do idrug = 1,ndrugs_used
 		if (.not.drug_gt_cthreshold(idrug)) then
 			write(logmsg,'(a,i2,a,a)') 'Removing drug and metabolites, concentrations below threshold: ',idrug,' ',chemo(iparent)%name
 			call logger(logmsg)
-			write(logmsg,'(a,3e12.3)') 'concs: ',(chemo(iparent+im)%medium_Cbnd,im=0,2)
+			write(logmsg,'(a,3e12.3)') 'concs: ',(chemo(iparent+im)%medium_Cbnd,im=0,nm)
 			call logger(logmsg)
 			write(logmsg,'(a,e12.3)') 'threshold concentration: ',Cthreshold
 			call logger(logmsg)
-			do im = 0,1
+			do im = 0,nm
 				ichemo = iparent + im
 				chemo(ichemo)%present = .false.
 			enddo

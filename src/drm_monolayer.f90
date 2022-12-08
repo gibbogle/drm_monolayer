@@ -900,18 +900,20 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine ReadProtocol(nf)
 integer :: nf
-integer :: itime, ntimes, kevent, ichemo, idrug, im
+integer :: itime, ntimes, kevent, ichemo, idrug, im, kevent_flush
 character*(64) :: line
 character*(16) :: drugname
 character*(1)  :: numstr
 character*(1) :: fullstr
 real(REAL_KIND) :: t, dt, vol, conc, O2conc, O2flush, dose, O2medium, glumedium
-type(event_type) :: E
+type(event_type) :: E, Eflush
+logical :: flushing
 
 write(logmsg,*) 'ReadProtocol'
 call logger(logmsg)
 total_volume = medium_volume0
 chemo(DRUG_A:)%used = .false.
+flushing = .false.
 do
 	read(nf,'(a)') line
 	if (trim(line) == 'PROTOCOL') exit
@@ -951,6 +953,7 @@ do itime = 1,ntimes
 		read(nf,*) O2conc
 		read(nf,*) O2flush
 		read(nf,*) conc
+		CA_time = (t + dt)*60*60    ! assuming that CA occurs at drug flushing time
 		event(kevent)%time = t
 		event(kevent)%ichemo = ichemo
 		event(kevent)%idrug = idrug
@@ -967,21 +970,22 @@ do itime = 1,ntimes
 			enddo
 		endif
 
-        if (.not.(idrug == 1 .and. use_inhibiter)) then     ! the flushing MEDIUM_EVENT is not added if the drug is an inhibiter
-		    kevent = kevent + 1
-		    event(kevent)%etype = MEDIUM_EVENT
-		    event(kevent)%time = t + dt
-		    event(kevent)%ichemo = 0
+!        if (.not.(idrug == 1 .and. use_inhibiter)) then     ! the flushing MEDIUM_EVENT is not added if the drug is an inhibiter
+!		    kevent = kevent + 1
+            flushing = .true.
+		    Eflush%etype = MEDIUM_EVENT
+		    Eflush%time = t + dt
+		    Eflush%ichemo = 0
 !		    event(kevent)%volume = medium_volume0
-		    event(kevent)%volume = total_volume
-		    event(kevent)%conc = 0
-		    event(kevent)%O2medium = O2flush		
-		    event(kevent)%glumedium = chemo(GLUCOSE)%dose_conc
-		    event(kevent)%lacmedium = chemo(LACTATE)%dose_conc	
-		    event(kevent)%full = .false.	
-		    event(kevent)%dose = 0
-		    write(nflog,'(a,i3,2f8.3)') 'define MEDIUM_EVENT: volume: ',kevent,event(kevent)%volume,event(kevent)%O2medium
-		endif
+		    Eflush%volume = total_volume
+		    Eflush%conc = 0
+		    Eflush%O2medium = O2flush		
+		    Eflush%glumedium = chemo(GLUCOSE)%dose_conc
+		    Eflush%lacmedium = chemo(LACTATE)%dose_conc	
+		    Eflush%full = .false.	
+		    Eflush%dose = 0
+		    write(nflog,'(a,i3,2f8.3)') 'define MEDIUM_EVENT: volume: ',kevent,Eflush%volume,Eflush%O2medium
+!		endif
 	elseif (trim(line) == 'MEDIUM') then
 		kevent = kevent + 1
 		event(kevent)%etype = MEDIUM_EVENT
@@ -1025,6 +1029,25 @@ Nevents = kevent
 ! convert volume from uL to cm^3  NO LONGER - now using cm^3 everywhere
 write(logmsg,*) 'nevents: ',nevents
 call logger(logmsg)
+if (flushing) then  ! add the flushing event - for now assume only one
+    kevent_flush = 0
+    do kevent = 1,Nevents
+        if (Eflush%time < event(kevent)%time) then
+            kevent_flush = kevent
+            exit
+        endif
+    enddo
+    if (kevent_flush == 0) then     ! add event after all other events
+        event(Nevents+1) = Eflush
+    else                            ! insert event at kevent_flush
+        do kevent = Nevents,kevent_flush,-1
+            event(kevent+1) = event(kevent)
+        enddo
+        event(kevent_flush) = Eflush
+    endif
+    Nevents = Nevents+1
+endif
+            
 do kevent = 1,Nevents
 	event(kevent)%done = .false.
 	event(kevent)%time = event(kevent)%time*60*60
@@ -1707,7 +1730,7 @@ if (full) then
 	total_volume = Ve
 	Caverage(MAX_CHEMO+1:2*MAX_CHEMO) = Ce
 else
-	Vcells = Ncells*Vcell_cm3
+	Vcells = Ncells*Vcell_cm3   ! This is valid only if Ncells is the actual experimental cell count.
 	Vm = total_volume - Vcells
 	Vr = min(Vm,Ve)
 	!write(nflog,'(a,4f8.4)') 'total_volume, Vcells, Vm, Vr: ',total_volume, Vcells, Vm, Vr 
@@ -1825,6 +1848,7 @@ integer :: phase_count(0:4), nG2
 real(REAL_KIND) :: total, tadjust
 real(REAL_KIND) :: fATM, fATR, fCP, dtCPdelay, dtATMdelay, dtATRdelay, ATM_DSB, DNA_rate
 real(REAL_KIND) :: pATM_sum, pATR_sum, DSB_sum
+real(REAL_KIND) :: SFtot, Pp, Pd
 logical :: PEST_OK
 logical :: ok = .true.
 logical :: dbug
@@ -1878,7 +1902,6 @@ if (medium_change_step .or. (chemo(DRUG_A)%present .and..not.use_inhibiter)) the
 else
     ndiv = 1
 endif
-!if (DRUG_A_inhibiter) ndiv = 1
 dt = DELTA_T/ndiv
 dts = dt/NT_CONC
 DELTA_T_save = DELTA_T
@@ -1886,7 +1909,7 @@ DELTA_T = dt
 t_sim_0 = t_simulation
 do idiv = 0,ndiv-1
     t_simulation = t_sim_0 + idiv*DELTA_T
-
+    
     if (dbug) write(nflog,*) 'Solver'
     do it_solve = 1,NT_CONC
 	    tstart = (it_solve-1)*dts
@@ -1897,11 +1920,10 @@ do idiv = 0,ndiv-1
 		    res = 5
 		    return
 	    endif
-		
     enddo	! end it_solve loop
     if (dbug) write(nflog,*) 'did Solver'
 #if 0
-!	if (use_metabolism) then
+	if (use_metabolism) then
 		do ityp = 1,Ncelltypes
 			HIF1 = mp%HIF1
 			C_O2 = chemo(OXYGEN)%cmedium(1)
@@ -1917,9 +1939,10 @@ do idiv = 0,ndiv-1
 	!write(nflog,*) 'did Solver'
     call GlutamineDecay
 #endif
-    call CheckDrugConcs
-    call CheckDrugPresence
-
+    if (Ndrugs_used > 0) then
+        call CheckDrugConcs
+        call CheckDrugPresence
+    endif
     if (dbug) write(nflog,*) 'GrowCells'
     call GrowCells(DELTA_T,t_simulation,ok)
     if (dbug) write(nflog,*) 'did GrowCells'
@@ -2058,7 +2081,7 @@ if (dbug .or. mod(istep,nthour) == 0) then
     enddo
     nphase(hour,:) = nphaseh
 	ntphase = nphaseh + ntphase
-	write(logmsg,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells,' Nviable: ',sum(Nviable),' NPsurvive: ',NPsurvive,' Napop: ',Napop    !, &
+	write(logmsg,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells  !,' Nviable: ',sum(Nviable),' NPsurvive: ',NPsurvive,' Napop: ',Napop    !, &
 	call logger(logmsg)
 !	write(nfphase,'(a,2f8.3)') 'S-phase k1, k2: ', K_ATR(2,1),K_ATR(2,2)
 !	if (output_DNA_rate) then
@@ -2139,15 +2162,32 @@ if (use_PEST) then  ! check that all phase distributions have been estimated
 endif
     
 if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
+    ! getSFlive computes the average psurvive for all cells that reach mitosis,
+    ! which number NPsurvive = Nirradiated - Napop.
     write(logmsg,*) 'NPsurvive = Nirradiated - Napop: ',NPsurvive,Nirradiated,Napop
     call logger(logmsg)
     SFlive = getSFlive()
-!    SFlive = sum(Psurvive(1:Nirradiated))/(Nirradiated - Napop)
-    if (use_Napop) then
-        SFave = ((Nirradiated - Napop)/Nirradiated)*SFlive
-    else
-        SFave = SFlive
+    ! To adjust SFlive to replace a cell that reached mitosis before CA with its daughter cells.
+    SFtot = SFlive*(Nirradiated - Napop)
+    if (include_daughters) then
+    ! In order to compare simulated SFave with SF determined by experimental CA,
+    ! SFave needs to be calculated as the average of cells that make it to CA.
+        do kcell = 1,nlist
+            cp => cell_list(kcell)
+            if (cp%psurvive > 0 .and. cp%mitosis_time < CA_time) then
+                Pp = cp%psurvive
+                Pd = 1 - sqrt(1 - Pp)   ! psurvive for the 2 daughters: Pp = 2Pd - Pd^2
+                NPsurvive = NPsurvive + 1
+                SFtot = SFtot - Pp + 2*Pd
+            endif
+        enddo
     endif
+    SFave = SFtot/NPsurvive
+!    if (use_Napop) then
+!        SFave = ((Nirradiated - Napop)/Nirradiated)*SFlive
+!    else
+!        SFave = SFlive
+!    endif
     write(logmsg,'(a,e12.3,f8.4)') 'SFave,log10(SFave): ',SFave,log10(SFave)
     call logger(logmsg)
     call completed
@@ -2201,7 +2241,9 @@ total0 = 0
 do kcell = 1,nlist
     cp => cell_list(kcell)
     if (cp%state == DEAD) cycle
-    if (cp%totDSB0 <= 0) cycle  ! this cell was not irradiated
+    if (cp%totDSB0 <= 0) then
+        cycle  ! this cell was not irradiated - must be a daughter cell
+    endif
     n = n+1
     sfsum = sfsum + cp%Psurvive
     totDSB = sum(cp%DSB)
@@ -2216,6 +2258,8 @@ do kcell = 1,nlist
         stop
     endif
 enddo
+!write(nflog,*) 'getSFlive: n, Nirradiated: ',n, Nirradiated
+! n = Nirradiated - Napop
 SF = sfsum/n
 write(nflog,'(a,2f10.1)') 'getSFlive: initial,final DSB totals: ',total0,total
 write(*,'(a,4e12.3)') 'Ave totDSB,Pmit,Nlethal,Paber: ',tottotDSB/n, totPmit/n, totNlethal/n, totPaber/n
@@ -2493,7 +2537,7 @@ subroutine Execute(ncpu,infile_array,inbuflen,outfile_array,outbuflen,res) BIND(
 use, intrinsic :: iso_c_binding
 character(c_char), intent(in) :: infile_array(*), outfile_array(*)
 integer(c_int) :: ncpu, inbuflen, outbuflen, res
-character*(2048) :: infile, outfile
+character*(2048) :: infile, outfile, logfile
 character*(13) :: fname
 character*(2) :: numstr
 logical :: ok, success, isopen
@@ -2515,7 +2559,10 @@ inquire(unit=nflog,OPENED=isopen)
 if (isopen) then
 	close(nflog)
 endif
-open(nflog,file='drm_monolayer.log',status='replace')
+i = index(infile,'.')
+logfile = infile(1:i)//'log'
+!open(nflog,file='drm_monolayer.log',status='replace')
+open(nflog,file=logfile,status='replace')
 
 write(nflog,*) 'irun: ',res
 write(numstr,'(i2)') res

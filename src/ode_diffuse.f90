@@ -312,6 +312,8 @@ integer :: kcell
 logical :: ok
 logical :: use_drugsolver = .true.
 
+use_drugsolver = .not.use_constant_drug_conc
+
 ok = .true.
 call OGSolver(tstart,dt,ok)
 if (.not.use_drugsolver) return
@@ -424,6 +426,7 @@ do im = 0,nmetabolites
     enddo
 enddo
 !write(*,'(a,5f12.8)') 'EC: ',(Caverage(MAX_CHEMO+iparent+i),i=0,nmetabolites)
+write(*,'(a,5f12.8)') 'IC: ',(Caverage(iparent+i),i=0,nmetabolites)
 
 end subroutine
 

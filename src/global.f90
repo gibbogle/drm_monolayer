@@ -221,7 +221,7 @@ type cell_type
 	! DRM section
 	integer :: phase0
 	real(8) :: pATM, pATR, DSB(NP), totDSB0, totMis
-	real(8) :: Nlethal, Psurvive
+	real(8) :: Nlethal, Psurvive, mitosis_time
 	
 	! Jaiswal section (26/09/22)
 	real(REAL_KIND) :: CC_act, ATR_act, ATM_act
@@ -531,11 +531,13 @@ logical :: single_cell
 
 ! DRM section
 logical :: DRM = .true.
-logical, parameter :: use_Napop = .false.   ! use count of apoptosed cells in SFave calculation - not with phase_hours >= 18
+logical, parameter :: use_Napop = .true.   ! use count of apoptosed cells in SFave calculation - true for consistency with CA
 integer :: N_checkpoint     ! number of cells in checkpoint - not growing
 integer :: ntphase(8)
 integer :: NPsurvive, Nirradiated, Napop
-real(8), allocatable :: Psurvive(:)
+real(REAL_KIND), allocatable :: Psurvive(:)
+real(REAL_KIND) :: CA_time = 18*60*60   ! seconds
+logical :: include_daughters = .false.
 !logical, parameter :: phase_dist = .true.
 real(REAL_KIND) :: t_irradiation, SFave
 logical :: use_SF = .true.
@@ -558,6 +560,7 @@ logical :: use_inhibiter = .false.
 logical :: use_fixed_CP != .false.
 logical :: compute_cycle
 logical :: CC11 = .false.
+logical :: use_constant_drug_conc = .true.   ! This is used in the SN39536 experiments
 
 !real(REAL_KIND) :: mitosis_std = 0.0    ! as a fraction of mean T_M
 real(REAL_KIND) :: mitosis_std = 0.1336*3600     ! Chao 2019, Erlang k=14, L = 28, hours -> seconds

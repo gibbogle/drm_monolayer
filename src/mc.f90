@@ -2,6 +2,8 @@ module mc
 use real_kind_mod
 use global
 
+use chemokine   ! is this OK?
+
 implicit none
 
 ! There are 6 pathways:
@@ -60,7 +62,7 @@ logical :: use_exp_slowdown = .true.
 
 ! DNA-PK inhibition parameters
 real(8) :: Chalf    ! inhibitor concentration that halves repair rate 
-real(8) :: Preass   ! rate of reassignment to pathway 4 (prob of reass/hour)
+real(8) :: Preass   ! rate of reassignment to pathway 4, TMEJ (prob of reass/hour)
 !real(8) :: KmaxInhibitRate = 0.8
 !real(8) :: b_exp = 1.0
 !real(8) :: b_hill = 0.5
@@ -841,7 +843,7 @@ cp%ATM_act = ATM_act
 t = t_simulation/3600.
 !cp%progress = (cp%CC_act - CC_act0)/(CC_threshold - CC_act0)
 if (single_cell) write(*,'(a,f6.2,4e12.3)') 'G2_J: t, vars: ',t,cp%CC_act,cp%ATR_act,cp%ATM_act,D
-if (kcell_now == 1) write(nflog,'(a,f6.2,4e12.3)') 'G2_J: t, vars: ',t,cp%CC_act,dCC_act_dt
+!if (kcell_now == 1) write(nflog,'(a,f6.2,4e12.3)') 'G2_J: t, vars: ',t,cp%CC_act,dCC_act_dt
 end subroutine
 
 !------------------------------------------------------------------------
@@ -933,7 +935,11 @@ phase = cp%phase
 DSB = cp%DSB
 repRateFactor = 1.0
 ! DNA-PK inhibition, DSB reassignment
-Cdrug = cp%Cin(DRUG_A)
+if (use_constant_drug_conc) then
+    Cdrug = Caverage(MAX_CHEMO + DRUG_A)
+else
+    Cdrug = cp%Cin(DRUG_A)
+endif
 !inhibrate = inhibitRate(Cdrug)
 !if (inhibrate > 0) then
 !    do k = 1,NP-1
@@ -946,7 +952,7 @@ Cdrug = cp%Cin(DRUG_A)
 ! Chalf is the drug concentration that reduces repair rate by 1/2.  fRR = exp(-k*C/Chalf)
 ! fRR = 0.5 when C = Chalf, 0.5 = exp(-k), k = -log(0.5) = 0.693
 repRateFactor(1:2) = exp(-0.693*Cdrug/Chalf) 
-!if (kcell_now == 1) write(*,'(a,3f10.4)') 'Cdrug,Chalf,fRR: ',Cdrug,Chalf,repRateFactor(1)
+!if (kcell_now == 1) write(nflog,'(a,4f10.4)') 'Cdrug IC,EC,Chalf,fRR: ',Cdrug,Caverage(MAX_CHEMO + DRUG_A),Chalf,repRateFactor(1)
 ! Reassignment to pathway 4 is (tentatively) constant
 ! Preass is an input parameter = prob of reassignment per hour
 if (Preass > 0) then
@@ -1093,6 +1099,7 @@ else    ! M_phase or dividing
     cp%Psurvive = Pmit*Msurvival
 endif
 NPsurvive = NPsurvive + 1   ! this is the count of cells for which Psurvive has been computed
+cp%mitosis_time = tnow      ! needed to determine if mitosis occurs before or after CA
 !Psurvive(NPsurvive) = cp%Psurvive
 
 ATMsum = ATMsum + cp%pATM
