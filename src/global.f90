@@ -537,7 +537,7 @@ integer :: ntphase(8)
 integer :: NPsurvive, Nirradiated, Napop
 real(REAL_KIND), allocatable :: Psurvive(:)
 real(REAL_KIND) :: CA_time = 18*60*60   ! seconds
-logical :: include_daughters = .false.
+logical :: include_daughters = .true.
 !logical, parameter :: phase_dist = .true.
 real(REAL_KIND) :: t_irradiation, SFave
 logical :: use_SF = .true.
