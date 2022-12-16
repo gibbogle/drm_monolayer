@@ -33,7 +33,7 @@ integer, parameter :: SSA = 5
 
 real(8) :: eta = 0.0006506387875449218
 real(8) :: Pcomplex = 0.4337    ! fraction of created DSBs that are complex (McMahon: complexFrac)
-real(8) :: PHRsimple = 0.8      ! fraction of post-replication simple DSBs that are repaired by HR (slow) rather than NHEJ (fast)
+real(8) :: PHR = 0.8      ! fraction of post-replication simple DSBs that are repaired by HR (slow) rather than NHEJ (fast)
 character*(2) :: phaseName(4) = ['G1','S ','G2','M ']
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.008462]   ! by pathway
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.2604, 0.008462]   ! by pathway  with HR simple
@@ -112,7 +112,7 @@ logical :: use_G1_CP_factor = .false.
 real(8) :: G1_CP_factor = 0.0
 real(8) :: G1_CP_time
 
-!DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHRsimple, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
+!DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHR, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
 contains
 
@@ -174,7 +174,7 @@ read(nfin,*) Klethal
 !endif
 
 read(nfin,*) Pcomplex
-read(nfin,*) PHRsimple
+read(nfin,*) PHR
 read(nfin,*) Chalf
 read(nfin,*) Preass
 read(nfin,*) TMEJrep
@@ -402,7 +402,7 @@ real(8) :: dose, Cdrug
 integer :: ityp, kpar = 0
 integer :: phase
 real(8) :: DSB0(NP)
-real(8) :: totDSB0, baseDSB, fin, T_S, f_S, PHR, NG1, NNHEJ
+real(8) :: totDSB0, baseDSB, fin, T_S, f_S, NG1, NNHEJ
 real(8) :: Pbase, Pdie, R
 real(8) :: DSB_Gy = 35
 
@@ -412,34 +412,33 @@ NG1 = DSB_Gy*dose
 DSB0 = 0
 if (phase == G1_phase) then
     f_S = 0
-    PHR = 0
+!    PHR = 0
+    DSB0(HR) = 0
 elseif (phase >= G2_phase) then
     f_S = 1.0
-    PHR = PHRsimple
+!    PHR = PHRsimple
+    DSB0(HR) = 0.15*2*NG1
 elseif (phase == S_phase) then
     f_S = cp%progress
-    PHR = PHRsimple
+!    PHR = PHRsimple
+    DSB0(HR) = f_S*PHR*2*NG1
 endif
 
 totDSB0 = (1+f_S)*NG1
-NNHEJ = NG1*(1-f_S) + 2*NG1*f_S*(1-PHR)
-DSB0(HR) = totDSB0 - NNHEJ
+!NNHEJ = NG1*(1-f_S) + 2*NG1*f_S*(1-PHR)
+!DSB0(HR) = totDSB0 - NNHEJ
+NNHEJ = totDSB0 - DSB0(HR)
 DSB0(NHEJc) = Pcomplex*NNHEJ
 DSB0(NHEJs) = (1 - Pcomplex)*NNHEJ
 
+! DSB0(HR) = totDSB0 - NNHEJ = (1+f_S)*NG1 - (1-f_S)*NG1 - 2*fs*NG1*(1-PHR)
+! = 2*f_S*NG1*(1 - (1-PHR)) = f_S*PHR*2*NG1
+
 !if (kcell_now == 76) write(*,'(a,i4,3f8.4)') 'cellIrradiation: phase, f_S, totDSB0, NNHEJ: ',phase, f_S, totDSB0, NNHEJ
 
-!DSB0(HR) = PHR*(1 + f_S)*NG1
-!DSB0(NHEJc) = Pcomplex*(1-PHR)*(1 + f_S)*NG1
-!DSB0(NHEJs) = (1-Pcomplex)*(1-PHR)*(1 + f_S)*NG1
-
-!baseDSB = DSB_Gy*dose
 cp%pATM = 0
 cp%pATR = 0
 if (phase == G1_phase) then
-!    totDSB0 = baseDSB
-!    DSB0(NHEJs) = (1 - Pcomplex)*totDSB0
-!    DSB0(NHEJc) = Pcomplex*totDSB0
     ! Apoptosis in G1
     Pbase = exp(-baseRate*totDSB0)   ! this is 1 - Pdie
     Pdie = 1 - Pbase 
@@ -469,28 +468,6 @@ elseif (phase == G2_phase) then
     endif
 endif
 
-!if (kcell_now == 1) then
-!if (phase == G1_phase) then
-!    write(*,'(a,i4,f8.3,5f8.2)') 'IR: phase,f_S,DSB0: ',phase, f_S, DSB0(1:3), totDSB0,sum(DSB0(1:2))
-!    stop
-!endif
-!elseif (phase >= G2_phase) then
-!    totDSB0 = 2*baseDSB
-!    DSB0(NHEJs) = (1 - Pcomplex)*(1 - PHRsimple)*totDSB0
-!    DSB0(HRs) = ((Pcomplex + PHRsimple) - Pcomplex*PHRsimple)*totDSB0
-!
-!else    ! S_phase
-!    if (kcell_now == 1) write(nflog,*) 'in S_phase'
-!    DSB0(NHEJs) = (1 - Pcomplex)*((1-f_S) + 2*f_S*(1 - PHRsimple))*baseDSB
-!    DSB0(NHEJc) = Pcomplex*(1-f_S)*baseDSB
-!    DSB0(HRc) = Pcomplex*2*f_S*baseDSB
-!    DSB0(HRs) = (1 - Pcomplex)*2*f_S*PHRsimple*baseDSB  ! This pathway is not used if PHRsimple = 0
-!    totDSB0 = (1+f_S)*baseDSB
-!endif
-
-!fin = finhibit(Cdrug)
-!DSB0(6) = fin*sum(DSB0(1:3))
-!DSB0(1:3) = (1 - fin)*DSB0(1:3)
 cp%DSB = DSB0
 cp%totDSB0 = totDSB0
 cp%Nlethal = 0
@@ -818,7 +795,7 @@ else
 endif
 Nt = int(dth/dt + 0.5)
 if (single_cell) write(nflog,*) 'G2_Jaiswal_update: Nt: ',Nt
-D = sum(cp%DSB(1:3))*norm_factor
+D = sum(cp%DSB(1:4))*norm_factor
 CC_act = cp%CC_act
 ATR_act = cp%ATR_act
 ATM_act = cp%ATM_act
@@ -951,6 +928,10 @@ endif
 ! Now the effect of inhibition is to reduce the repair rate.
 ! Chalf is the drug concentration that reduces repair rate by 1/2.  fRR = exp(-k*C/Chalf)
 ! fRR = 0.5 when C = Chalf, 0.5 = exp(-k), k = -log(0.5) = 0.693
+if (Chalf == 0) then
+    write(nflog,*) 'ERROR: Chalf = 0'
+    stop
+endif
 repRateFactor(1:2) = exp(-0.693*Cdrug/Chalf) 
 !if (kcell_now == 1) write(nflog,'(a,4f10.4)') 'Cdrug IC,EC,Chalf,fRR: ',Cdrug,Caverage(MAX_CHEMO + DRUG_A),Chalf,repRateFactor(1)
 ! Reassignment to pathway 4 is (tentatively) constant
@@ -970,7 +951,7 @@ endif
 
 DSB0 = DSB     ! initial DSBs for this time step
 totDSB0 = sum(DSB0)
-!if (totDSB0 == 0) return
+if (totDSB0 == 0) return
 
 !if (kcell_now == 1) write(*,'(a,2i6,3f8.2)') 'updateRepair: kcell, phase, DSB0: ',kcell_now,cp%phase,cp%DSB(1:3)
 

@@ -2081,7 +2081,7 @@ if (dbug .or. mod(istep,nthour) == 0) then
     enddo
     nphase(hour,:) = nphaseh
 	ntphase = nphaseh + ntphase
-	write(logmsg,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells  !,' Nviable: ',sum(Nviable),' NPsurvive: ',NPsurvive,' Napop: ',Napop    !, &
+	write(logmsg,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells, ' NPsurvive: ',NPsurvive    !,' Napop: ',Napop    !, &
 	call logger(logmsg)
 !	write(nfphase,'(a,2f8.3)') 'S-phase k1, k2: ', K_ATR(2,1),K_ATR(2,2)
 !	if (output_DNA_rate) then
