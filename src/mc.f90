@@ -33,7 +33,8 @@ integer, parameter :: SSA = 5
 
 real(8) :: eta = 0.0006506387875449218
 real(8) :: Pcomplex = 0.4337    ! fraction of created DSBs that are complex (McMahon: complexFrac)
-real(8) :: PHR = 0.8      ! fraction of post-replication simple DSBs that are repaired by HR (slow) rather than NHEJ (fast)
+!real(8) :: PHR = 0.8      ! fraction of post-replication simple DSBs that are repaired by HR (slow) rather than NHEJ (fast)
+real(8) :: pHRs_S, pHRc_S, pHRs_G2, pHRc_G2
 character*(2) :: phaseName(4) = ['G1','S ','G2','M ']
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.008462]   ! by pathway
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.2604, 0.008462]   ! by pathway  with HR simple
@@ -112,7 +113,7 @@ logical :: use_G1_CP_factor = .false.
 real(8) :: G1_CP_factor = 0.0
 real(8) :: G1_CP_time
 
-!DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, PHR, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
+!DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
 contains
 
@@ -123,6 +124,7 @@ subroutine ReadMcParameters(nfin)
 integer :: nfin
 integer :: iuse_baserate, iuse_exp, iphase_hours, icase, nCPparams, iph, j
 real(8) :: TMEJrep, TMEJfid, SSArep, SSAfid
+real(8) :: pHR_S, pfc_S, pHR_G2, pfc_G2
 
 write(*,*) 'ReadMcParameters:'
 read(nfin,*) iphase_hours
@@ -174,7 +176,11 @@ read(nfin,*) Klethal
 !endif
 
 read(nfin,*) Pcomplex
-read(nfin,*) PHR
+!read(nfin,*) PHR
+read(nfin,*) pHR_S
+read(nfin,*) pfc_S
+read(nfin,*) pHR_G2
+read(nfin,*) pfc_G2
 read(nfin,*) Chalf
 read(nfin,*) Preass
 read(nfin,*) TMEJrep
@@ -187,6 +193,10 @@ read(nfin,*) SSAfrac
 !    read(nfin,*) SSA_rep_fraction
 !    read(nfin,*) SSA_fid_fraction
 !endif
+pHRc_S = pfc_S*pHR_S
+pHRs_S = (1-pfc_S)*pHR_S
+pHRc_G2 = pfc_G2*pHR_G2
+pHRs_G2 = (1-pfc_G2)*pHR_G2
 repRate(4) = TMEJrep
 fidRate(4) = TMEJfid
 repRate(5) = SSArep
@@ -385,16 +395,15 @@ end subroutine
 ! If the pathway is NHEJ, a fraction of the DSBs that would be on the NHEJ
 ! pathway are instead switched to the MMEJ pathway when the DNA-PK inhibitor
 ! drug is present.
-! Bill 
-! So the number assigned to HR, NHR = PHR (1 + fS) NG1. ….(1)
-! Similarly, NNHEJ = (1-PHR)(1 + fS)NG1.
-! But NNHEJ = NNHEJ,S + NNHEJ,C
-! And Pcomplex = NNHEJ, C /NNHEJ
-! Thus Pcomplex = NNHEJ,C /(1-PHR)(1 + fS)NG1.
-! So NNHEJ,C = Pcomplex (1-PHR)(1 + fS)NG1 ….(2)
-! But NNHEJ,S = NNHEJ – NNHEJ,C
-! Therefore NNHEJ,S = (1-PHR)(1 + fS)NG1 - Pcomplex (1-PHR)(1 + fS)NG1
-!                   = (1-Pcomplex)(1-PHR)(1 + fS)NG1 ….(3)
+!
+! Option 1: the first method, which used one pHR for S and one for G2, and
+! pHRs_S = pHR_S/2, pHRc_S = pHR_S/2
+! pHRs_G2 = pHR_G2/2, pHRc_G2 = pHR_G2/2 with pHR_G2 = 0.15 (fixed)
+!
+! Option 2: Bill's suggestion, making the pHRs and pHRc parameters differ,
+! and preserving the total complex fraction.
+!
+! Note: pHRs + pHRc must be <= 1
 !--------------------------------------------------------------------------
 subroutine cellIrradiation(cp, dose, Cdrug)
 type(cell_type), pointer :: cp
@@ -402,9 +411,10 @@ real(8) :: dose, Cdrug
 integer :: ityp, kpar = 0
 integer :: phase
 real(8) :: DSB0(NP)
-real(8) :: totDSB0, baseDSB, fin, T_S, f_S, NG1, NNHEJ
+real(8) :: totDSB0, baseDSB, fin, T_S, f_S, NG1, NNHEJ, pHRs, pHRc, NHRs, NHRc
 real(8) :: Pbase, Pdie, R
 real(8) :: DSB_Gy = 35
+integer, parameter :: option = 2
 
 phase = cp%phase
 cp%phase0 = phase
@@ -412,30 +422,30 @@ NG1 = DSB_Gy*dose
 DSB0 = 0
 if (phase == G1_phase) then
     f_S = 0
-!    PHR = 0
-    DSB0(HR) = 0
+    pHRs = 0
+    pHRc = 0
 elseif (phase >= G2_phase) then
     f_S = 1.0
-!    PHR = PHRsimple
-    DSB0(HR) = 0.15*2*NG1
+    pHRs = pHRs_G2
+    pHRc = pHRc_G2
 elseif (phase == S_phase) then
     f_S = cp%progress
-!    PHR = PHRsimple
-    DSB0(HR) = f_S*PHR*2*NG1
+    pHRs = pHRs_S
+    pHRc = pHRc_S
 endif
 
 totDSB0 = (1+f_S)*NG1
-!NNHEJ = NG1*(1-f_S) + 2*NG1*f_S*(1-PHR)
-!DSB0(HR) = totDSB0 - NNHEJ
-NNHEJ = totDSB0 - DSB0(HR)
-DSB0(NHEJc) = Pcomplex*NNHEJ
-DSB0(NHEJs) = (1 - Pcomplex)*NNHEJ
-
-! DSB0(HR) = totDSB0 - NNHEJ = (1+f_S)*NG1 - (1-f_S)*NG1 - 2*fs*NG1*(1-PHR)
-! = 2*f_S*NG1*(1 - (1-PHR)) = f_S*PHR*2*NG1
-
-!if (kcell_now == 76) write(*,'(a,i4,3f8.4)') 'cellIrradiation: phase, f_S, totDSB0, NNHEJ: ',phase, f_S, totDSB0, NNHEJ
-
+NHRs = f_S*pHRs*2*NG1
+NHRc = f_S*pHRc*2*NG1
+DSB0(HR) = NHRs + NHRc
+if (option == 1) then
+    DSB0(NHEJc) = Pcomplex*(totDSB0 - DSB0(HR)) 
+    DSB0(NHEJs) = (1 - Pcomplex)*(totDSB0 - DSB0(HR)) 
+elseif (option == 2) then
+    DSB0(NHEJc) = Pcomplex*totDSB0 - NHRc
+    DSB0(NHEJs) = (1 - Pcomplex)*totDSB0 - NHRs
+endif
+        
 cp%pATM = 0
 cp%pATR = 0
 if (phase == G1_phase) then
