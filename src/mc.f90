@@ -188,11 +188,6 @@ read(nfin,*) TMEJfid
 read(nfin,*) SSArep
 read(nfin,*) SSAfid
 read(nfin,*) SSAfrac
-!if (use_SSA .and. read_SSA_parameters) then
-!    read(nfin,*) SSAfrac
-!    read(nfin,*) SSA_rep_fraction
-!    read(nfin,*) SSA_fid_fraction
-!endif
 pHRc_S = pfc_S*pHR_S
 pHRs_S = (1-pfc_S)*pHR_S
 pHRc_G2 = pfc_G2*pHR_G2
@@ -417,7 +412,7 @@ real(8) :: DSB_Gy = 35
 integer, parameter :: option = 2
 
 phase = cp%phase
-cp%phase0 = phase
+cp%phase0 = min(phase, M_phase)
 NG1 = DSB_Gy*dose
 DSB0 = 0
 if (phase == G1_phase) then
@@ -1091,6 +1086,7 @@ else    ! M_phase or dividing
 endif
 NPsurvive = NPsurvive + 1   ! this is the count of cells for which Psurvive has been computed
 cp%mitosis_time = tnow      ! needed to determine if mitosis occurs before or after CA
+if (istep > 1278) write(*,*) 'reached M: phase0: ',istep,cp%phase0
 !Psurvive(NPsurvive) = cp%Psurvive
 
 ATMsum = ATMsum + cp%pATM

@@ -54,7 +54,7 @@ if (cp%phase == G1_phase) then
         if (use_G1_stop) then
             ! At start of CP, need to compute CP delay
             call get_CP_delay(cp)
-            if (kcell_now <= 10) write(*,'(a,i6,f8.1)') 'G1 CP_delay: ', kcell_now,cp%CP_delay/3600
+!            if (kcell_now <= 10) write(*,'(a,i6,f8.1)') 'G1 CP_delay: ', kcell_now,cp%CP_delay/3600
             cp%phase = G1_checkpoint
             cp%progress = 0
 !            write(*,'(a,i6)') 'G1 -> checkpoint: ',kcell_now

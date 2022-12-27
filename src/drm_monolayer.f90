@@ -1195,6 +1195,8 @@ cp%metab%C_GlnEx_prev = 0
 
 ! Jaiswal
 cp%CC_act = CC_act0
+!R = par_uni(kpar)
+!cp%CC_act = CC_act0 + R*(CC_threshold - CC_act0)
 cp%ATR_act = 0
 cp%ATM_act = 0
 
@@ -2065,7 +2067,7 @@ endif
                 DSB_sum = DSB_sum + sum(cp%DSB)
             endif
         enddo
-        write(nfphase,'(a,f8.3,2f8.4,f8.1)') 'hour, (G2) ave pATM, pATR, DSB: ',istep*DELTA_T/3600.,pATM_sum/nG2, pATR_sum/nG2, DSB_sum/nG2
+!        write(nfphase,'(a,f8.3,2f8.4,f8.1)') 'hour, (G2) ave pATM, pATR, DSB: ',istep*DELTA_T/3600.,pATM_sum/nG2, pATR_sum/nG2, DSB_sum/nG2
 !        write(*,'(a,i4,f6.3,i4)') 'phase, progress: ',cp%phase, cp%progress, next_phase_hour
 !        write(nfphase,'(2i4,2f6.1,2f6.3)') hour,cp%phase,tnow/3600,cp%G2_time/3600,cp%V/Vdivide0,cp%divide_volume/Vdivide0
     endif
@@ -2081,7 +2083,7 @@ if (dbug .or. mod(istep,nthour) == 0) then
     enddo
     nphase(hour,:) = nphaseh
 	ntphase = nphaseh + ntphase
-	write(logmsg,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells, ' NPsurvive: ',NPsurvive    !,' Napop: ',Napop    !, &
+	write(logmsg,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells, ' N reached mitosis: ',NPsurvive    !,' Napop: ',Napop    !, &
 	call logger(logmsg)
 !	write(nfphase,'(a,2f8.3)') 'S-phase k1, k2: ', K_ATR(2,1),K_ATR(2,2)
 !	if (output_DNA_rate) then
@@ -2341,7 +2343,7 @@ if (compute_cycle) then
     write(nfphase,'(a,3f8.3)') 'Average G2 delay: pATM, pATR, total: ',G2thsum/NG2th,sum(G2thsum)/NG2th
     write(nfphase,'(a,i6)') 'Number of cells averaged: ',NG2th
     if (npet > 0) write(*,'(a,i6,f6.3)') 'Average phase time: ',npet,phase_exit_time_sum/(3600*npet)
-    return
+!    return
 endif
 if (output_DNA_rate) then
     write(nflog,*) 'Completed'
@@ -2402,11 +2404,16 @@ do kcell = 1,nlist
     nir(ph) = nir(ph) + 1
     sftot(ph) = sftot(ph) + cp%Psurvive
 enddo
+nir = max(nir,1)
 write(*,'(a,4i6)') 'nir: ',nir
 write(*,'(a,4f8.4)') 'Average SF by phase: ',sftot/nir
 write(*,'(a,4f8.4)') 'log10(SF) by phase: ',log10(sftot/nir)
+if (use_synchronise) then
+    write(nfphase,'(a,4f8.4)') 'Average SF by phase: ',sftot/nir
+!    write(nfphase,'(a,4f8.4)') 'log10(SF) by phase: ',log10(sftot/nir)
+endif
 !write(*,'(a,2f8.4)') 'Average: ',sfsum/nsum,log10(sfsum/nsum)
-write(*,'(a,i6,e12.3)') 'max G1 SF: ',kcellmax,sfmax
+!write(*,'(a,i6,e12.3)') 'max G1 SF: ',kcellmax,sfmax
 
 !    phase_dist(3) = phase_dist(3) + phase_dist(4)   ! lump G2 and M as G2
 !    fract(0:3) = phase_dist(0:3)/real(sum(phase_dist(0:3)))
@@ -2539,7 +2546,7 @@ character(c_char), intent(in) :: infile_array(*), outfile_array(*)
 integer(c_int) :: ncpu, inbuflen, outbuflen, res
 character*(2048) :: infile, outfile, logfile
 character*(13) :: fname
-character*(2) :: numstr
+character*(1) :: numstr
 logical :: ok, success, isopen
 integer :: i
 
@@ -2565,7 +2572,7 @@ logfile = infile(1:i)//'log'
 open(nflog,file=logfile,status='replace')
 
 write(nflog,*) 'irun: ',res
-write(numstr,'(i2)') res
+write(numstr,'(i1)') res
 fname = 'phase'//numstr//'.log'
 write(nflog,'(a)') fname
 inquire(unit=nfphase,OPENED=isopen)

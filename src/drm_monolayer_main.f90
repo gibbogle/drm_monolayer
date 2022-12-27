@@ -117,7 +117,7 @@ if (use_synchronise) then
         write(*,'(2i6,f6.3)') i-1, phase(i), progress(i)
     enddo
 endif
-synch_phase = G2_phase   !G1 is 1 - 6, S is 7 - 15, G2 is 16 - 19
+synch_phase = S_phase   !G1 is 1 - 6, S is 7 - 15, G2 is 16 - 19
 synch_fraction = 0.8
 G2_katm3_factor = 1.0
 G2_katm4_factor = 1.0
@@ -130,7 +130,7 @@ compute_cycle = .true.
 i_hypoxia_cutoff = 3
 i_growth_cutoff = 1
 do irun = 1,1   ! 1,6   ! 16,19     ! 7,15
-!    synch_fraction = progress(irun)    !(irun-1)*0.2
+    synch_fraction = progress(irun)    !(irun-1)*0.2
     if (use_synchronise) then
     	write(*,'(a,2i4,f6.3)') 'irun, synch_phase, synch_fraction: ',irun,synch_phase,synch_fraction
     endif
