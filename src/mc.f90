@@ -35,6 +35,8 @@ real(8) :: eta = 0.0006506387875449218
 real(8) :: Pcomplex = 0.4337    ! fraction of created DSBs that are complex (McMahon: complexFrac)
 !real(8) :: PHR = 0.8      ! fraction of post-replication simple DSBs that are repaired by HR (slow) rather than NHEJ (fast)
 real(8) :: pHRs_S, pHRc_S, pHRs_G2, pHRc_G2
+logical :: use_sigmoid = .true.
+real(8) :: rmin = 0.1, kdecay = 0.1, ksig = 1, csig = 8.56    ! decay function parameters
 character*(2) :: phaseName(4) = ['G1','S ','G2','M ']
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.008462]   ! by pathway
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.2604, 0.008462]   ! by pathway  with HR simple
@@ -177,10 +179,13 @@ read(nfin,*) Klethal
 
 read(nfin,*) Pcomplex
 !read(nfin,*) PHR
-read(nfin,*) pHR_S
-read(nfin,*) pfc_S
-read(nfin,*) pHR_G2
-read(nfin,*) pfc_G2
+read(nfin,*) pHRs_S
+read(nfin,*) pHRc_S
+read(nfin,*) rmin
+read(nfin,*) ksig
+!read(nfin,*) pfc_S
+!read(nfin,*) pHR_G2
+!read(nfin,*) pfc_G2
 read(nfin,*) Chalf
 read(nfin,*) Preass
 read(nfin,*) TMEJrep
@@ -188,10 +193,10 @@ read(nfin,*) TMEJfid
 read(nfin,*) SSArep
 read(nfin,*) SSAfid
 read(nfin,*) SSAfrac
-pHRc_S = pfc_S*pHR_S
-pHRs_S = (1-pfc_S)*pHR_S
-pHRc_G2 = pfc_G2*pHR_G2
-pHRs_G2 = (1-pfc_G2)*pHR_G2
+!pHRc_S = pfc_S*pHR_S
+!pHRs_S = (1-pfc_S)*pHR_S
+!pHRc_G2 = pfc_G2*pHR_G2
+!pHRs_G2 = (1-pfc_G2)*pHR_G2
 repRate(4) = TMEJrep
 fidRate(4) = TMEJfid
 repRate(5) = SSArep
@@ -409,24 +414,29 @@ real(8) :: DSB0(NP)
 real(8) :: totDSB0, baseDSB, fin, T_S, f_S, NG1, NNHEJ, pHRs, pHRc, NHRs, NHRc
 real(8) :: Pbase, Pdie, R
 real(8) :: DSB_Gy = 35
+real(8) :: th, Npre, Npre_s, Npre_c, Npost, Npost_s, Npost_c
 integer, parameter :: option = 2
 
 phase = cp%phase
 cp%phase0 = min(phase, M_phase)
 NG1 = DSB_Gy*dose
 DSB0 = 0
+
+#if 0
 if (phase == G1_phase) then
     f_S = 0
     pHRs = 0
     pHRc = 0
-elseif (phase >= G2_phase) then
-    f_S = 1.0
-    pHRs = pHRs_G2
-    pHRc = pHRc_G2
-elseif (phase == S_phase) then
-    f_S = cp%progress
-    pHRs = pHRs_S
-    pHRc = pHRc_S
+else
+    if (phase >= G2_phase) then
+        f_S = 1.0
+        pHRs = pHRs_G2
+        pHRc = pHRc_G2
+    else
+        f_S = cp%progress
+        pHRs = pHRs_S
+        pHRc = pHRc_S
+    endif    
 endif
 
 totDSB0 = (1+f_S)*NG1
@@ -440,7 +450,35 @@ elseif (option == 2) then
     DSB0(NHEJc) = Pcomplex*totDSB0 - NHRc
     DSB0(NHEJs) = (1 - Pcomplex)*totDSB0 - NHRs
 endif
-        
+#endif
+
+if (phase == G1_phase) then
+    totDSB0 = NG1
+    DSB0(NHEJc) = Pcomplex*totDSB0
+    DSB0(NHEJs) = (1 - Pcomplex)*totDSB0
+else
+    th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
+    if (phase >= G2_phase) then
+        f_S = 1.0
+    else
+        f_S = cp%progress
+    endif 
+    totDSB0 = (1+f_S)*NG1
+    pHRs = pHRs_S*((1-rmin)*fdecay(th) +rmin)
+    pHRc = pHRc_S*((1-rmin)*fdecay(th) +rmin)
+    Npre = NG1*(1 - f_S)
+    Npost = NG1*2*f_S
+    Npre_s = Npre*(1 - pComplex)
+    Npre_c = Npre*pComplex
+    Npost_s = Npost*(1 - pComplex)
+    Npost_c = Npost*pComplex
+    NHRs = Npost_s*pHRs
+    NHRc = Npost_c*pHRc
+    DSB0(HR) = NHRs + NHRc
+    DSB0(NHEJs) = Npre_s + Npost_s - NHRs
+    DSB0(NHEJc) = Npre_c + Npost_c - NHRc       
+endif
+
 cp%pATM = 0
 cp%pATR = 0
 if (phase == G1_phase) then
@@ -484,6 +522,27 @@ tottotDSB = 0
 totNlethal = 0
 
 end subroutine
+
+!--------------------------------------------------------------------------
+!--------------------------------------------------------------------------
+function fdecay(t) result(f)
+real(8) :: t, f
+
+if (use_sigmoid) then
+    f = fsigmoid(t)
+else
+    f = exp(-kdecay*t)
+endif
+end function
+
+!--------------------------------------------------------------------------
+! From Richards's curve
+!--------------------------------------------------------------------------
+function fsigmoid(t) result(f)
+real(8) :: t, f
+
+f = 1.0/(1.0 + exp(ksig*(t - csig)))
+end function
 
 !--------------------------------------------------------------------------
 ! There is no need to work with pATM concentration, since the concentration

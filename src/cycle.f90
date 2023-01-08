@@ -62,6 +62,7 @@ if (cp%phase == G1_phase) then
         endif
         cp%phase = S_phase
         cp%progress = 0
+        cp%t_S_phase = tnow
 !        goto 10    ! could continue in next phase with the remainder of the time step
     endif
 elseif (cp%phase == S_phase) then

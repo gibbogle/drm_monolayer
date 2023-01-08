@@ -169,6 +169,7 @@ type cell_type
 	real(REAL_KIND) :: fg(4)			! to make sum(T_G1, T_S, T_G2, T_M) consistent with Tdivide
 	real(REAL_KIND) :: t_divide_last	! these two values are used for colony simulation
 	real(REAL_KIND) :: t_divide_next
+	real(REAL_KIND) :: t_S_phase
 	real(REAL_KIND) :: birthtime
 !	real(REAL_KIND) :: t_anoxia
 !	real(REAL_KIND) :: t_anoxia_die
