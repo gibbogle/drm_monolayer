@@ -190,15 +190,11 @@ read(nfin,*) ksig
 read(nfin,*) Chalf
 read(nfin,*) Preass
 read(nfin,*) TMEJrep
-read(nfin,*) TMEJfid
 read(nfin,*) sigma_TMEJ
 read(nfin,*) SSArep
-read(nfin,*) SSAfid
 read(nfin,*) SSAfrac
 repRate(4) = TMEJrep
-fidRate(4) = TMEJfid
 repRate(5) = SSArep
-fidRate(5) = SSAfid
 
 if (use_Jaiswal) then
     read(nfin,*) Kcc2a
@@ -445,6 +441,7 @@ endif
 #endif
 
 if (phase == G1_phase) then
+    f_S = 0.0
     totDSB0 = NG1
     DSB0(NHEJc) = Pcomplex*totDSB0
     DSB0(NHEJs) = (1 - Pcomplex)*totDSB0
@@ -506,7 +503,7 @@ endif
 cp%DSB = DSB0
 cp%totDSB0 = totDSB0
 cp%Nlethal = 0
-!if (kcell_now <= 10) write(*,'(a,2i6,8f8.2)') 'IR: kcell, phase,DSB,f_S: ',kcell_now,phase,cp%DSB(1:3),f_S
+if (kcell_now <= 10) write(*,'(a,2i6,8f8.2)') 'IR: kcell, phase,DSB,f_S: ',kcell_now,phase,cp%DSB(1:4),f_S
 
 totPmit = 0
 totPaber = 0
@@ -877,7 +874,7 @@ cp%ATM_act = ATM_act
 t = t_simulation/3600.
 !cp%progress = (cp%CC_act - CC_act0)/(CC_threshold - CC_act0)
 if (single_cell) write(*,'(a,f6.2,4e12.3)') 'G2_J: t, vars: ',t,cp%CC_act,cp%ATR_act,cp%ATM_act,D
-!if (kcell_now == 1) write(nflog,'(a,f6.2,4e12.3)') 'G2_J: t, vars: ',t,cp%CC_act,dCC_act_dt
+!if (kcell_now == 3) write(*,'(a,f6.2,4e12.3)') 'G2_J: t, vars: ',t,cp%CC_act,dCC_act_dt
 end subroutine
 
 !------------------------------------------------------------------------
@@ -968,6 +965,7 @@ phase = cp%phase
 !    iph = 1
 !endif
 DSB = cp%DSB
+!write(*,'(a,i4,4f8.1)') 'phase,DSB: ',phase,DSB(1:4)
 repRateFactor = 1.0
 ! DNA-PK inhibition, DSB reassignment
 if (use_constant_drug_conc) then
@@ -1006,51 +1004,37 @@ if (Preass > 0) then
         endif
     enddo
 endif
+DSB0 = DSB     ! initial DSBs for this time step
 
 ! Revised approach with no fidelity, just misrejoining
 
-! The following commented out code follows MEDRAS
-#if 0
-DSB0 = DSB     ! initial DSBs for this time step
 totDSB0 = sum(DSB0)
 if (totDSB0 == 0) return
 
 !if (kcell_now == 1) write(*,'(a,2i6,3f8.2)') 'updateRepair: kcell, phase, DSB0: ',kcell_now,cp%phase,cp%DSB(1:3)
 
-!if (use_ATM) then
-!ATM_DSB = DSB(2) + DSB(4)   ! complex DSB
-!ATR_DSB = DSB(4) + DSB(5)
 ATM_DSB = DSB(NHEJc) + DSB(HR)   ! complex DSB
 ATR_DSB = DSB(HR)
-!if (phase == G1_phase) then
-!    call updateATR(cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth
-!elseif (phase == S_phase) then
-!    call updateATM(cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth
-!    call updateATR(cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth
-!else
-    if (iph >= 7) iph = iph - 6     ! checkpoint phase numbers --> phase number, to continue pATM and pATR processes through checkpoints
-    if (iph <= G2_phase) then      ! not for 4 (M_phase) or 5 (dividing)
-        if (iph == G2_phase .and. use_Jaiswal) then
-            call G2_Jaiswal_update(cp, dth)
-        else
-            call updateATM(iph,cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth
-            if (iph > G1_phase) call updateATR(iph,cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth
-        endif
+if (iph >= 7) iph = iph - 6     ! checkpoint phase numbers --> phase number, to continue pATM and pATR processes through checkpoints
+if (iph <= G2_phase) then      ! not for 4 (M_phase) or 5 (dividing)
+    if (iph == G2_phase .and. use_Jaiswal) then
+        call G2_Jaiswal_update(cp, dth)
+    else
+        call updateATM(iph,cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth
+        if (iph > G1_phase) call updateATR(iph,cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth
     endif
-!endif
+endif
 
-!pathUsed = pathwayUsed(phase,:)
-dbug = (kcell_now == -3) .and. (cp%phase0 == G2_phase)
 DSB = 0
 do k = 1,NP
-!    if (pathUsed(k)) then
-        if (dbug .and. DSB0(k) > 0) write(*,*) 'pathwayRepair: k,DSB0(k): ',kcell_now,k,DSB0(k)
-        call pathwayRepair(k, dth, DSB0(k), DSB(k))
-!    endif
+!   if (dbug .and. DSB0(k) > 0) write(*,*) 'pathwayRepair: k,DSB0(k): ',kcell_now,k,DSB0(k)
+    call pathwayRepair(k, dth, DSB0(k), DSB(k))
     if (DSB(k) < DSB_min) DSB(k) = 0
 enddo
 ! DSB0(k) is the count before repair, DSB(k) is the count after repair
 
+! The following commented out code follows MEDRAS
+#if 0
 totDSB = sum(DSB)
 totDSBinfid0 = 0
 totDSBinfid = 0

@@ -44,6 +44,7 @@ real(8) :: S_NHEJ, S_TMEJ
 real(8) :: V, R, eta
 integer :: k
 
+write(nflog,*) 'make_eta_table: ',S_NHEJ, S_TMEJ
 do k = 1,Neta
 	V = 1 + (k-1.0)/(Neta-1.0)
 	R = V**(1./3.)
@@ -51,9 +52,8 @@ do k = 1,Neta
 	eta_table(k,1:2) = eta
 	eta = etafun(R,S_TMEJ)
 	eta_table(k,3:5) = eta
-!	write(*,'(a,f8.4,2f6.2,f10.6)') 'sigma, V, R, eta: ', sigma, V, R, eta
+	write(nflog,'(a,i4,2f10.6)') 'k, eta_NHEJ, eta_TMEJ: ', k, eta_table(k,1), eta_table(k,3)
 enddo
-
 end subroutine
 
 !--------------------------------------------------------------------------

@@ -45,7 +45,7 @@ real(REAL_KIND) :: dt
 !	write(nflog,*) 'dVdt=0, kcell: ',kcell_now,cp%phase
 !	stop
 !endif
-!if (kcell_now == 1) write(*,'(a,2i4,8f7.3)') 'kcell, phase: ',kcell_now,cp%phase, cp%progress, cp%fp
+!if (kcell_now == 3) write(*,'(a,2i4,8f7.3)') 'kcell, phase, progress, fp: ',kcell_now,cp%phase, cp%progress, cp%fp
 !if (kcell_now <= 10) write(nflog,'(a,2i4,f6.3)') 'kcell_now, phase, progress: ',kcell_now,cp%phase,cp%progress
 10 continue
 if (cp%phase == G1_phase) then
