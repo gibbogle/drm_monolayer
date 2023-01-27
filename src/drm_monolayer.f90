@@ -2083,8 +2083,11 @@ if (dbug .or. mod(istep,nthour) == 0) then
     enddo
     nphase(hour,:) = nphaseh
 	ntphase = nphaseh + ntphase
+	write(nflog,*)
 	write(logmsg,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells, ' N reached mitosis: ',NPsurvive    !,' Napop: ',Napop    !, &
 	call logger(logmsg)
+	if (single_cell) call medras_compare()
+	write(nflog,*)
 !	write(nfphase,'(a,2f8.3)') 'S-phase k1, k2: ', K_ATR(2,1),K_ATR(2,2)
 !	if (output_DNA_rate) then
 !	    call get_DNA_synthesis_rate(DNA_rate)
@@ -2128,26 +2131,6 @@ endif
 istep = istep + 1
 !write(*,*) 'end simulate_step: t_simulation: ',t_simulation
 !call averages
-! No need for this here, since we are now computing phase_dist every hour
-!if (t_simulation - t_irradiation >= phase_hours*3600 .and. phase_dist(1) == 0) then   ! count cells in each phase
-!    call get_phase_distribution(phase_dist)
-!    do kcell = 1,nlist
-!        cp => cell_list(kcell)
-!        if (cp%state == DEAD) then
-!            ph = 0      ! 
-!        elseif (cp%phase == G1_phase .or. cp%phase == G1_checkpoint) then
-!            ph = 1
-!        elseif (cp%phase == S_phase .or. cp%phase == S_checkpoint) then
-!            ph = 2
-!        elseif (cp%phase < M_phase) then
-!            ph = 3
-!        else
-!            ph = 4
-!        endif
-!        phase_dist(ph) = phase_dist(ph) + 1
-!!        phase_dist(cp%phase) = phase_dist(cp%phase) + 1   ! checking # in checkpoints
-!    enddo
-!endif
 ! Need the phase_dist check in case NPsurvive = Nirradiated before phase_hours
 
 ! Check for completion of the run
@@ -2200,6 +2183,21 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
     res = 1
 endif
 
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+subroutine medras_compare()
+type(cell_type), pointer :: cp
+real(8) :: totDSB, Paber, Pmit, Psurvive
+
+cp => cell_list(1)
+totDSB = sum(cp%DSB(1:3))
+write(nflog,'(a,3f8.3)') 'N_DSB, totNmis, Nlethal: ',totDSB,cp%Nlethal/Klethal,cp%Nlethal
+Paber = exp(-cp%Nlethal)
+Pmit = exp(-mitRate*totDSB)
+Psurvive = Pmit*Paber  
+write(nflog,'(a,3f8.4)') 'Paber, Pmit, Psurvive: ',Paber, Pmit, Psurvive
 end subroutine
 
 !-----------------------------------------------------------------------------------------

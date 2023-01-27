@@ -3,10 +3,11 @@ use real_kind_mod
 use global
 
 use chemokine   ! is this OK?
+use eta_module
 
 implicit none
 
-! There are 6 pathways:
+! There are 5 pathways:
 ! 1 = NHEJs fast pre-replication (simple)
 ! 2 = NHEJc slow pre-replication (complex)
 ! 3 = HRc slow post-replication (complex)
@@ -28,10 +29,11 @@ integer, parameter :: SSA = 5
 !integer, parameter :: HRs = 4
 !integer, parameter :: TMEJ = 5
 
+
 ! Note: McMahon parameter values are from MEDRAS code, specifically medrascell.py
 !       ------------------------
 
-real(8) :: eta = 0.0006506387875449218
+!real(8) :: eta = 0.0006506387875449218
 real(8) :: Pcomplex = 0.4337    ! fraction of created DSBs that are complex (McMahon: complexFrac)
 !real(8) :: PHR = 0.8      ! fraction of post-replication simple DSBs that are repaired by HR (slow) rather than NHEJ (fast)
 real(8) :: pHRs_S, pHRc_S, pHRs_G2, pHRc_G2
@@ -47,7 +49,7 @@ real(8) :: repRate(NP) = [2.081, 0.2604, 0.2604, 0.008462, 0.0]   ! by pathway (
 !real(8) :: fidRate(NP)  = [0.98537, 0.98537, 0.98537, 1.0, 0.4393]  ! by pathway
 !real(8) :: fidRate(NP)  = [0.98537, 0.98537, 0.98537, 1.0, 1.0, 0.4393]  ! by pathway  with HR simple
 !real(8) :: fidRate(NP)  = [0.98537, 0.98537, 1.0, 1.0, 0.4393]  ! by pathway  with HR simple
-real(8) :: fidRate(NP)  = [0.98537, 0.98537, 1.0, 0.4393, 0.0]  ! by pathway  with HR simple (McMahon: NHEJFidelity, NHEJFidelity, 1.0, MMEJFidelity)
+real(8) :: fidRate(NP)  = [0.98537, 1.0, 0.4393, 0.0, 0.0]  ! by pathway  with HR simple (McMahon: NHEJFidelity, NHEJFidelity, 1.0, MMEJFidelity)
 !logical :: pathwayUsed(8,NP)
 real(8) :: apopRate = 0.01117   ! (McMahon: apoptoticRate) (NOT USED only baseRate is used)
 real(8) :: baseRate = 0.000739  ! (McMahon: baseRate)
@@ -62,6 +64,8 @@ real(8) :: K_ATM(3,4) ! = [0.076, 0.3, 1.0, 1.0]    ! (1) and (2) are the parame
 real(8) :: K_ATR(3,4) ! = [0.005, 0.3, 1.0, 1.0]
 real(8) :: Ztime = 0    ! hours
 logical :: use_exp_slowdown = .true.
+
+real(8) :: sigma_NHEJ = 0.04187, sigma_TMEJ = 0.08
 
 ! DNA-PK inhibition parameters
 real(8) :: Chalf    ! inhibitor concentration that halves repair rate 
@@ -114,6 +118,7 @@ logical :: normalise, M_only
 logical :: use_G1_CP_factor = .false.
 real(8) :: G1_CP_factor = 0.0
 real(8) :: G1_CP_time
+
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
@@ -178,25 +183,18 @@ read(nfin,*) Klethal
 !endif
 
 read(nfin,*) Pcomplex
-!read(nfin,*) PHR
 read(nfin,*) pHRs_S
 read(nfin,*) pHRc_S
 read(nfin,*) rmin
 read(nfin,*) ksig
-!read(nfin,*) pfc_S
-!read(nfin,*) pHR_G2
-!read(nfin,*) pfc_G2
 read(nfin,*) Chalf
 read(nfin,*) Preass
 read(nfin,*) TMEJrep
 read(nfin,*) TMEJfid
+read(nfin,*) sigma_TMEJ
 read(nfin,*) SSArep
 read(nfin,*) SSAfid
 read(nfin,*) SSAfrac
-!pHRc_S = pfc_S*pHR_S
-!pHRs_S = (1-pfc_S)*pHR_S
-!pHRc_G2 = pfc_G2*pHR_G2
-!pHRs_G2 = (1-pfc_G2)*pHR_G2
 repRate(4) = TMEJrep
 fidRate(4) = TMEJfid
 repRate(5) = SSArep
@@ -223,13 +221,7 @@ if (use_Jaiswal) then
     Km2 = Km1
 endif
 
-!if (use_SSA) then
-!    repRate(SSA) = SSA_rep_fraction*repRate(TMEJ)
-!    fidRate(SSA) = SSA_fid_fraction*fidRate(TMEJ)
-!    if (alt_EJ_suppressed) then
-!        SSAfrac = 1.0
-!    endif
-!endif
+call make_eta_table(sigma_NHEJ, sigma_TMEJ)
 
 ATMsum = 0  ! to investigate ATM dependence on parameters
 ATRsum = 0  ! to investigate ATR dependence on parameters
@@ -543,6 +535,7 @@ real(8) :: t, f
 
 f = 1.0/(1.0 + exp(ksig*(t - csig)))
 end function
+
 
 !--------------------------------------------------------------------------
 ! There is no need to work with pATM concentration, since the concentration
@@ -858,7 +851,7 @@ else
     kkm10 = Km10
 endif
 Nt = int(dth/dt + 0.5)
-if (single_cell) write(nflog,*) 'G2_Jaiswal_update: Nt: ',Nt
+!if (single_cell) write(nflog,*) 'G2_Jaiswal_update: Nt: ',Nt
 D = sum(cp%DSB(1:4))*norm_factor
 CC_act = cp%CC_act
 ATR_act = cp%ATR_act
@@ -955,13 +948,14 @@ real(8) :: DSB(NP), dNlethal
 real(8) :: DSB0(NP)
 real(8) :: totDSB0, totDSB, Pmis, Nmis, dNmis(NP), totDSBinfid0, totDSBinfid, ATR_DSB, ATM_DSB, dth, binMisProb
 real(8) :: Cdrug, inhibrate, Nreassign
+real(8) :: f_S, eta_NHEJ, eta_TMEJ
 logical :: pathUsed(NP)
 integer :: k, iph
 logical :: use_DSBinfid = .true.
 real(8) :: DSB_min = 1.0e-3
-real(8) :: eta_G1 = 0.0006506
-real(8) :: eta_G2 = 0.0003326
-logical :: use_totMis = .false.
+!real(8) :: eta_G1 = 0.0006506
+!real(8) :: eta_G2 = 0.0006506   !0.0003326
+logical :: use_totMis = .true.      ! was false!
 logical :: use_ATM != .false.
 logical :: dbug
 
@@ -1013,6 +1007,10 @@ if (Preass > 0) then
     enddo
 endif
 
+! Revised approach with no fidelity, just misrejoining
+
+! The following commented out code follows MEDRAS
+#if 0
 DSB0 = DSB     ! initial DSBs for this time step
 totDSB0 = sum(DSB0)
 if (totDSB0 == 0) return
@@ -1051,6 +1049,8 @@ do k = 1,NP
 !    endif
     if (DSB(k) < DSB_min) DSB(k) = 0
 enddo
+! DSB0(k) is the count before repair, DSB(k) is the count after repair
+
 totDSB = sum(DSB)
 totDSBinfid0 = 0
 totDSBinfid = 0
@@ -1064,7 +1064,7 @@ enddo
 ! Testing eta dependence
 !eta_G1 = eta_G2 ! -> Pmis = 0.01 - 0.07
 !eta_G2 = eta_G1 ! -> Pmis = 0.1 - 0.127
-! Therefore small eta -> small Pmis -> bigger Nmis (the factor (1 - Pmis) is ~0.95 for eta_G2, ~0.89 for eta_G1)
+! Therefore small eta -> small Pmis -> smaller Nmis (Pmis is ~0.05 for eta_G2, ~0.11 for eta_G1) -> bigger SF
 
 if (phase == G1_phase) then
     eta = eta_G1
@@ -1078,9 +1078,9 @@ if (use_DSBinfid) then
 else
     Pmis = misrepairRate(totDSB0, totDSB, eta)
 endif
-!if (Pmis > 0.1) write(*,'(a,i6,e12.3)') 'Pmis: ',kcell_now,Pmis    ! dose = 6 Gy -> Pmis = 0.127
 cp%totMis = cp%totMis + Pmis*(totDSB0 - totDSB)
 binMisProb = cp%totMis/(cp%totDSB0 - totDSB)
+if (single_cell) write(nflog,'(a,2e12.3)') 'Pmis, binMisProb: ',Pmis,binMisProb
 Nmis = 0
 dNmis = 0
 do k = 1,NP
@@ -1100,15 +1100,37 @@ do k = 1,NP
         endif
     endif
 enddo
-!write(nfphase,'(a,5f8.3)') 'dNmis: ',dNmis,Nmis
+write(nflog,'(a,6f8.3)') 'dNmis, Nmis: ',dNmis,Nmis
 if (isnan(Nmis)) then
     write(*,*) 'updateRepair: Nmis isnan'
     stop
 endif
+#endif
+
+if (phase == G1_phase) then
+    f_S = 0.0
+elseif (phase == S_phase) then
+    f_S = cp%progress
+elseif (phase >= G2_phase) then
+    f_S = 1.0
+endif
+eta_NHEJ = eta_lookup(phase, NHEJs, f_S) 
+eta_TMEJ = eta_lookup(phase, TMEJ, f_S) 
+
+Nmis = 0
+! For NHEJ pathways
+totDSB0 = DSB0(NHEJs) + DSB0(NHEJc)
+totDSB = DSB(NHEJs) + DSB(NHEJc)
+Pmis = misrepairRate(totDSB0, totDSB, eta_NHEJ)
+Nmis = Nmis + Pmis*(totDSB0 - totDSB)
+! For TMEJ pathway
+Pmis = misrepairRate(DSB0(TMEJ), DSB(TMEJ), eta_TMEJ)
+Nmis = Nmis + Pmis*(DSB0(TMEJ) - DSB(TMEJ))
 cp%DSB = DSB
 !dNlethal = Klethal*misrepRate(phase)*Nmis   ! (was 0.5)  1.65 needs to be another parameter -> Klethal
 dNlethal = Klethal*Nmis   ! Here Klethal ~ 2.1*0.19 = 0.4, i.e. using a single average misreprate
 cp%Nlethal = cp%Nlethal + dNlethal
+
 end subroutine
 
 !------------------------------------------------------------------------
