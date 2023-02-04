@@ -1009,7 +1009,7 @@ do itime = 1,ntimes
 		event(kevent)%etype = RADIATION_EVENT
 		read(nf,*) t
 		if (use_synchronise) then
-		    t = 0   ! might need to be > 0
+		    t = 0.01   ! might need to be > 0
 		endif
 		read(nf,*) dose
 		event(kevent)%time = t
@@ -1058,7 +1058,7 @@ enddo
 ! Check that events are sequential
 do kevent = 1,Nevents-1
 	if (event(kevent)%time >= event(kevent+1)%time) then
-		write(logmsg,*) 'Error: non-sequential event: ',kevent,event(kevent)%time
+		write(logmsg,'(a,2(i4,f6.2))') 'Error: non-sequential event: ',kevent,event(kevent)%time,kevent+1,event(kevent+1)%time
 		call logger(logmsg)
 		stop
 	endif

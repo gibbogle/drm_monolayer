@@ -65,7 +65,8 @@ real(8) :: K_ATR(3,4) ! = [0.005, 0.3, 1.0, 1.0]
 real(8) :: Ztime = 0    ! hours
 logical :: use_exp_slowdown = .true.
 
-real(8) :: sigma_NHEJ = 0.04187, sigma_TMEJ = 0.08
+real(8) :: sigma_NHEJ = 0.04187
+real(8) :: sigma_TMEJ = 0.08
 
 ! DNA-PK inhibition parameters
 real(8) :: Chalf    ! inhibitor concentration that halves repair rate 
@@ -76,7 +77,7 @@ real(8) :: Preass   ! rate of reassignment to pathway 4, TMEJ (prob of reass/hou
 !logical :: use_exp_inhibit = .true.
 
 ! SSA parameters
-logical :: use_SSA = .true.
+logical :: use_SSA = .false.
 real(8) :: SSAfrac = 0.1
 !real(8) :: SSA_rep_fraction = 1.0
 !real(8) :: SSA_fid_fraction = 0.5
@@ -118,6 +119,9 @@ logical :: normalise, M_only
 logical :: use_G1_CP_factor = .false.
 real(8) :: G1_CP_factor = 0.0
 real(8) :: G1_CP_time
+
+! Checking TMEJ misjoining
+real(8) :: misjoins(2)      ! 1 = NHEJ, 2 = TMEJ
 
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
@@ -194,7 +198,8 @@ read(nfin,*) sigma_TMEJ
 read(nfin,*) SSArep
 read(nfin,*) SSAfrac
 repRate(4) = TMEJrep
-repRate(5) = SSArep
+!repRate(5) = SSArep
+dsigma_dt = SSArep      ! to use to investigate sigma_NHEJ growing with time since IR
 
 if (use_Jaiswal) then
     read(nfin,*) Kcc2a
@@ -323,6 +328,9 @@ totG2delay = 0
 nG1delay = 0
 nSdelay = 0
 nG2delay = 0
+
+! Initialise misjoining counts
+misjoins = 0
 
 ! Test changes to repRate(HR)
 !write(nflog,*) '!!!!!!!!!!!!!!!!!!!! changing repRate(HR) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
@@ -910,7 +918,7 @@ integer :: path
 real(8) :: dth, N0, N
 
 if (dth >= 0) then
-    N = N0*exp(-repRate(path)*dth*repRateFactor(path))  !!!! TESTING reducing repair rate
+    N = N0*exp(-repRate(path)*dth*repRateFactor(path))
 else
     N = 0
 endif
@@ -945,13 +953,11 @@ real(8) :: DSB(NP), dNlethal
 real(8) :: DSB0(NP)
 real(8) :: totDSB0, totDSB, Pmis, Nmis, dNmis(NP), totDSBinfid0, totDSBinfid, ATR_DSB, ATM_DSB, dth, binMisProb
 real(8) :: Cdrug, inhibrate, Nreassign
-real(8) :: f_S, eta_NHEJ, eta_TMEJ
+real(8) :: f_S, eta_NHEJ, eta_TMEJ, tIR
 logical :: pathUsed(NP)
 integer :: k, iph
 logical :: use_DSBinfid = .true.
 real(8) :: DSB_min = 1.0e-3
-!real(8) :: eta_G1 = 0.0006506
-!real(8) :: eta_G2 = 0.0006506   !0.0003326
 logical :: use_totMis = .true.      ! was false!
 logical :: use_ATM != .false.
 logical :: dbug
@@ -1098,8 +1104,12 @@ elseif (phase == S_phase) then
 elseif (phase >= G2_phase) then
     f_S = 1.0
 endif
-eta_NHEJ = eta_lookup(phase, NHEJs, f_S) 
-eta_TMEJ = eta_lookup(phase, TMEJ, f_S) 
+tIR = (t_simulation - t_irradiation)/3600   ! time since IR, in hours
+tIR = max(tIR,0.0)
+eta_NHEJ = eta_lookup(phase, NHEJs, f_S, tIR) 
+eta_TMEJ = eta_lookup(phase, TMEJ, f_S, tIR) 
+
+write(nflog,'(a,2e12.3)') 'eta_NHEJ, eta_TMEJ: ',eta_NHEJ, eta_TMEJ
 
 Nmis = 0
 ! For NHEJ pathways
@@ -1107,9 +1117,11 @@ totDSB0 = DSB0(NHEJs) + DSB0(NHEJc)
 totDSB = DSB(NHEJs) + DSB(NHEJc)
 Pmis = misrepairRate(totDSB0, totDSB, eta_NHEJ)
 Nmis = Nmis + Pmis*(totDSB0 - totDSB)
+misjoins(1) = misjoins(1) + Pmis*(totDSB0 - totDSB)
 ! For TMEJ pathway
 Pmis = misrepairRate(DSB0(TMEJ), DSB(TMEJ), eta_TMEJ)
 Nmis = Nmis + Pmis*(DSB0(TMEJ) - DSB(TMEJ))
+misjoins(2) = misjoins(2) + Pmis*(totDSB0 - totDSB)
 cp%DSB = DSB
 !dNlethal = Klethal*misrepRate(phase)*Nmis   ! (was 0.5)  1.65 needs to be another parameter -> Klethal
 dNlethal = Klethal*Nmis   ! Here Klethal ~ 2.1*0.19 = 0.4, i.e. using a single average misreprate
@@ -1143,7 +1155,7 @@ elseif (cp%phase0 < M_phase) then   ! G1, S, G2
     Paber = exp(-Nlethal)
     Pmit = exp(-mitRate*totDSB)
     cp%Psurvive = Pmit*Paber  
-    if (kcell_now == 1) write(*,'(a,2f8.4,2e12.3)') 'totDSB,Nlethal,Pmit,Paber: ',totDSB,Nlethal,Pmit,Paber   
+    if (kcell_now == 1) write(*,'(a,2f8.4,2e12.3)') 'totDSB,Nlethal,Pmit,Paber: ',totDSB,Nlethal,Pmit,Paber  
 else    ! M_phase or dividing
     Paber = 1
     Pmit = exp(-mitRate*totDSB)
