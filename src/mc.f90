@@ -1109,8 +1109,6 @@ tIR = max(tIR,0.0)
 eta_NHEJ = eta_lookup(phase, NHEJs, f_S, tIR) 
 eta_TMEJ = eta_lookup(phase, TMEJ, f_S, tIR) 
 
-write(nflog,'(a,2e12.3)') 'eta_NHEJ, eta_TMEJ: ',eta_NHEJ, eta_TMEJ
-
 Nmis = 0
 ! For NHEJ pathways
 totDSB0 = DSB0(NHEJs) + DSB0(NHEJc)

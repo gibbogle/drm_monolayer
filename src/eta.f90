@@ -5,7 +5,7 @@ use global
 implicit none
 
 integer, parameter :: Neta = 11
-integer, parameter :: NtIR = 9
+integer, parameter :: NtIR = 15
 real(8) :: dsigma_dt
 real(8) :: eta_table(Neta,NtIR,5)
 
