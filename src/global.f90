@@ -105,6 +105,11 @@ logical, parameter :: suppress_growth = .false.
 
 logical, parameter :: OFF_LATTICE = .false.
 
+! Jaiswal
+logical :: use_slope_threshold      ! set true if CC_threshold < 0.1, then slope_threshold = CC_threshold
+real(REAL_KIND) :: slope_threshold
+
+
 real(REAL_KIND), parameter :: PI = 4.0*atan(1.0)
 real(REAL_KIND), parameter :: CFSE_std = 0.05
 real(REAL_KIND), parameter :: small_d = 0.1e-4          ! 0.1 um -> cm
@@ -225,7 +230,7 @@ type cell_type
 	real(8) :: Nlethal, Psurvive, mitosis_time
 	
 	! Jaiswal section (26/09/22)
-	real(REAL_KIND) :: CC_act, ATR_act, ATM_act
+	real(REAL_KIND) :: CC_act, ATR_act, ATM_act, dCC_act_dt
 
 end type
 

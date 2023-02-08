@@ -218,7 +218,13 @@ if (use_Jaiswal) then
     read(nfin,*) CC_act0
     read(nfin,*) CC_threshold
     read(nfin,*) norm_factor
-    CC_threshold = CC_threshold*CC_tot
+    if (CC_threshold < 0.1) then
+        use_slope_threshold = .true.
+        slope_threshold = CC_threshold
+    else
+        use_slope_threshold = .false.
+        CC_threshold = CC_threshold*CC_tot
+    endif
     Km2 = Km1
 endif
 
@@ -876,9 +882,12 @@ do it = 1,Nt
     t = it*dt
 !    write(nflog,'(i6,f8.4,2f10.6)') it,t,CC_act,dCC_act_dt
 enddo
+if (kcell_now == 1) write(*,'(a,4f8.4)') 'ATR_act, Kd2e,D,ATR_inact: ',ATR_act, Kd2e,D,ATR_inact
+if (kcell_now <= 10) write(*,'(a,i8,4f8.4)') 'CC_act: ',kcell_now,ATR_act,ATM_act,CC_act,dCC_act_dt
 cp%CC_act = CC_act
 cp%ATR_act = ATR_act
 cp%ATM_act = ATM_act
+cp%dCC_act_dt = dCC_act_dt
 t = t_simulation/3600.
 !cp%progress = (cp%CC_act - CC_act0)/(CC_threshold - CC_act0)
 if (single_cell) write(*,'(a,f6.2,4e12.3)') 'G2_J: t, vars: ',t,cp%CC_act,cp%ATR_act,cp%ATM_act,D

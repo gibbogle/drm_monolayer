@@ -40,6 +40,8 @@ subroutine log_timestep(cp, ccp, dt)
 type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
 real(REAL_KIND) :: dt
+real(REAL_KIND) :: tIR
+logical :: switch
 
 !if (cp%dVdt == 0) then
 !	write(nflog,*) 'dVdt=0, kcell: ',kcell_now,cp%phase
@@ -85,7 +87,14 @@ elseif (cp%phase == S_phase) then
 elseif (cp%phase == G2_phase) then
     if (use_Jaiswal) then
         !cp%progress = (cp%CC_act - CC_act0)/(CC_threshold - CC_act0)    ! not really needed, and not correct
-        if (cp%CC_act >= CC_threshold) then
+        if (use_slope_threshold) then
+            tIR = (t_simulation - t_irradiation)/3600   ! time since IR, in hours
+            if (kcell_now == 1) write(*,'(a,3f8.2)') 'tIR: ',t_simulation/3600, t_irradiation/3600,tIR
+            switch = (tIR > 1.0) .and. (cp%dCC_act_dt < slope_threshold)
+        else
+            switch = (cp%CC_act >= CC_threshold)
+        endif
+        if (switch) then
             cp%phase = M_phase
             cp%progress = 0
             cp%V = cp%divide_volume     ! set volume here, to maintain correct cell volume at cell division

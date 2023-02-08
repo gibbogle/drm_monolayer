@@ -734,10 +734,6 @@ read(nf,*) ccp%f_G2
 read(nf,*) ccp%f_M
 read(nf,*) ccp%Apoptosis_median
 read(nf,*) ccp%Apoptosis_shape
-control_ave(1) = 100*ccp%f_G1
-control_ave(2) = 100*ccp%f_S
-control_ave(3) = 100*ccp%f_G2
-control_ave(4) = 100*ccp%f_M
 
 divide_dist(ityp)%class = LOGNORMAL_DIST
 divide_time_median(ityp) = 60*60*divide_time_median(ityp)		! hours -> seconds
@@ -2031,6 +2027,7 @@ if (compute_cycle) then
     total = sum(phase_count)
     phase_dist = 100*phase_count/total
     tadjust = event(1)%time/3600    ! if the RADIATION event is #1
+    write(*,'(a,f8.3,3i8,3f8.3)') 'hour, count, phase_dist: ',real(istep)/nthour,phase_count(1:3),phase_dist(1:3)
 !    write(nflog,'(a,f8.3,i8,f8.3)') 'hour, count, M%: ',real(istep)/nthour - tadjust,phase_count(M_phase),phase_dist(M_phase)
 endif
 if (compute_cycle .or. output_DNA_rate) then
@@ -2086,6 +2083,10 @@ if (dbug .or. mod(istep,nthour) == 0) then
 	write(nflog,*)
 	write(logmsg,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells, ' N reached mitosis: ',NPsurvive    !,' Napop: ',Napop    !, &
 	call logger(logmsg)
+    call get_phase_distribution(phase_count)
+    total = sum(phase_count)
+    phase_dist = 100*phase_count/total
+    write(*,'(a,f8.3,3i8,3f8.3)') 'hour, count, phase_dist: ',hour,phase_count(1:3),phase_dist(1:3)
 	if (single_cell) call medras_compare()
 	write(nflog,*)
 !	write(nfphase,'(a,2f8.3)') 'S-phase k1, k2: ', K_ATR(2,1),K_ATR(2,2)
@@ -2279,9 +2280,10 @@ end function
 !-----------------------------------------------------------------------------------------
 subroutine completed
 !real(REAL_KIND) :: fract(0:4)
-integer :: kcell, ph, nir(4), nsum, kcellmax, i
+integer :: kcell, ph, nir(4), nsum, kcellmax, i, ityp
 real(REAL_KIND) :: sftot(4), sfsum, sfmax
 integer :: tadjust
+type(cycle_parameters_type), pointer :: ccp
 type(cell_type), pointer :: cp
 logical :: only_M_phase = .false.
 logical :: PDS4 = .false.
@@ -2319,13 +2321,22 @@ if (compute_cycle) then
             write(nfres,'(20e15.6)') (recorded_phase_dist(i,4),i=1,nphase_hours)
         else
             if (normalise) then
+                ityp = 1
+                ccp => cc_parameters(ityp)
+                control_ave(1) = 100*ccp%f_G1
+                control_ave(2) = 100*ccp%f_S
+                control_ave(3) = 100*ccp%f_G2
+                control_ave(4) = 100*ccp%f_M
+
                 write(*,*) 'Normalising PDs'
                 write(nflog,*) 'Normalising PDs'
                 do i = 1,nphase_hours
                     normalised_phase_dist(i,1:4) = recorded_phase_dist(i,1:4)/control_ave(1:4)
                 enddo
-                write(nfres,'(20e15.6)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
-                write(nflog,'(20e15.6)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
+                write(*,*) 'write PEST output'
+                write(nfres,'(20f10.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
+                write(nflog,'(20f10.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
+                write(nflog,'(20f10.5)') control_ave(1:4)
             else
                 write(*,*) 'Not normalising PDs'
                 write(nfres,'(20e15.6)') (recorded_phase_dist(i,1:4),i=1,nphase_hours)
@@ -2352,6 +2363,7 @@ if (output_DNA_rate) then
         tadjust = 6
     endif
     if (nphase_hours > 0) then
+        write(*,*) 'write DNA_rate'
         write(nfres,'(20e15.6)') (recorded_DNA_rate(i),i=1,nphase_hours)
         do i = 1,nphase_hours
             write(nflog,'(f6.2,4x,4f6.3)') phase_hour(i)-tadjust,recorded_DNA_rate(i)
@@ -2426,9 +2438,10 @@ if (use_PEST) then
     if (use_SF) then
         write(nfres,'(e15.6)') log10(SFave)
     endif
-    if (nphase_hours > 0) then
-        write(nfres,'(20e15.6)') (recorded_phase_dist(i,1:4),i=1,nphase_hours)
-    endif
+!    if (nphase_hours > 0) then
+!        write(*,*) 'write recorded_phase_dist'
+!        write(nfres,'(20e15.6)') (recorded_phase_dist(i,1:4),i=1,nphase_hours)
+!    endif
 endif
 end subroutine
 
