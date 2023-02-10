@@ -516,6 +516,7 @@ close(nfcell)
 call logger('Finished reading input data')
 
 single_cell = (use_synchronise .and. initial_count==1)
+write(nflog,*) 'single_cell: ',single_cell
 
 ! Rescale
 chemo(OXYGEN)%membrane_diff_in = chemo(OXYGEN)%membrane_diff_in*Vsite_cm3/60		! /min -> /sec

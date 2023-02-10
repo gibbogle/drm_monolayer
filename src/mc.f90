@@ -35,8 +35,9 @@ integer, parameter :: SSA = 5
 
 !real(8) :: eta = 0.0006506387875449218
 real(8) :: Pcomplex = 0.4337    ! fraction of created DSBs that are complex (McMahon: complexFrac)
+real(8) :: pJeggo = 0.9         ! fraction of post-replication DSBs that are fast.
 !real(8) :: PHR = 0.8      ! fraction of post-replication simple DSBs that are repaired by HR (slow) rather than NHEJ (fast)
-real(8) :: pHRs_S, pHRc_S, pHRs_G2, pHRc_G2
+real(8) :: pHRs_max, pHRc_max, pHRs_G2, pHRc_G2
 logical :: use_sigmoid = .true.
 real(8) :: rmin = 0.1, kdecay = 0.1, ksig = 1, csig = 8.56    ! decay function parameters
 character*(2) :: phaseName(4) = ['G1','S ','G2','M ']
@@ -186,9 +187,9 @@ read(nfin,*) Klethal
 !    stop
 !endif
 
-read(nfin,*) Pcomplex
-read(nfin,*) pHRs_S
-read(nfin,*) pHRc_S
+read(nfin,*) pJeggo     ! Pcomplex
+read(nfin,*) pHRs_max
+read(nfin,*) pHRc_max
 read(nfin,*) rmin
 read(nfin,*) ksig
 read(nfin,*) Chalf
@@ -399,7 +400,7 @@ end subroutine
 ! drug is present.
 !
 ! Option 1: the first method, which used one pHR for S and one for G2, and
-! pHRs_S = pHR_S/2, pHRc_S = pHR_S/2
+! pHRs_max = pHR_S/2, pHRc_max = pHR_S/2
 ! pHRs_G2 = pHR_G2/2, pHRc_G2 = pHR_G2/2 with pHR_G2 = 0.15 (fixed)
 !
 ! Option 2: Bill's suggestion, making the pHRs and pHRc parameters differ,
@@ -413,73 +414,83 @@ real(8) :: dose, Cdrug
 integer :: ityp, kpar = 0
 integer :: phase
 real(8) :: DSB0(NP)
-real(8) :: totDSB0, baseDSB, fin, T_S, f_S, NG1, NNHEJ, pHRs, pHRc, NHRs, NHRc
+real(8) :: totDSB0, baseDSB, fin, T_S, f_S, NG1, NNHEJ, pHRs, pHRc, pHR, pNHEJ, NHRs, NHRc
 real(8) :: Pbase, Pdie, R
 real(8) :: DSB_Gy = 35
-real(8) :: th, Npre, Npre_s, Npre_c, Npost, Npost_s, Npost_c
+real(8) :: th, Npre, Npre_s, Npre_c, Npost, Npost_s, Npost_c, Pc, x
 integer, parameter :: option = 2
+logical :: use_Jeggo = .true.
 
 phase = cp%phase
 cp%phase0 = min(phase, M_phase)
 NG1 = DSB_Gy*dose
 DSB0 = 0
 
-#if 0
-if (phase == G1_phase) then
-    f_S = 0
-    pHRs = 0
-    pHRc = 0
-else
-    if (phase >= G2_phase) then
-        f_S = 1.0
-        pHRs = pHRs_G2
-        pHRc = pHRc_G2
-    else
+if (use_Jeggo) then
+    Pc = 0.2
+    x = pJeggo
+    If (phase == G1_phase) Then
+        f_S = 0
+    ElseIf (phase == S_phase) Then
         f_S = cp%progress
-        pHRs = pHRs_S
-        pHRc = pHRc_S
-    endif    
-endif
-
-totDSB0 = (1+f_S)*NG1
-NHRs = f_S*pHRs*2*NG1
-NHRc = f_S*pHRc*2*NG1
-DSB0(HR) = NHRs + NHRc
-if (option == 1) then
-    DSB0(NHEJc) = Pcomplex*(totDSB0 - DSB0(HR)) 
-    DSB0(NHEJs) = (1 - Pcomplex)*(totDSB0 - DSB0(HR)) 
-elseif (option == 2) then
-    DSB0(NHEJc) = Pcomplex*totDSB0 - NHRc
-    DSB0(NHEJs) = (1 - Pcomplex)*totDSB0 - NHRs
-endif
-#endif
-
-if (phase == G1_phase) then
-    f_S = 0.0
-    totDSB0 = NG1
-    DSB0(NHEJc) = Pcomplex*totDSB0
-    DSB0(NHEJs) = (1 - Pcomplex)*totDSB0
-else
-    th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
-    if (phase >= G2_phase) then
-        f_S = 1.0
+        th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
+    ElseIf (phase >= G2_phase) Then
+        f_S = 1
+        th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
+    End If
+    totDSB0 = (1 + f_S) * NG1
+    DSB0(TMEJ) = 0
+    If (phase == G1_phase) Then
+        Npre = totDSB0
+    Else
+        Npre = NG1 * (1 - f_S)
+    End If
+    Npost = totDSB0 - Npre
+    If (f_S > 0) Then
+        pHRs = pHRs_max * ((1 - rmin) * fdecay(th) + rmin)
+        pHRc = pHRc_max * ((1 - rmin) * fdecay(th) + rmin)
+        pHR = pHRs + pHRc
+        pHR = min(pHR, 1.0) ! Note: we must have pHRs + pHRc <= 1
     else
+        pHR = 0
+    End If
+    pNHEJ = 1 - pHR
+    DSB0(NHEJs) = Pc * Npre + x * pNHEJ * Npost           ! fast
+    DSB0(NHEJc) = Pc * Npre + (1 - x) * pNHEJ * Npost     ! slow
+    DSB0(HR) = pHR * Npost     
+else
+    if (phase == G1_phase) then
+        f_S = 0.0
+        totDSB0 = NG1
+        DSB0(NHEJc) = Pcomplex*totDSB0
+        DSB0(NHEJs) = (1 - Pcomplex)*totDSB0
+    elseif (phase == S_phase) then
+        th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
         f_S = cp%progress
-    endif 
-    totDSB0 = (1+f_S)*NG1
-    pHRs = pHRs_S*((1-rmin)*fdecay(th) +rmin)
-    pHRc = pHRc_S*((1-rmin)*fdecay(th) +rmin)
-    Npre = NG1*(1 - f_S)
-    Npost = NG1*2*f_S
-    Npre_s = Npre*(1 - pComplex)
-    Npre_c = Npre*pComplex
-    Npost_s = Npost*(1 - pComplex)
-    Npost_c = Npost*pComplex
-    NHRs = Npost_s*pHRs
-    NHRc = Npost_c*pHRc
-    DSB0(HR) = NHRs + NHRc
-    DSB0(NHEJs) = Npre_s + Npost_s - NHRs
-    DSB0(NHEJc) = Npre_c + Npost_c - NHRc       
+        totDSB0 = (1+f_S)*NG1
+        pHRs = pHRs_max*((1-rmin)*fdecay(th) +rmin)
+        pHRc = pHRc_max*((1-rmin)*fdecay(th) +rmin)
+        Npre = NG1*(1 - f_S)
+        Npost = NG1*2*f_S
+        Npre_s = Npre*(1 - pComplex)
+        Npre_c = Npre*pComplex
+        Npost_s = Npost*(1 - pComplex)
+        Npost_c = Npost*pComplex
+        NHRs = Npost_s*pHRs
+        NHRc = Npost_c*pHRc
+        DSB0(HR) = NHRs + NHRc
+        DSB0(NHEJs) = Npre_s + Npost_s - NHRs
+        DSB0(NHEJc) = Npre_c + Npost_c - NHRc
+    elseif (phase >= G2_phase) then
+        f_S = 1
+        th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
+        totDSB0 = 2*NG1
+        Npost = totDSB0
+        pHRs = pHRs_max*((1-rmin)*fdecay(th)+rmin)
+        DSB0(HR) = Npost*pHRs
+        DSB0(NHEJs) = Npost*(1 - pHRs)
+        DSB0(NHEJc) = 0
+    endif
 endif
 
 cp%pATM = 0
@@ -848,7 +859,7 @@ subroutine G2_Jaiswal_update(cp, dth)
 type(cell_type), pointer :: cp
 real(8) :: dth
 real(8) :: dt = 0.001
-real(8) :: D, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact
+real(8) :: D_ATR, D_ATM, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact
 real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, T_G2, kkm10
 integer :: it, Nt
 type(cycle_parameters_type),pointer :: ccp
@@ -862,8 +873,10 @@ else
     kkm10 = Km10
 endif
 Nt = int(dth/dt + 0.5)
-!if (single_cell) write(nflog,*) 'G2_Jaiswal_update: Nt: ',Nt
-D = sum(cp%DSB(1:4))*norm_factor
+if (single_cell) write(nflog,*) 'G2_Jaiswal_update: Nt: ',Nt
+!D = sum(cp%DSB(1:4))*norm_factor
+D_ATR = cp%DSB(HR)*norm_factor
+D_ATM = (cp%DSB(HR) + cp%DSB(NHEJc))*norm_factor
 CC_act = cp%CC_act
 ATR_act = cp%ATR_act
 ATM_act = cp%ATM_act
@@ -872,8 +885,8 @@ do it = 1,Nt
     ATR_inact = ATR_tot - ATR_act
     ATM_inact = ATM_tot - ATM_act
     dCC_act_dt = (Kcc2a + CC_act) * CC_inact / (kkm10 + CC_inact) - Kt2cc * ATM_act * CC_act / (Km10t + CC_act) - Ke2cc * ATR_act * CC_act / (kkm10 + CC_act)
-    dATR_act_dt = Kd2e * D * ATR_inact / (kkm10 + ATR_inact) - Kcc2e * ATR_act * CC_act / (kkm10 + CC_act)
-    dATM_act_dt = Kd2t * D * ATM_inact / (Km1 + ATM_inact) - Kti2t * ATM_act / (Km1 + ATM_act)
+    dATR_act_dt = Kd2e * D_ATR * ATR_inact / (kkm10 + ATR_inact) - Kcc2e * ATR_act * CC_act / (kkm10 + CC_act)
+    dATM_act_dt = Kd2t * D_ATM * ATM_inact / (Km1 + ATM_inact) - Kti2t * ATM_act / (Km1 + ATM_act)
     
     CC_act = CC_act + dt * dCC_act_dt
     ATR_act = ATR_act + dt * dATR_act_dt
@@ -882,15 +895,15 @@ do it = 1,Nt
     t = it*dt
 !    write(nflog,'(i6,f8.4,2f10.6)') it,t,CC_act,dCC_act_dt
 enddo
-if (kcell_now == 1) write(*,'(a,4f8.4)') 'ATR_act, Kd2e,D,ATR_inact: ',ATR_act, Kd2e,D,ATR_inact
-if (kcell_now <= 10) write(*,'(a,i8,4f8.4)') 'CC_act: ',kcell_now,ATR_act,ATM_act,CC_act,dCC_act_dt
+!if (kcell_now == 1) write(*,'(a,4f8.4)') 'ATR_act, Kd2e,D_ATR, D_ATM: ',ATR_act, Kd2e,D_ATR, D_ATM
+!if (kcell_now == 8) write(*,'(a,i8,4f8.4)') 'CC_act: ',kcell_now,ATR_act,ATM_act,CC_act,dCC_act_dt
 cp%CC_act = CC_act
 cp%ATR_act = ATR_act
 cp%ATM_act = ATM_act
 cp%dCC_act_dt = dCC_act_dt
 t = t_simulation/3600.
 !cp%progress = (cp%CC_act - CC_act0)/(CC_threshold - CC_act0)
-if (single_cell) write(*,'(a,f6.2,4e12.3)') 'G2_J: t, vars: ',t,cp%CC_act,cp%ATR_act,cp%ATM_act,D
+if (single_cell) write(nflog,'(a,f6.2,5e12.3)') 'G2_J: t, vars: ',t,cp%CC_act,cp%ATR_act,cp%ATM_act,D_ATR, D_ATM
 !if (kcell_now == 3) write(*,'(a,f6.2,4e12.3)') 'G2_J: t, vars: ',t,cp%CC_act,dCC_act_dt
 end subroutine
 
@@ -974,11 +987,11 @@ logical :: dbug
 dth = dt/3600   ! hours
 use_ATM = .not.use_fixed_CP
 phase = cp%phase
-!if (use_phase_dependent_CP_parameters) then    ! always now
-    iph = phase
-!else
-!    iph = 1
-!endif
+if (single_cell .and. phase > G2_phase) then
+    write(nflog,*) 'updateRepair: phase: ',phase
+    stop
+endif
+iph = phase
 DSB = cp%DSB
 !write(*,'(a,i4,4f8.1)') 'phase,DSB: ',phase,DSB(1:4)
 repRateFactor = 1.0
@@ -1024,8 +1037,10 @@ DSB0 = DSB     ! initial DSBs for this time step
 ! Revised approach with no fidelity, just misrejoining
 
 totDSB0 = sum(DSB0)
-if (totDSB0 == 0) return
-
+!if (totDSB0 == 0) then
+!    write(nflog,*) 'totDSB0 = 0'
+!    return
+!endif
 !if (kcell_now == 1) write(*,'(a,2i6,3f8.2)') 'updateRepair: kcell, phase, DSB0: ',kcell_now,cp%phase,cp%DSB(1:3)
 
 ATM_DSB = DSB(NHEJc) + DSB(HR)   ! complex DSB

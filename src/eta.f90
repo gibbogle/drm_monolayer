@@ -56,7 +56,7 @@ do it = 1,NtIR
 	eta_table(k,it,1:2) = eta
 	eta = etafun(R,S_TMEJ)
 	eta_table(k,it,3:5) = eta
-	write(nflog,'(a,2i4,2e12.3)') 'k, it, S, eta_NHEJ: ', k, it, S, eta_table(k,it,1)
+!	write(nflog,'(a,2i4,2e12.3)') 'k, it, S, eta_NHEJ: ', k, it, S, eta_table(k,it,1)
 enddo
 enddo
 end subroutine
