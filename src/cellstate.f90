@@ -69,6 +69,8 @@ logical :: ok
 integer :: kcell, site(3), iv, ityp, n, kpar=0  !, idrug, im, ichemo
 real(REAL_KIND) :: C_O2, SER, p_death, p_recovery, R, kill_prob, tmin, Cdrug, total
 real(REAL_KIND) :: SER_OER(2)
+integer :: phase_count(0:4)
+real(REAL_KIND) :: ph_dist(0:4)
 integer :: counts(8)
 type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
@@ -80,6 +82,11 @@ Nirradiated = Ncells
 t_irradiation = t_simulation
 write(logmsg,*) 'Irradiation: Nirradiated: ',Nirradiated
 call logger(logmsg)
+call get_phase_distribution(phase_count)
+total = sum(phase_count)
+ph_dist = 100*phase_count/total
+write(nflog,'(a,5f8.4)') 'phase distribution: ',ph_dist
+
 if (use_G1_CP_factor) then
     G1_CP_time = G1_CP_factor*dose*3600
 endif
@@ -644,6 +651,7 @@ do kcell = 1,nlist0
 	else
     	cp => cell_list(kcell)
     endif
+!	if (kcell == 5 .and. cp%psurvive > 0) write(*,'(a,3i6)') 'grower: kcell, phase, state: ',kcell,cp%phase,cp%state
     
 	if (cp%state == DEAD) cycle
 	if (cp%state == DYING) then		! nothing affects a DYING cell (when does it die?)
@@ -656,7 +664,7 @@ do kcell = 1,nlist0
 !	mitosis_duration = ccp%T_M
     mitosis_duration = cp%mitosis_duration
     prev_phase = cp%phase
-	if (cp%phase /= M_phase) then
+	if (cp%phase < M_phase) then
 	    call growcell(cp,dt)
 	endif
 !	if (cp%dVdt > 0) then
@@ -684,10 +692,10 @@ do kcell = 1,nlist0
 		enddo
 		if (drugkilled) cycle
 		cp%mitosis = (tnow - cp%t_start_mitosis)/mitosis_duration
-!		if (cp%radiation_tag) cycle
+        if (kcell == -27) write(nflog,'(a,i6,3f8.1,f8.3)') 'grower: kcell, mitosis: ',kcell,tnow, cp%t_start_mitosis,mitosis_duration,cp%mitosis
 		
         if (cp%mitosis >= 1) then
-!            if (kcell == 20) write(nflog,*) 'new_grower: divide cell: ',kcell
+            if (kcell == -27) write(nflog,*) 'grower: divide cell: ',kcell
 !            write(nflog,'(a,i6,f6.3)') 'Exit M_phase: kcell, time: ',kcell_now,t_simulation/3600
 !         write(nflog,*)
 !			divide = .true.

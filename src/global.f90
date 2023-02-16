@@ -1192,6 +1192,31 @@ endif
 ok = .true.
 end subroutine
 
+!-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+subroutine get_phase_distribution(phase_count)
+integer :: phase_count(0:4)
+integer :: kcell, ph
+type(cell_type), pointer :: cp
+
+phase_count = 0
+do kcell = 1,nlist
+    cp => cell_list(kcell)
+    if (cp%state == DEAD) then
+        ph = 0      ! 
+    elseif (cp%phase == G1_phase .or. cp%phase == G1_checkpoint) then
+        ph = 1
+    elseif (cp%phase == S_phase .or. cp%phase == S_checkpoint) then
+        ph = 2
+    elseif (cp%phase == G2_phase .or. cp%phase == G2_checkpoint) then
+        ph = 3
+    else
+        ph = 4
+    endif
+    phase_count(ph) = phase_count(ph) + 1
+enddo
+!write(*,'(a,5i6)') 'phase_count: ',phase_count(0:4)
+end subroutine
 
 
 

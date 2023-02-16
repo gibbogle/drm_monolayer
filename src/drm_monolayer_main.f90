@@ -110,15 +110,15 @@ else
 endif
 
 ! Synchronisation of cell IR
-use_synchronise = .false.
+use_synchronise = .true.
 if (use_synchronise) then
     call syncher(Nph, phase, progress)
     do i = 1,Nph
         write(*,'(2i6,f6.3)') i-1, phase(i), progress(i)
     enddo
 endif
-synch_phase = G2_phase   !G1 is 1 - 6, S is 7 - 15, G2 is 16 - 19
-synch_fraction = 0.0
+synch_phase = S_phase   !G1 is 1 - 6, S is 7 - 15, G2 is 16 - 19
+synch_fraction = 0.5
 G2_katm3_factor = 1.0
 G2_katm4_factor = 1.0
 G2_katr3_factor = 1.0
@@ -126,7 +126,6 @@ G2_katr4_factor = 1.0
 
 use_fixed_CP = .false.
 compute_cycle = .true.
-!call get_dimensions(NX,NY,NZ,nsteps,DELTA_T, MAX_CHEMO, cused);
 i_hypoxia_cutoff = 3
 i_growth_cutoff = 1
 do irun = 1,1   ! 1,6   ! 16,19     ! 7,15

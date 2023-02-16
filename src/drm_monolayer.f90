@@ -515,7 +515,8 @@ endif
 close(nfcell)
 call logger('Finished reading input data')
 
-single_cell = (use_synchronise .and. initial_count==1)
+!single_cell = (use_synchronise .and. initial_count==1)
+single_cell = (initial_count==1)
 write(nflog,*) 'single_cell: ',single_cell
 
 ! Rescale
@@ -897,7 +898,7 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine ReadProtocol(nf)
 integer :: nf
-integer :: itime, ntimes, kevent, ichemo, idrug, im, kevent_flush
+integer :: itime, ntimes, kevent, ichemo, idrug, im, kevent_flush, drop_event
 character*(64) :: line
 character*(16) :: drugname
 character*(1)  :: numstr
@@ -1021,6 +1022,36 @@ do itime = 1,ntimes
 	endif
 enddo
 Nevents = kevent
+! Check that the DRUG event has cdrug > 0
+drop_event = 0
+do kevent = 1,Nevents
+    if (event(kevent)%etype == DRUG_EVENT) then
+        if (event(kevent)%conc == 0) then
+            drop_event = kevent
+            exit
+        endif
+    endif
+enddo
+if (drop_event > 0) then    ! need to remove DRUG event from the list
+    do kevent = drop_event+1, Nevents
+        event(kevent-1) = event(kevent)
+    enddo
+    Nevents = Nevents - 1
+    CA_time = 18*60*60
+    flushing = .false.
+	do idrug = 1,ndrugs_used
+		if (drugname == drug(idrug)%name) then
+			ichemo = DRUG_A + 2*(idrug-1)
+			exit
+		endif
+	enddo
+	chemo(ichemo)%used = .false.
+	if (drug(idrug)%use_metabolites) then
+		do im = 1,drug(idrug)%nmetabolites
+			chemo(ichemo+im)%used = .false.
+		enddo
+	endif
+endif
 ! Set events not done
 ! convert time from hours to seconds
 ! convert volume from uL to cm^3  NO LONGER - now using cm^3 everywhere
@@ -1136,8 +1167,13 @@ do kcell = 1,initial_count
 	phase = cell_list(kcell)%phase
 	counts(phase) = counts(phase) + 1
 enddo
-write(*,*) 'Initial phase counts: ',counts
-write(*,'(a,4f6.2)') 'Initial phase %ages: ',100.0*real(counts)/sum(counts)
+write(*,*)
+write(*,'(a,5i6)') 'Initial phase counts: ',counts
+write(*,'(a,5f8.3)') 'Initial phase %ages: ',100.0*real(counts)/sum(counts)
+write(*,*)
+write(nflog,'(a,5i6)') 'Initial phase counts: ',counts
+write(nflog,'(a,5f7.2)') 'Initial phase %ages: ',100.0*real(counts)/sum(counts)
+write(nflog,*) 'Ncells_Mphase: ',Ncells_Mphase
 !write(*,*) 'stopping...'
 !stop
 nlist = kcell-1
@@ -1438,10 +1474,9 @@ elseif (t < tswitch(3)) then
         if (single_cell) write(*,*) 'SetInitialCellCycleStatus: dth: ',dth
         call G2_Jaiswal_update(cp,dth)
 !        if (single_cell) write(*,*) 'SetInitialCellCycleStatus: initial CC_act: ',cp%CC_act
-        if (kcell <= 100) write(*,'(a,i6,2f6.3)') 'SetInitialCellCycleStatus: dth,initial CC_act: ',kcell,dth,cp%CC_act
+!        if (kcell <= 1000) write(nflog,'(a,i6,2f8.1,2f8.3)') 'SetInitialCellCycleStatus: dth,initial CC_act: ',kcell,dth,T_G2,cp%progress,cp%CC_act
     endif
 else
-    cp%phase = M_phase
 !    cp%fp = metab*f_CP/fg(M_phase)      ! not used
     cp%dVdt = 0
     cp%V = 2*V0
@@ -1450,8 +1485,14 @@ else
     cp%t_start_mitosis = -R*cp%mitosis_duration
 	ncells_mphase = ncells_mphase + 1
     cp%phase = dividing
+ !   write(nflog,'(a,i6,f8.1)') 'Cell dividing: t_start_mitosis: ',kcell,cp%t_start_mitosis
 !    cp%progress = 1.0
     if (kcell <= 100) write(*,'(a,i6,2f6.3)') 'SetInitialCellCycleStatus: mitosis_duration, t_start: ',kcell,cp%mitosis_duration/3600,cp%t_start_mitosis/3600
+endif
+if (single_cell) then
+    write(*,*)
+    write(*,*) 'Initial phase, progress: ',cp%phase,cp%progress
+    write(*,*)
 endif
 cp%t_divide_last = -t
 end subroutine
@@ -2028,7 +2069,7 @@ if (compute_cycle) then
     total = sum(phase_count)
     phase_dist = 100*phase_count/total
     tadjust = event(1)%time/3600    ! if the RADIATION event is #1
-    write(*,'(a,f8.3,3i8,3f8.3)') 'hour, count, phase_dist: ',real(istep)/nthour,phase_count(1:3),phase_dist(1:3)
+    write(*,'(a,f8.3,3i8,3f8.3)') 'hour,count, phase_dist: ',real(istep)/nthour,phase_count(1:3),phase_dist(1:3)
 !    write(nflog,'(a,f8.3,i8,f8.3)') 'hour, count, M%: ',real(istep)/nthour - tadjust,phase_count(M_phase),phase_dist(M_phase)
 endif
 if (compute_cycle .or. output_DNA_rate) then
@@ -2087,8 +2128,8 @@ if (dbug .or. mod(istep,nthour) == 0) then
     call get_phase_distribution(phase_count)
     total = sum(phase_count)
     phase_dist = 100*phase_count/total
-    write(*,'(a,f8.3,3i8,3f8.3)') 'hour, count, phase_dist: ',hour,phase_count(1:3),phase_dist(1:3)
-	if (single_cell) call medras_compare()
+    write(*,'(a,3i8,3f8.3)') 'count, phase_dist: ',phase_count(1:3),phase_dist(1:3)
+!	if (single_cell) call medras_compare()
 	write(nflog,*)
 !	write(nfphase,'(a,2f8.3)') 'S-phase k1, k2: ', K_ATR(2,1),K_ATR(2,2)
 !	if (output_DNA_rate) then
@@ -2111,26 +2152,15 @@ if (dbug .or. mod(istep,nthour) == 0) then
     do kcell = 1,nlist
         cp => cell_list(kcell)
         total = total + cp%totDSB0
-    enddo
-
-!    if (use_PEST) then
-!    if (compute_cycle) then
-!        if (next_phase_hour > 0) then  ! check if this is a phase_hour
-!            if (hour >= phase_hour(next_phase_hour)) then   ! record phase_dist
-!                recorded_phase_dist(next_phase_hour,:) = phase_dist
-!                next_phase_hour = next_phase_hour + 1
-!                if (next_phase_hour > nphase_hours) next_phase_hour = 0
-!                write(*,*) 'next_phase_hour: ',next_phase_hour
-!            endif
-!        endif
-!    endif
-    
-!    write(nfphase,'(a,6f8.1)') 'DSB: ',cp%DSB(1:4),sum(cp%DSB),cp%Nlethal
-	    
+    enddo    
 endif
 ! write(nflog,'(a,f8.3)') 'did simulate_step: time: ',wtime()-start_wtime
 
 istep = istep + 1
+if (istep == 99*nthour) then
+    write(*,*) 'overstepped the mark'
+    stop
+endif
 !write(*,*) 'end simulate_step: t_simulation: ',t_simulation
 !call averages
 ! Need the phase_dist check in case NPsurvive = Nirradiated before phase_hours
@@ -2151,31 +2181,38 @@ endif
 if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
     ! getSFlive computes the average psurvive for all cells that reach mitosis,
     ! which number NPsurvive = Nirradiated - Napop.
-    write(logmsg,*) 'NPsurvive = Nirradiated - Napop: ',NPsurvive,Nirradiated,Napop
-    call logger(logmsg)
     SFlive = getSFlive()
     ! To adjust SFlive to replace a cell that reached mitosis before CA with its daughter cells.
     SFtot = SFlive*(Nirradiated - Napop)
+    write(*,*)
+    write(*,'(a,3i6,e12.3)') 'NPsurvive,Nirradiated,Napop,SFtot: ',NPsurvive,Nirradiated,Napop,SFtot
     if (include_daughters) then
-    ! In order to compare simulated SFave with SF determined by experimental CA,
+    ! In order to compare simulated SFave with SF determined by experimental CA (clonogenic analysis),
     ! SFave needs to be calculated as the average of cells that make it to CA.
         do kcell = 1,nlist
             cp => cell_list(kcell)
-            if (cp%psurvive > 0 .and. cp%mitosis_time < CA_time) then
+            if (cp%psurvive > 1.0e-8 .and. cp%mitosis_time < CA_time) then
                 Pp = cp%psurvive
-                Pd = 1 - sqrt(1 - Pp)   ! psurvive for the 2 daughters: Pp = 2Pd - Pd^2
+                Pd = 1 - sqrt(1.0 - Pp)   ! Pd = psurvive for the 2 daughters: Pp = 2Pd - Pd^2
                 NPsurvive = NPsurvive + 1
                 SFtot = SFtot - Pp + 2*Pd
+                if (kcell <= 10) write(*,'(a,i6,2e12.3)') 'daughters: kcell, Pp, Pd: ',kcell,Pp,Pd
             endif
         enddo
     endif
-    SFave = SFtot/NPsurvive
+    if (NPsurvive > 0) then
+        SFave = SFtot/NPsurvive
+    else
+        SFave = 0
+    endif
+    write(*,'(a,i6,2e12.3)') 'NPsurvive,SFlive,SFtot: ',NPsurvive,SFlive,SFtot
 !    if (use_Napop) then
 !        SFave = ((Nirradiated - Napop)/Nirradiated)*SFlive
 !    else
 !        SFave = SFlive
 !    endif
-    write(logmsg,'(a,e12.4,f8.4)') 'SFave,log10(SFave): ',SFave,log10(SFave)
+    write(*,*)
+    write(logmsg,'(a,e12.4,f8.3)') 'SFave,log10(SFave): ',SFave,log10(SFave)
     call logger(logmsg)
     call completed
     write(nflog,'(a)') 'nphase:'
@@ -2200,32 +2237,6 @@ Paber = exp(-cp%Nlethal)
 Pmit = exp(-mitRate*totDSB)
 Psurvive = Pmit*Paber  
 write(nflog,'(a,3f8.4)') 'Paber, Pmit, Psurvive: ',Paber, Pmit, Psurvive
-end subroutine
-
-!-----------------------------------------------------------------------------------------
-!-----------------------------------------------------------------------------------------
-subroutine get_phase_distribution(phase_count)
-integer :: phase_count(0:4)
-integer :: kcell, ph
-type(cell_type), pointer :: cp
-
-phase_count = 0
-do kcell = 1,nlist
-    cp => cell_list(kcell)
-    if (cp%state == DEAD) then
-        ph = 0      ! 
-    elseif (cp%phase == G1_phase .or. cp%phase == G1_checkpoint) then
-        ph = 1
-    elseif (cp%phase == S_phase .or. cp%phase == S_checkpoint) then
-        ph = 2
-    elseif (cp%phase == G2_phase .or. cp%phase == G2_checkpoint) then
-        ph = 3
-    else
-        ph = 4
-    endif
-    phase_count(ph) = phase_count(ph) + 1
-enddo
-!write(*,'(a,5i6)') 'phase_count: ',phase_count(0:4)
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -2417,23 +2428,15 @@ do kcell = 1,nlist
 enddo
 nir = max(nir,1)
 write(*,'(a,4i6)') 'nir: ',nir
-write(*,'(a,4f8.4)') 'Average SF by phase: ',sftot/nir
-write(*,'(a,4f8.4)') 'log10(SF) by phase: ',log10(sftot/nir)
+write(*,'(a,4f10.6)') 'Average SF by phase: ',sftot/nir
 if (use_synchronise) then
     write(nfphase,'(a,4f8.4)') 'Average SF by phase: ',sftot/nir
-!    write(nfphase,'(a,4f8.4)') 'log10(SF) by phase: ',log10(sftot/nir)
 endif
-!write(*,'(a,2f8.4)') 'Average: ',sfsum/nsum,log10(sfsum/nsum)
-!write(*,'(a,i6,e12.3)') 'max G1 SF: ',kcellmax,sfmax
 
-!    phase_dist(3) = phase_dist(3) + phase_dist(4)   ! lump G2 and M as G2
-!    fract(0:3) = phase_dist(0:3)/real(sum(phase_dist(0:3)))
-write(logmsg,'(a,8f6.1)') 'phase_dist:      ',phase_dist(0:3)
-call logger(logmsg)
-write(*,'(a,f8.3)') 'Final average pATM: ',ATMsum/nirradiated
-write(*,'(a,f8.3)') 'Final average pATR: ',ATRsum/nirradiated
-!write(*,'(a,f8.3)') 'Average S delay: ',Sthsum/NSth
-!write(*,'(a,f8.3)') 'Average G2 ATM delay: ',G2thsum/NG2th
+!write(logmsg,'(a,8f8.3)') 'phase_dist:      ',phase_dist(0:3)
+!call logger(logmsg)
+!write(*,'(a,f8.3)') 'Final average pATM: ',ATMsum/nirradiated
+!write(*,'(a,f8.3)') 'Final average pATR: ',ATRsum/nirradiated
 
 if (use_PEST) then
     if (use_SF) then

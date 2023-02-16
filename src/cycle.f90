@@ -87,19 +87,24 @@ elseif (cp%phase == S_phase) then
 elseif (cp%phase == G2_phase) then
     if (use_Jaiswal) then
         !cp%progress = (cp%CC_act - CC_act0)/(CC_threshold - CC_act0)    ! not really needed, and not correct
-        if (use_slope_threshold) then
+        if (is_radiation) then      ! post-IR
             tIR = (t_simulation - t_irradiation)/3600   ! time since IR, in hours
-            if (kcell_now == 1) write(*,'(a,3f8.2)') 'tIR: ',t_simulation/3600, t_irradiation/3600,tIR
-            switch = (tIR > 1.0) .and. (cp%dCC_act_dt < slope_threshold)
+            if (use_slope_threshold) then
+                switch = (tIR > 1.0) .and. (cp%dCC_act_dt < slope_threshold)
+            else
+!                switch = (tIR > 1.0) .and. (cp%CC_act >= CC_threshold)
+                switch = (cp%CC_act >= CC_threshold)
+            endif
         else
             switch = (cp%CC_act >= CC_threshold)
         endif
+
         if (switch) then
             cp%phase = M_phase
             cp%progress = 0
             cp%V = cp%divide_volume     ! set volume here, to maintain correct cell volume at cell division
             if (single_cell) write(*,*) 'Reached mitosis at: ',t_simulation/3600
-!            if (kcell_now <= 10) write(nflog,'(a,i4,3f8.3)') 'Exit G2: CC_act, threshold, t: ',kcell_now,cp%CC_act,CC_threshold,t_simulation/3600
+!            if (kcell_now <= 100) write(nflog,'(a,i4,3f8.3)') 'Exit G2: CC_act, threshold, t: ',kcell_now,cp%CC_act,CC_threshold,t_simulation/3600
 !            if (cp%generation == 1) then
 !                npet = npet+1
 !                phase_exit_time_sum = t_simulation + phase_exit_time_sum + dt

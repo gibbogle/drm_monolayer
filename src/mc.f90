@@ -44,7 +44,7 @@ character*(2) :: phaseName(4) = ['G1','S ','G2','M ']
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.008462]   ! by pathway
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.2604, 0.008462]   ! by pathway  with HR simple
 !real(8) :: repRate(NP) = [2.081, 0.2604, 0.2604, 0.2604, 0.008462]   ! by pathway  with HR simple
-real(8) :: repRate(NP) = [2.081, 0.2604, 0.2604, 0.008462, 0.0]   ! by pathway (TMEJ was 0.008462) (McMahon: fastRepair, slowRepair, verySlowRepair)
+real(8) :: repRate(NP) = [2.081, 0.2604, 0.087, 0.008462, 0.0]   ! by pathway (TMEJ was 0.008462) (McMahon: fastRepair, slowRepair, verySlowRepair)
 !real(8) :: misrepRate(8) = [0.18875,0.18875,0.18247,0.18247,0.14264,0.14264,0.18875,0.18875]        ! by phase, Nlethal = 0.5*misrepRate*Nmis 
 !real(8) :: misrepRate(8) = [0.18875,0.0,0.18247,0.0,0.14264,0.0,0.18875,0.0]        ! by phase, Nlethal = 0.5*misrepRate*Nmis 
 !real(8) :: fidRate(NP)  = [0.98537, 0.98537, 0.98537, 1.0, 0.4393]  ! by pathway
@@ -199,7 +199,7 @@ read(nfin,*) sigma_TMEJ
 read(nfin,*) SSArep
 read(nfin,*) SSAfrac
 repRate(4) = TMEJrep
-!repRate(5) = SSArep
+repRate(5) = SSArep
 dsigma_dt = SSArep      ! to use to investigate sigma_NHEJ growing with time since IR
 
 if (use_Jaiswal) then
@@ -455,7 +455,7 @@ if (use_Jeggo) then
         pHR = 0
     End If
     pNHEJ = 1 - pHR
-    DSB0(NHEJs) = Pc * Npre + x * pNHEJ * Npost           ! fast
+    DSB0(NHEJs) = (1 - Pc) * Npre + x * pNHEJ * Npost           ! fast
     DSB0(NHEJc) = Pc * Npre + (1 - x) * pNHEJ * Npost     ! slow
     DSB0(HR) = pHR * Npost     
 else
@@ -873,7 +873,7 @@ else
     kkm10 = Km10
 endif
 Nt = int(dth/dt + 0.5)
-if (single_cell) write(nflog,*) 'G2_Jaiswal_update: Nt: ',Nt
+!if (single_cell) write(nflog,*) 'G2_Jaiswal_update: Nt: ',Nt
 !D = sum(cp%DSB(1:4))*norm_factor
 D_ATR = cp%DSB(HR)*norm_factor
 D_ATM = (cp%DSB(HR) + cp%DSB(NHEJc))*norm_factor
@@ -896,7 +896,7 @@ do it = 1,Nt
 !    write(nflog,'(i6,f8.4,2f10.6)') it,t,CC_act,dCC_act_dt
 enddo
 !if (kcell_now == 1) write(*,'(a,4f8.4)') 'ATR_act, Kd2e,D_ATR, D_ATM: ',ATR_act, Kd2e,D_ATR, D_ATM
-!if (kcell_now == 8) write(*,'(a,i8,4f8.4)') 'CC_act: ',kcell_now,ATR_act,ATM_act,CC_act,dCC_act_dt
+!if (kcell_now == 3) write(nflog,'(a,i8,4f8.4)') 'CC_act: ',kcell_now,ATR_act,ATM_act,CC_act,dCC_act_dt
 cp%CC_act = CC_act
 cp%ATR_act = ATR_act
 cp%ATM_act = ATM_act
@@ -987,10 +987,10 @@ logical :: dbug
 dth = dt/3600   ! hours
 use_ATM = .not.use_fixed_CP
 phase = cp%phase
-if (single_cell .and. phase > G2_phase) then
-    write(nflog,*) 'updateRepair: phase: ',phase
-    stop
-endif
+!if (single_cell .and. phase > G2_phase) then
+!    write(nflog,*) 'updateRepair: phase: ',phase
+!    stop
+!endif
 iph = phase
 DSB = cp%DSB
 !write(*,'(a,i4,4f8.1)') 'phase,DSB: ',phase,DSB(1:4)
@@ -1159,33 +1159,33 @@ end subroutine
 !------------------------------------------------------------------------
 subroutine survivalProbability(cp)
 type(cell_type), pointer :: cp
-real(8) :: DSB(NP), totDSB, Nlethal,Paber, Pbase, Papop, Pmit, Psurv
+real(8) :: DSB(NP), totDSB, Nlethal,Nmisjoins, Paber, Pbase, Papop, Pmit, Psurv
 
 DSB = cp%DSB
 totDSB = sum(DSB)
 Nlethal = cp%Nlethal
-if (kcell_now == 1) write(nflog,'(a,3i4,2e12.3)') 'kcell, phase0, phase, totDSB, Nlethal: ',kcell_now, cp%phase0, cp%phase, totDSB, Nlethal
-if (cp%phase0 == G1_phase) then     ! same as S, G2
-!    Pbase = exp(-baseRate*cp%totDSB0)   ! this is handled in cellIrradiation() = 1 - Pdie
-    Paber = exp(-Kaber*Nlethal) ! Kaber = 1, not needed because Klethal is a parameter
-    Pmit = exp(-mitRate*totDSB)
-    cp%Psurvive = Paber*Pmit
-!    if (kcell_now < 40) write(*,'(a,i3,2f5.1,3e11.3)') 'G1: Nlethal,totDSB,Paber,Pmit: ',kcell_now,Nlethal,totDSB,Paber,Pmit,Paber*Pmit
-!       cp%Psurvive = Paber*Pbase*Papop*Pmit
-!    if (kcell_now == 35) write(*,*) 'cell #35 Psurvive: ',cp%Psurvive
-elseif (cp%phase0 < M_phase) then   ! G1, S, G2
+Nmisjoins = Nlethal/Klethal
+if (kcell_now == -27) write(nflog,'(a,3i4,2e12.3)') 'kcell, phase0, phase, totDSB, Nlethal: ',kcell_now, cp%phase0, cp%phase, totDSB, Nlethal
+if (cp%phase0 < M_phase) then   ! G1, S, G2
     Paber = exp(-Nlethal)
     Pmit = exp(-mitRate*totDSB)
     cp%Psurvive = Pmit*Paber  
-    if (kcell_now == 1) write(*,'(a,2f8.4,2e12.3)') 'totDSB,Nlethal,Pmit,Paber: ',totDSB,Nlethal,Pmit,Paber  
+!    if (kcell_now == 1) write(*,'(a,2f8.4,2e12.3)') 'totDSB,Nlethal,Pmit,Paber: ',totDSB,Nlethal,Pmit,Paber  
 else    ! M_phase or dividing
     Paber = 1
     Pmit = exp(-mitRate*totDSB)
     cp%Psurvive = Pmit*Msurvival
+!    write(nflog,'(a,i6,3f10.4)') 'IR in mitosis: ',kcell_now,totDSB,cp%totDSB0,Pmit
+endif
+if (kcell_now <= 10) then
+    write(*,*)
+    write(*,'(a,i3)') 'Computed psurvive for cell: ',kcell_now
+    write(*,'(a,i3,2f8.2)') 'phase0,Nmisjoins,totDSB: ',cp%phase0,Nmisjoins,totDSB
+    write(*,'(a,3e12.3)') 'Paber,Pmit,Psurvive: ',Paber,Pmit,cp%Psurvive
+    write(*,*)
 endif
 NPsurvive = NPsurvive + 1   ! this is the count of cells for which Psurvive has been computed
 cp%mitosis_time = tnow      ! needed to determine if mitosis occurs before or after CA
-if (istep > 1278) write(*,*) 'reached M: phase0: ',istep,cp%phase0
 !Psurvive(NPsurvive) = cp%Psurvive
 
 ATMsum = ATMsum + cp%pATM
