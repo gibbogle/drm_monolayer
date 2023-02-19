@@ -86,7 +86,7 @@ real(8) :: Preass   ! rate of reassignment to pathway 4, TMEJ (prob of reass/hou
 !logical :: alt_EJ_suppressed = .false.
 
 ! Jaiswal formulation (26/09/22)
-real(8) :: Kcc2a, Kcc2e, Kd2e, Kd2t, Ke2cc, Km1, Km2, Km10, Kt2cc, Kti2t, Km10t
+real(8) :: Kcc2a, Kcc2e, Kd2e, Kd2t, Ke2cc, Km1, Km10, Kt2cc, Kti2t, Km10t
 real(8) :: CC_tot, ATR_tot, ATM_tot, CC_act0, CC_threshold, norm_factor
 logical :: use_Jaiswal = .true.
 logical :: vary_km10 = .true.
@@ -226,7 +226,7 @@ if (use_Jaiswal) then
         use_slope_threshold = .false.
         CC_threshold = CC_threshold*CC_tot
     endif
-    Km2 = Km1
+    Km10 = 2.36*Kcc2a + 1.7     ! to give T_G2 = 3.9, from line fit in jaiswal.xlsm
 endif
 call make_eta_table(sigma_NHEJ, sigma_TMEJ)
 
