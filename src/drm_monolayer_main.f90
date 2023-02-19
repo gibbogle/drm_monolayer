@@ -110,7 +110,7 @@ else
 endif
 
 ! Synchronisation of cell IR
-use_synchronise = .true.
+use_synchronise = .false.
 if (use_synchronise) then
     call syncher(Nph, phase, progress)
     do i = 1,Nph
@@ -118,7 +118,7 @@ if (use_synchronise) then
     enddo
 endif
 synch_phase = S_phase   !G1 is 1 - 6, S is 7 - 15, G2 is 16 - 19
-synch_fraction = 0.5
+synch_fraction = 0.6
 G2_katm3_factor = 1.0
 G2_katm4_factor = 1.0
 G2_katr3_factor = 1.0

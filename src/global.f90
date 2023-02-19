@@ -10,7 +10,7 @@ use, intrinsic :: ISO_C_BINDING
 
 implicit none
 
-integer, parameter :: NP = 5        ! pathways (was 4)
+integer, parameter :: NP = 4
 
 integer, parameter :: TCP_PORT_0 = 5000		! main communication port (logging)
 integer, parameter :: TCP_PORT_1 = 5001		! data transfer port (plotting)

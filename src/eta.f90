@@ -7,7 +7,7 @@ implicit none
 integer, parameter :: Neta = 11
 integer, parameter :: NtIR = 15
 real(8) :: dsigma_dt
-real(8) :: eta_table(Neta,NtIR,5)
+real(8) :: eta_table(Neta,NtIR,NP)
 
 contains
 !--------------------------------------------------------------------------
@@ -55,7 +55,7 @@ do it = 1,NtIR
 	eta = etafun(R,S)
 	eta_table(k,it,1:2) = eta
 	eta = etafun(R,S_TMEJ)
-	eta_table(k,it,3:5) = eta
+	eta_table(k,it,3:NP) = eta
 !	write(nflog,'(a,2i4,2e12.3)') 'k, it, S, eta_NHEJ: ', k, it, S, eta_table(k,it,1)
 enddo
 enddo

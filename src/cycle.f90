@@ -47,7 +47,7 @@ logical :: switch
 !	write(nflog,*) 'dVdt=0, kcell: ',kcell_now,cp%phase
 !	stop
 !endif
-!if (kcell_now == 3) write(*,'(a,2i4,8f7.3)') 'kcell, phase, progress, fp: ',kcell_now,cp%phase, cp%progress, cp%fp
+if (single_cell) write(nflog,'(a,2i4,8f7.3)') 'kcell, phase, progress, fp: ',kcell_now,cp%phase, cp%progress, cp%fp
 !if (kcell_now <= 10) write(nflog,'(a,2i4,f6.3)') 'kcell_now, phase, progress: ',kcell_now,cp%phase,cp%progress
 10 continue
 if (cp%phase == G1_phase) then
@@ -82,12 +82,14 @@ elseif (cp%phase == S_phase) then
         nSdelay = nSdelay + 1   ! only S doesn't use stops
         if (single_cell) then
             write(*,*) 'G2 entry: N_DSB: ',sum(cp%DSB(1:3))
+            write(nflog,*) 'G2 entry: N_DSB: ',sum(cp%DSB(1:3))
         endif
     endif
 elseif (cp%phase == G2_phase) then
     if (use_Jaiswal) then
         !cp%progress = (cp%CC_act - CC_act0)/(CC_threshold - CC_act0)    ! not really needed, and not correct
         if (is_radiation) then      ! post-IR
+            if (single_cell) write(nflog,'(a,2f8.3)') 'G2_phase, CC_act, CC_threshold: ',cp%CC_act, CC_threshold
             tIR = (t_simulation - t_irradiation)/3600   ! time since IR, in hours
             if (use_slope_threshold) then
                 switch = (tIR > 1.0) .and. (cp%dCC_act_dt < slope_threshold)

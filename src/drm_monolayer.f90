@@ -497,7 +497,6 @@ read(nfcell,*) growthcutoff(3)
 read(nfcell,*) Cthreshold
 read(nfcell,*) Clabel_threshold
 read(nfcell,*) spcrad_value
-
 read(nfcell,*) Ndrugs_used
 write(nflog,*) 'Ndrugs_used: ',Ndrugs_used
 use_inhibiter = .false.
@@ -1447,7 +1446,7 @@ elseif (t <= tswitch(2)) then
     cp%dVdt = cp%fp*rVmax
     cp%V = Vprev + (t - tswitch(1))*cp%dVdt 
     cp%progress = (t - tswitch(1))/T_S
-elseif (t < tswitch(3)) then
+elseif (t <= tswitch(3)) then
     Vprev = V0 + fp(1)*rVmax*T_G1 + fp(2)*rVmax*T_S
     cp%phase = G2_phase
     cp%fp = fp(3)
@@ -1492,6 +1491,7 @@ endif
 if (single_cell) then
     write(*,*)
     write(*,*) 'Initial phase, progress: ',cp%phase,cp%progress
+    write(nflog,*) 'Initial phase, progress: ',cp%phase,cp%progress
     write(*,*)
 endif
 cp%t_divide_last = -t
@@ -2051,7 +2051,7 @@ if (use_synchronise .and. .false.) then
     tATMdelay = tATMdelay + dtATMdelay
     tATRdelay = tATRdelay + dtATRdelay 
 !    write(nfphase,'(2i6,11f8.3)') istep,cp%phase,cp%progress,t_simulation/3600,cp%pATM,cp%pATR,fATM,fATR,fCP,tCPdelay/3600,tATMdelay/3600,tATRdelay/3600
-    ATM_DSB = cp%DSB(NHEJc) + cp%DSB(HR)   ! complex DSB
+    ATM_DSB = cp%DSB(NHEJslow) + cp%DSB(HR)   ! complex DSB
     write(nfphase,'(2i6,11f8.3)') istep,cp%phase,cp%progress,t_simulation/3600,ATM_DSB,cp%pATM
     if (cp%phase == S_phase) stop
     if (cp%phase == dividing) then
@@ -2122,15 +2122,13 @@ if (dbug .or. mod(istep,nthour) == 0) then
     enddo
     nphase(hour,:) = nphaseh
 	ntphase = nphaseh + ntphase
-	write(nflog,*)
-	write(logmsg,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells, ' N reached mitosis: ',NPsurvive    !,' Napop: ',Napop    !, &
-	call logger(logmsg)
+!	write(nflog,*)
+	write(nflog,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells, ' N reached mitosis: ',NPsurvive    !,' Napop: ',Napop    !, &
     call get_phase_distribution(phase_count)
     total = sum(phase_count)
     phase_dist = 100*phase_count/total
-    write(*,'(a,3i8,3f8.3)') 'count, phase_dist: ',phase_count(1:3),phase_dist(1:3)
+    write(*,'(a,3i8,3f8.1)') 'count, phase_dist: ',phase_count(1:3),phase_dist(1:3)
 !	if (single_cell) call medras_compare()
-	write(nflog,*)
 !	write(nfphase,'(a,2f8.3)') 'S-phase k1, k2: ', K_ATR(2,1),K_ATR(2,2)
 !	if (output_DNA_rate) then
 !	    call get_DNA_synthesis_rate(DNA_rate)
@@ -2196,7 +2194,7 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
                 Pd = 1 - sqrt(1.0 - Pp)   ! Pd = psurvive for the 2 daughters: Pp = 2Pd - Pd^2
                 NPsurvive = NPsurvive + 1
                 SFtot = SFtot - Pp + 2*Pd
-                if (kcell <= 10) write(*,'(a,i6,2e12.3)') 'daughters: kcell, Pp, Pd: ',kcell,Pp,Pd
+!                if (kcell <= 100) write(*,'(a,i6,2e12.3)') 'daughters: kcell, Pp, Pd: ',kcell,Pp,Pd
             endif
         enddo
     endif
@@ -2275,7 +2273,7 @@ enddo
 ! n = Nirradiated - Napop
 SF = sfsum/n
 write(nflog,'(a,2f10.1)') 'getSFlive: initial,final DSB totals: ',total0,total
-write(*,'(a,4e12.3)') 'Ave totDSB,Pmit,Nlethal,Paber: ',tottotDSB/n, totPmit/n, totNlethal/n, totPaber/n
+write(*,'(a,i6,4e12.3)') 'n,Ave totDSB,Pmit,Nlethal,Paber: ',n,totDSB/n, totPmit/n, totNlethal/n, totPaber/n
 end function
 
 !-----------------------------------------------------------------------------------------

@@ -85,7 +85,7 @@ call logger(logmsg)
 call get_phase_distribution(phase_count)
 total = sum(phase_count)
 ph_dist = 100*phase_count/total
-write(nflog,'(a,5f8.4)') 'phase distribution: ',ph_dist
+write(nflog,'(a,5f8.1)') 'phase distribution: ',ph_dist
 
 if (use_G1_CP_factor) then
     G1_CP_time = G1_CP_factor*dose*3600
