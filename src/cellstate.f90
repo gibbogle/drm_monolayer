@@ -87,6 +87,11 @@ total = sum(phase_count)
 ph_dist = 100*phase_count/total
 write(nflog,'(a,5f8.1)') 'phase distribution: ',ph_dist
 
+nslow_sum = 0
+pHR_sum = 0
+pNHEJslow_sum = 0
+fdecay_sum = 0
+
 if (use_G1_CP_factor) then
     G1_CP_time = G1_CP_factor*dose*3600
 endif
@@ -185,6 +190,21 @@ counts = 0
 		endif
 #endif
     enddo
+    
+if (check_G2_slow) then
+    write(nflog,*)
+    write(nflog,*) 'Prob of slow repair pathways in G2:'
+    write(nflog,*) 'nslow_sum: ', nslow_sum
+    write(nflog,*) 'pHR: ',pHR_sum/nslow_sum
+    write(nflog,*) 'pNHEJslow: ',pNHEJslow_sum/nslow_sum
+    write(nflog,*) 'fdecay: ',fdecay_sum/nslow_sum
+    write(*,*) 'Prob of slow repair pathways in G2:'
+    write(*,*) 'nslow_sum: ', nslow_sum
+    write(*,*) 'pHR: ',pHR_sum/nslow_sum
+    write(*,*) 'pNHEJslow: ',pNHEJslow_sum/nslow_sum
+    write(*,*) 'fdecay: ',fdecay_sum/nslow_sum
+endif
+
 !endif
 !call check_radiation
 !write(logmsg,'(a,i6)') 'Did irradiation: # of IRL cells: ',n

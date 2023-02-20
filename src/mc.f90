@@ -124,6 +124,10 @@ real(8) :: G1_CP_time
 ! Checking TMEJ misjoining
 real(8) :: misjoins(2)      ! 1 = NHEJ, 2 = TMEJ
 
+! Checking prob of slow repair in G2
+logical :: check_G2_slow = .true.
+integer :: nslow_sum
+real(8) :: pHR_sum, pNHEJslow_sum, fdecay_sum
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
@@ -418,24 +422,29 @@ real(8) :: Pbase, Pdie, R
 real(8) :: DSB_Gy = 35
 real(8) :: th, Npre, Npre_s, Npre_c, Npost, Npost_s, Npost_c, Pc, x
 integer, parameter :: option = 2
+type(cycle_parameters_type),pointer :: ccp
 logical :: use_Jeggo = .true.
 
+ccp => cc_parameters(1)
 phase = cp%phase
 cp%phase0 = min(phase, M_phase)
 NG1 = DSB_Gy*dose
 DSB0 = 0
 
 if (use_Jeggo) then
-    Pc = pComplex
+!    Pc = pComplex
 !    x = pJeggo
     If (phase == G1_phase) Then
         f_S = 0
     ElseIf (phase == S_phase) Then
         f_S = cp%progress
-        th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
+!        th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
+         th = cp%progress*ccp%T_S/3600
     ElseIf (phase >= G2_phase) Then
         f_S = 1
-        th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
+!        th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
+         th = (ccp%T_S + cp%progress*ccp%T_G2)/3600
+        
     End If
     totDSB0 = (1 + f_S) * NG1
     DSB0(TMEJ) = 0
@@ -453,11 +462,20 @@ if (use_Jeggo) then
     else
         pHR = 0
     End If
-!    write(*,*) 'phase, pHR: ',phase,pHR
+!    if (single_cell) then
+!        write(*,'(a,2f8.3)') 'th, fdecay(th): ',th, fdecay(th)
+!        write(*,'(a,2f8.3)') 'pHRfast,pHRslow: ',pHRfast,pHRslow
+!    endif
     pNHEJ = 1 - pHR
-    DSB0(NHEJfast) = (1 - Pc) * Npre + pJeggo * pNHEJ * Npost     ! fast
-    DSB0(NHEJslow) = Pc * Npre + (1 - pJeggo) * pNHEJ * Npost     ! slow
-    DSB0(HR) = pHR * Npost     
+    DSB0(NHEJfast) = (1 - pComplex) * Npre + pJeggo * pNHEJ * Npost     ! fast
+    DSB0(NHEJslow) = pComplex * Npre + (1 - pJeggo) * pNHEJ * Npost     ! slow
+    DSB0(HR) = pHR * Npost
+    if (phase == G2_phase) then
+        nslow_sum = nslow_sum + 1
+        pHR_sum = pHR_sum + pHR
+        pNHEJslow_sum = pNHEJslow_sum + (1 - pJeggo) * pNHEJ
+        fdecay_sum = fdecay_sum + fdecay(th)
+    endif
 else
     if (phase == G1_phase) then
         f_S = 0.0
@@ -491,7 +509,7 @@ else
         DSB0(NHEJfast) = Npost*(1 - pHRfast)
         DSB0(NHEJslow) = 0
     endif
-endif
+endif    
 
 cp%pATM = 0
 cp%pATR = 0
@@ -551,6 +569,7 @@ end function
 
 !--------------------------------------------------------------------------
 ! From Richards's curve
+! t is hours since start of S-phase, csig approx = T_S
 !--------------------------------------------------------------------------
 function fsigmoid(t) result(f)
 real(8) :: t, f
