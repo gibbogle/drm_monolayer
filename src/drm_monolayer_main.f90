@@ -117,8 +117,8 @@ if (use_synchronise) then
         write(*,'(2i6,f6.3)') i-1, phase(i), progress(i)
     enddo
 endif
-synch_phase = G2_phase   !G1 is 1 - 6, S is 7 - 15, G2 is 16 - 19
-synch_fraction = 0.5
+synch_phase = S_phase   !G1 is 1 - 6, S is 7 - 15, G2 is 16 - 19
+synch_fraction = 0.8
 G2_katm3_factor = 1.0
 G2_katm4_factor = 1.0
 G2_katr3_factor = 1.0

@@ -40,23 +40,28 @@ end function
 
 !--------------------------------------------------------------------------
 ! S_NHEJ, S_TMEJ are sigma_NHEJ, sigma_TMEJ
+! fsmin is the minimum of the multiplying factor fsigma that reduces sigma 
+! as f_S increases.
 !--------------------------------------------------------------------------
-subroutine make_eta_table(S_NHEJ, S_TMEJ)
-real(8) :: S_NHEJ, S_TMEJ
-real(8) :: V, R, S, eta
+subroutine make_eta_table(S_NHEJ, S_TMEJ, fsmin)
+real(8) :: S_NHEJ, S_TMEJ, fsmin
+real(8) :: V, R, S, eta, fsigma
 integer :: k, it
 
 write(nflog,*) 'make_eta_table: ',S_NHEJ, S_TMEJ
+fsigma = 1
 do k = 1,Neta
+fsigma = 1 -(1 - fsmin)*(k-1)/(Neta - 1.0)
 do it = 1,NtIR
 	V = 1 + (k-1.0)/(Neta-1.0)
 	R = V**(1./3.)
 	S = S_NHEJ + (it-1)*dsigma_dt
+	S = fsigma*S
 	eta = etafun(R,S)
 	eta_table(k,it,1:2) = eta
 	eta = etafun(R,S_TMEJ)
 	eta_table(k,it,3:NP) = eta
-!	write(nflog,'(a,2i4,2e12.3)') 'k, it, S, eta_NHEJ: ', k, it, S, eta_table(k,it,1)
+	write(nflog,'(a,2i4,3f8.4)') 'k, it, R, S, eta_NHEJ: ', k, it, R, S, eta_table(k,it,1)
 enddo
 enddo
 end subroutine

@@ -35,9 +35,10 @@ integer, parameter :: SSA = 5
 
 !real(8) :: eta = 0.0006506387875449218
 real(8) :: Pcomplex = 0.4337    ! fraction of created DSBs that are complex (McMahon: complexFrac)
-real(8) :: pJeggo = 0.9         ! fraction of post-replication DSBs that are fast.
+real(8) :: pJeggo = 0.9         ! fraction of post-replication DSBs that are fast. (NOT USED)
+real(8) :: fsmin = 0.5
 !real(8) :: PHR = 0.8      ! fraction of post-replication simple DSBs that are repaired by HR (slow) rather than NHEJ (fast)
-real(8) :: pHRfast_max, pHRslow_max, pHRs_G2, pHRc_G2
+real(8) :: pHRs_max, pHRc_max, pHRs_G2, pHRc_G2
 logical :: use_sigmoid = .true.
 real(8) :: rmin = 0.1, kdecay = 0.1, ksig = 1, csig = 8.56    ! decay function parameters
 character*(2) :: phaseName(4) = ['G1','S ','G2','M ']
@@ -196,9 +197,9 @@ read(nfin,*) repRate(NHEJslow)
 read(nfin,*) repRate(HR)
 read(nfin,*) repRate(TMEJ)
 read(nfin,*) pComplex
-read(nfin,*) pJeggo
-read(nfin,*) pHRfast_max
-read(nfin,*) pHRslow_max
+read(nfin,*) fsmin  !pJeggo
+read(nfin,*) pHRs_max
+read(nfin,*) pHRc_max
 read(nfin,*) rmin
 read(nfin,*) ksig
 read(nfin,*) csig
@@ -232,7 +233,7 @@ if (use_Jaiswal) then
     endif
     Km10 = 2.36*Kcc2a + 1.7     ! to give T_G2 = 3.9, from line fit in jaiswal.xlsm
 endif
-call make_eta_table(sigma_NHEJ, sigma_TMEJ)
+call make_eta_table(sigma_NHEJ, sigma_TMEJ, fsmin)
 
 ATMsum = 0  ! to investigate ATM dependence on parameters
 ATRsum = 0  ! to investigate ATR dependence on parameters
@@ -417,7 +418,7 @@ real(8) :: dose, Cdrug
 integer :: ityp, kpar = 0
 integer :: phase
 real(8) :: DSB0(NP)
-real(8) :: totDSB0, baseDSB, fin, T_S, f_S, NG1, NNHEJ, pHRfast, pHRslow, pHR, pNHEJ, NHRs, NHRc
+real(8) :: totDSB0, baseDSB, fin, T_S, f_S, NG1, NNHEJ, pHRs, pHRc, pHR, pNHEJ, NHRs, NHRc
 real(8) :: Pbase, Pdie, R
 real(8) :: DSB_Gy = 35
 real(8) :: th, Npre, Npre_s, Npre_c, Npost, Npost_s, Npost_c, Pc, x
@@ -432,8 +433,6 @@ NG1 = DSB_Gy*dose
 DSB0 = 0
 
 if (use_Jeggo) then
-!    Pc = pComplex
-!    x = pJeggo
     If (phase == G1_phase) Then
         f_S = 0
     ElseIf (phase == S_phase) Then
@@ -455,26 +454,32 @@ if (use_Jeggo) then
     End If
     Npost = totDSB0 - Npre
     If (f_S > 0) Then
-        pHRfast = pHRfast_max * ((1 - rmin) * fdecay(th) + rmin)
-        pHRslow = pHRslow_max * ((1 - rmin) * fdecay(th) + rmin)
-        pHR = pHRfast + pHRslow
-        pHR = min(pHR, 1.0) ! Note: we must have pHRfast + pHRslow <= 1
+        pHRs = pHRs_max * ((1 - rmin) * fdecay(th) + rmin)
+        pHRc = pHRc_max * ((1 - rmin) * fdecay(th) + rmin)
     else
-        pHR = 0
+        pHRs = 0
+        pHRc = 0
     End If
+    pHR = (1 - pComplex)*pHRs + pComplex*pHRc
 !    if (single_cell) then
 !        write(*,'(a,2f8.3)') 'th, fdecay(th): ',th, fdecay(th)
-!        write(*,'(a,2f8.3)') 'pHRfast,pHRslow: ',pHRfast,pHRslow
+!        write(*,'(a,2f8.3)') 'pHRs,pHRc: ',pHRs,pHRc
 !    endif
-    pNHEJ = 1 - pHR
-    DSB0(NHEJfast) = (1 - pComplex) * Npre + pJeggo * pNHEJ * Npost     ! fast
-    DSB0(NHEJslow) = pComplex * Npre + (1 - pJeggo) * pNHEJ * Npost     ! slow
-    DSB0(HR) = pHR * Npost
-    if (phase == G2_phase) then
-        nslow_sum = nslow_sum + 1
-        pHR_sum = pHR_sum + pHR
-        pNHEJslow_sum = pNHEJslow_sum + (1 - pJeggo) * pNHEJ
-        fdecay_sum = fdecay_sum + fdecay(th)
+    if (option == 1) then
+        pNHEJ = 1 - pHR
+        DSB0(NHEJfast) = (1 - pComplex) * Npre + pJeggo * pNHEJ * Npost     ! fast
+        DSB0(NHEJslow) = pComplex * Npre + (1 - pJeggo) * pNHEJ * Npost     ! slow
+        DSB0(HR) = pHR * Npost
+        if (phase == G2_phase) then
+            nslow_sum = nslow_sum + 1
+            pHR_sum = pHR_sum + pHR
+            pNHEJslow_sum = pNHEJslow_sum + (1 - pJeggo) * pNHEJ
+            fdecay_sum = fdecay_sum + fdecay(th)
+        endif
+    elseif (option == 2) then
+        DSB0(NHEJfast) = (1-pComplex)*Npre + (1-pComplex)*(1-pHRs)*Npost     ! fast
+        DSB0(NHEJslow) = pComplex*Npre + pComplex*(1-pHRc)*Npost     ! slow
+        DSB0(HR) = pHR*Npost
     endif
 else
     if (phase == G1_phase) then
@@ -486,16 +491,16 @@ else
         th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
         f_S = cp%progress
         totDSB0 = (1+f_S)*NG1
-        pHRfast = pHRfast_max*((1-rmin)*fdecay(th) +rmin)
-        pHRslow = pHRslow_max*((1-rmin)*fdecay(th) +rmin)
+        pHRs = pHRs_max*((1-rmin)*fdecay(th) +rmin)
+        pHRc = pHRc_max*((1-rmin)*fdecay(th) +rmin)
         Npre = NG1*(1 - f_S)
         Npost = NG1*2*f_S
         Npre_s = Npre*(1 - pComplex)
         Npre_c = Npre*pComplex
         Npost_s = Npost*(1 - pComplex)
         Npost_c = Npost*pComplex
-        NHRs = Npost_s*pHRfast
-        NHRc = Npost_c*pHRslow
+        NHRs = Npost_s*pHRs
+        NHRc = Npost_c*pHRc
         DSB0(HR) = NHRs + NHRc
         DSB0(NHEJfast) = Npre_s + Npost_s - NHRs
         DSB0(NHEJslow) = Npre_c + Npost_c - NHRc
@@ -504,9 +509,9 @@ else
         th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
         totDSB0 = 2*NG1
         Npost = totDSB0
-        pHRfast = pHRfast_max*((1-rmin)*fdecay(th)+rmin)
-        DSB0(HR) = Npost*pHRfast
-        DSB0(NHEJfast) = Npost*(1 - pHRfast)
+        pHRs = pHRs_max*((1-rmin)*fdecay(th)+rmin)
+        DSB0(HR) = Npost*pHRs
+        DSB0(NHEJfast) = Npost*(1 - pHRs)
         DSB0(NHEJslow) = 0
     endif
 endif    
@@ -546,7 +551,7 @@ endif
 cp%DSB = DSB0
 cp%totDSB0 = totDSB0
 cp%Nlethal = 0
-if (kcell_now <= 10) write(*,'(a,2i6,8f8.2)') 'IR: kcell, phase,DSB,f_S: ',kcell_now,phase,cp%DSB(1:4),f_S
+!if (kcell_now <= 10) write(*,'(a,2i6,8f8.2)') 'IR: kcell, phase,DSB,f_S: ',kcell_now,phase,cp%DSB(1:4),f_S
 
 totPmit = 0
 totPaber = 0
@@ -994,7 +999,7 @@ real(8) :: DSB(NP), dNlethal
 real(8) :: DSB0(NP)
 real(8) :: totDSB0, totDSB, Pmis, Nmis, dNmis(NP), totDSBinfid0, totDSBinfid, ATR_DSB, ATM_DSB, dth, binMisProb
 real(8) :: Cdrug, inhibrate, Nreassign
-real(8) :: f_S, eta_NHEJ, eta_TMEJ, tIR
+real(8) :: f_S, eta_NHEJ, eta_TMEJ, tIR, eta
 logical :: pathUsed(NP)
 integer :: k, iph
 logical :: use_DSBinfid = .true.
@@ -1159,10 +1164,22 @@ totDSB = DSB(NHEJfast) + DSB(NHEJslow)
 Pmis = misrepairRate(totDSB0, totDSB, eta_NHEJ)
 Nmis = Nmis + Pmis*(totDSB0 - totDSB)
 misjoins(1) = misjoins(1) + Pmis*(totDSB0 - totDSB)
-! For TMEJ pathway
-Pmis = misrepairRate(DSB0(TMEJ), DSB(TMEJ), eta_TMEJ)
-Nmis = Nmis + Pmis*(DSB0(TMEJ) - DSB(TMEJ))
-misjoins(2) = misjoins(2) + Pmis*(totDSB0 - totDSB)
+!write(nflog,'(a,4f10.4)') 'totDSB0, totDSB, eta_NHEJ, Pmis: ',totDSB0, totDSB, eta_NHEJ, Pmis
+!if (tIR == 2.0) then
+!    write(nflog,*) 'tIR: ',tIR
+!    write(nflog,*) 'Varying eta to find how Pmis depends on eta'
+!    do k = 1,11
+!        eta = eta_NHEJ*(0.5 + (k-1)*0.1)
+!        Pmis = misrepairRate(totDSB0, totDSB, eta)
+!        write(nflog,'(a,i4,2f8.4)') 'k, eta, Pmis: ',k,eta,Pmis
+!    enddo
+!endif
+if (DSB0(TMEJ) > 0) then
+    ! For TMEJ pathway
+    Pmis = misrepairRate(DSB0(TMEJ), DSB(TMEJ), eta_TMEJ)
+    Nmis = Nmis + Pmis*(DSB0(TMEJ) - DSB(TMEJ))
+    misjoins(2) = misjoins(2) + Pmis*(totDSB0 - totDSB)
+endif
 cp%DSB = DSB
 !dNlethal = Klethal*misrepRate(phase)*Nmis   ! (was 0.5)  1.65 needs to be another parameter -> Klethal
 dNlethal = Klethal*Nmis   ! Here Klethal ~ 2.1*0.19 = 0.4, i.e. using a single average misreprate

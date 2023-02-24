@@ -1164,6 +1164,7 @@ rsite = [0.,0.,0.]
 do kcell = 1,initial_count
 	call AddCell(kcell,rsite)
 	phase = cell_list(kcell)%phase
+	phase = min(phase,NP)
 	counts(phase) = counts(phase) + 1
 enddo
 write(*,*)

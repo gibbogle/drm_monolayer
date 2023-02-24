@@ -191,7 +191,7 @@ counts = 0
 #endif
     enddo
     
-if (check_G2_slow) then
+if (check_G2_slow .and. nslow_sum > 0) then
     write(nflog,*)
     write(nflog,*) 'Prob of slow repair pathways in G2:'
     write(nflog,*) 'nslow_sum: ', nslow_sum
