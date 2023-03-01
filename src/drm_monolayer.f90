@@ -330,6 +330,24 @@ end subroutine
 
 !----------------------------------------------------------------------------------------- 
 !-----------------------------------------------------------------------------------------
+subroutine test_rnor
+integer :: kpar=0, n = 100000, i
+real(8) :: R, sum, sum2, ave, var
+
+sum = 0
+sum2 = 0
+do i = 1,n
+    R = par_rnor(kpar)
+    sum = sum + R
+    sum2 = sum2 + R*R
+enddo
+ave = sum/n
+var = (sum2 - n*ave*ave)/(n-1)
+write(*,'(a,3f10.4)') 'ave, var, std: ',ave,var,sqrt(var)
+end subroutine
+
+!----------------------------------------------------------------------------------------- 
+!-----------------------------------------------------------------------------------------
 subroutine RngInitialisation
 integer, allocatable :: zig_seed(:)
 integer :: i
@@ -344,6 +362,9 @@ do i = 0,npar-1
 enddo
 call par_zigset(npar,zig_seed,grainsize)
 par_zig_init = .true.
+
+!call test_rnor
+!stop
 end subroutine
 
 !----------------------------------------------------------------------------------------
@@ -1006,7 +1027,7 @@ do itime = 1,ntimes
 		event(kevent)%etype = RADIATION_EVENT
 		read(nf,*) t
 		if (use_synchronise) then
-		    t = 0.01   ! might need to be > 0
+		    t = 0.001   ! might need to be > 0
 		endif
 		read(nf,*) dose
 		event(kevent)%time = t
@@ -1017,7 +1038,7 @@ do itime = 1,ntimes
 		if (use_PEST .and. nphase_hours > 0) then
 		    phase_hour(1:nphase_hours) = t + phase_hour(1:nphase_hours)
 		endif
-		write(nflog,'(a,i3,a,f6.1)') 'Radiation event: ', kevent,'  dose: ',dose
+		write(nflog,'(a,i3,a,f6.1,a,f6.2)') 'Radiation event: ', kevent,'  dose: ',dose,' hour: ',t
 	endif
 enddo
 Nevents = kevent
@@ -1138,6 +1159,7 @@ logical :: ok
 integer :: kcell, k, ichemo, ityp, site(3), phase
 real(REAL_KIND) :: rsite(3)
 real(REAL_KIND) :: fract(0:8), total
+real(REAL_KIND) :: kt2cc_min, kt2cc_max
 !integer :: phase_count(0:8), hour
 integer :: counts(NP)
 
@@ -1161,12 +1183,18 @@ Ncells_type = 0
 !endif
 write(*,*) '!!!!!!!!!!!!!!!!! use_synchronise: ',use_synchronise
 rsite = [0.,0.,0.]
+kt2cc_min = 9999
+kt2cc_max = 0
 do kcell = 1,initial_count
 	call AddCell(kcell,rsite)
+	kt2cc_min = min(kt2cc_min,cell_list(kcell)%kt2cc)
+	kt2cc_max = max(kt2cc_max,cell_list(kcell)%kt2cc)
 	phase = cell_list(kcell)%phase
 	phase = min(phase,NP)
 	counts(phase) = counts(phase) + 1
 enddo
+write(*,'(a,2f10.4)') 'kt2cc min, max: ',kt2cc_min,kt2cc_max
+write(nflog,'(a,2f10.4)') 'kt2cc min, max: ',kt2cc_min,kt2cc_max
 write(*,*)
 write(*,'(a,5i6)') 'Initial phase counts: ',counts
 write(*,'(a,5f8.3)') 'Initial phase %ages: ',100.0*real(counts)/sum(counts)
@@ -1193,7 +1221,7 @@ subroutine AddCell(kcell, rsite)
 integer :: kcell
 real(REAL_KIND) :: rsite(3)
 integer :: ityp, k, kpar = 0
-real(REAL_KIND) :: v(3), c(3), R1, R2, V0, Tdiv, Vdiv, p(3), R, gfactor
+real(REAL_KIND) :: v(3), c(3), R1, R2, V0, Tdiv, Vdiv, p(3), R, gfactor, kfactor
 type(cell_type), pointer :: cp
 type(cycle_parameters_type),pointer :: ccp
 	
@@ -1227,6 +1255,11 @@ cp%metab = phase_metabolic(1)
 cp%metab%C_GlnEx_prev = 0
 
 ! Jaiswal
+R = par_rnor(kpar)
+kfactor = max(0.0,1 + R*jaiswal_std)
+cp%kt2cc = kt2cc*kfactor
+cp%ke2cc = ke2cc*kfactor
+!write(*,'(a,5f10.4)') 'Jaiswal R: ',R,kfactor,cp%kt2cc,cp%ke2cc
 cp%CC_act = CC_act0
 !R = par_uni(kpar)
 !cp%CC_act = CC_act0 + R*(CC_threshold - CC_act0)
@@ -2070,7 +2103,7 @@ if (compute_cycle) then
     total = sum(phase_count)
     phase_dist = 100*phase_count/total
     tadjust = event(1)%time/3600    ! if the RADIATION event is #1
-    write(*,'(a,f8.3,3i8,3f8.3)') 'hour,count, phase_dist: ',real(istep)/nthour,phase_count(1:3),phase_dist(1:3)
+    write(*,'(a,f8.3,4i8,4f8.3)') 'hour,count, phase_dist: ',real(istep)/nthour,phase_count(1:4),phase_dist(1:4)
 !    write(nflog,'(a,f8.3,i8,f8.3)') 'hour, count, M%: ',real(istep)/nthour - tadjust,phase_count(M_phase),phase_dist(M_phase)
 endif
 if (compute_cycle .or. output_DNA_rate) then
@@ -2128,7 +2161,7 @@ if (dbug .or. mod(istep,nthour) == 0) then
     call get_phase_distribution(phase_count)
     total = sum(phase_count)
     phase_dist = 100*phase_count/total
-    write(*,'(a,3i8,3f8.1)') 'count, phase_dist: ',phase_count(1:3),phase_dist(1:3)
+    write(*,'(a,4i8,4f8.1)') 'count, phase_dist: ',phase_count(1:4),phase_dist(1:4)
 !	if (single_cell) call medras_compare()
 !	write(nfphase,'(a,2f8.3)') 'S-phase k1, k2: ', K_ATR(2,1),K_ATR(2,2)
 !	if (output_DNA_rate) then

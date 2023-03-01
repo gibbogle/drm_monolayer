@@ -230,7 +230,7 @@ type cell_type
 	real(8) :: Nlethal, Psurvive, mitosis_time
 	
 	! Jaiswal section (26/09/22)
-	real(REAL_KIND) :: CC_act, ATR_act, ATM_act, dCC_act_dt
+	real(REAL_KIND) :: CC_act, ATR_act, ATM_act, dCC_act_dt, kt2cc, ke2cc
 
 end type
 

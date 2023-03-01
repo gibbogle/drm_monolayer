@@ -91,6 +91,7 @@ real(8) :: Kcc2a, Kcc2e, Kd2e, Kd2t, Ke2cc, Km1, Km10, Kt2cc, Kti2t, Km10t
 real(8) :: CC_tot, ATR_tot, ATM_tot, CC_act0, CC_threshold, norm_factor
 logical :: use_Jaiswal = .true.
 logical :: vary_km10 = .true.
+real(8) :: jaiswal_std = 0.4
 
 real(8) :: ATMsum, ATRsum, Sthsum, G2thsum(2)
 integer :: NSth, NG2th
@@ -260,6 +261,12 @@ elseif (mod(iphase_hours,10) == 2) then    ! this is the compute_cycle case for 
     nphase_hours = 3
     next_phase_hour = 1
     phase_hour(1:5) = [5.0, 8.5, 11.5, 0.0, 0.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+elseif (mod(iphase_hours,10) == 7) then    ! this is the compute_cycle case for 24h
+    compute_cycle = .true.
+    use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
+    nphase_hours = 12
+    next_phase_hour = 1
+    phase_hour(1:12) = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24]   
 elseif (mod(iphase_hours,10) == 5) then    ! this is the compute_cycle case for CC-11
     CC11 = .true.
     compute_cycle = .true.
@@ -883,7 +890,7 @@ subroutine G2_Jaiswal_update(cp, dth)
 type(cell_type), pointer :: cp
 real(8) :: dth
 real(8) :: dt = 0.001
-real(8) :: D_ATR, D_ATM, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact
+real(8) :: D_ATR, D_ATM, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact, CC_act0
 real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, T_G2, kkm10
 integer :: it, Nt
 type(cycle_parameters_type),pointer :: ccp
@@ -902,13 +909,14 @@ Nt = int(dth/dt + 0.5)
 D_ATR = cp%DSB(HR)*norm_factor
 D_ATM = (cp%DSB(HR) + cp%DSB(NHEJslow))*norm_factor
 CC_act = cp%CC_act
+CC_act0 = CC_act
 ATR_act = cp%ATR_act
 ATM_act = cp%ATM_act
 do it = 1,Nt
     CC_inact = CC_tot - CC_act
     ATR_inact = ATR_tot - ATR_act
     ATM_inact = ATM_tot - ATM_act
-    dCC_act_dt = (Kcc2a + CC_act) * CC_inact / (kkm10 + CC_inact) - Kt2cc * ATM_act * CC_act / (Km10t + CC_act) - Ke2cc * ATR_act * CC_act / (kkm10 + CC_act)
+    dCC_act_dt = (Kcc2a + CC_act) * CC_inact / (kkm10 + CC_inact) - cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act) - cp%Ke2cc * ATR_act * CC_act / (kkm10 + CC_act)
     dATR_act_dt = Kd2e * D_ATR * ATR_inact / (kkm10 + ATR_inact) - Kcc2e * ATR_act * CC_act / (kkm10 + CC_act)
     dATM_act_dt = Kd2t * D_ATM * ATM_inact / (Km1 + ATM_inact) - Kti2t * ATM_act / (Km1 + ATM_act)
     
@@ -927,7 +935,7 @@ cp%ATM_act = ATM_act
 cp%dCC_act_dt = dCC_act_dt
 t = t_simulation/3600.
 !cp%progress = (cp%CC_act - CC_act0)/(CC_threshold - CC_act0)
-if (single_cell) write(nflog,'(a,f6.2,5e12.3)') 'G2_J: t, vars: ',t,cp%CC_act,cp%ATR_act,cp%ATM_act,D_ATR, D_ATM
+if (single_cell) write(nflog,'(a,f6.2,6e12.3)') 'G2_J: t, vars: ',t,CC_act0,cp%CC_act,cp%ATR_act,cp%ATM_act,D_ATR, D_ATM
 !if (kcell_now == 3) write(*,'(a,f6.2,4e12.3)') 'G2_J: t, vars: ',t,cp%CC_act,dCC_act_dt
 end subroutine
 

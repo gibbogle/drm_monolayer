@@ -105,7 +105,11 @@ elseif (cp%phase == G2_phase) then
             cp%phase = M_phase
             cp%progress = 0
             cp%V = cp%divide_volume     ! set volume here, to maintain correct cell volume at cell division
-            if (single_cell) write(*,*) 'Reached mitosis at: ',t_simulation/3600
+            if (single_cell) then
+                write(*,*) 'Reached mitosis at: ',t_simulation/3600
+                write(nflog,*) 'Reached mitosis at: ',t_simulation/3600
+                write(nflog,*) 'CC_act: ',cp%CC_act
+            endif
 !            if (kcell_now <= 100) write(nflog,'(a,i4,3f8.3)') 'Exit G2: CC_act, threshold, t: ',kcell_now,cp%CC_act,CC_threshold,t_simulation/3600
 !            if (cp%generation == 1) then
 !                npet = npet+1
