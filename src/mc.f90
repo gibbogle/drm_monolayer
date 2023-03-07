@@ -89,6 +89,7 @@ real(8) :: Preass   ! rate of reassignment to pathway 4, TMEJ (prob of reass/hou
 ! Jaiswal formulation (26/09/22)
 real(8) :: Kcc2a, Kcc2e, Kd2e, Kd2t, Ke2cc, Km1, Km10, Kt2cc, Kti2t, Km10t
 real(8) :: CC_tot, ATR_tot, ATM_tot, CC_act0, CC_threshold, norm_factor
+real(8) :: km10_alfa(3), km10_beta(3)
 logical :: use_Jaiswal = .true.
 logical :: vary_km10 = .true.
 real(8) :: jaiswal_std = 0.4
@@ -114,9 +115,9 @@ logical :: use_DSB_CP = .false.
 logical :: use_D_model = .true.
 
 ! Normalisation
-!real(8) :: control_ave(4) = [35.746, 48.898, 13.735, 1.621]
 real(8) :: control_ave(4)   ! now set equal to ccp%f_G1, ...
 logical :: normalise, M_only
+character(6) :: expt_tag
 
 ! G1 checkpoint
 logical :: use_G1_CP_factor = .false.
@@ -130,6 +131,7 @@ real(8) :: misjoins(2)      ! 1 = NHEJ, 2 = TMEJ
 logical :: check_G2_slow = .true.
 integer :: nslow_sum
 real(8) :: pHR_sum, pNHEJslow_sum, fdecay_sum
+
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
@@ -232,7 +234,8 @@ if (use_Jaiswal) then
         use_slope_threshold = .false.
         CC_threshold = CC_threshold*CC_tot
     endif
-    Km10 = 2.36*Kcc2a + 1.7     ! to give T_G2 = 3.9, from line fit in jaiswal.xlsm
+!    Km10 = 2.36*Kcc2a + 1.7     ! to give T_G2 = 3.9, from line fit in jaiswal.xlsm
+    call kcc2a_km10(CC_tot,km10_alfa,km10_beta)
 endif
 call make_eta_table(sigma_NHEJ, sigma_TMEJ, fsmin)
 
@@ -254,28 +257,33 @@ M_only = .false.
 if (iphase_hours == 1) then
     use_SF = .true.     ! in this case SFave only is recorded
     compute_cycle = .false.
-!elseif (iphase_hours == -2 .or. iphase_hours == -102 .or. iphase_hours == -112) then    ! this is the compute_cycle case for CA-135
+
 elseif (mod(iphase_hours,10) == 2) then    ! this is the compute_cycle case for CA-135
+    expt_tag = "CA-135"
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 3
     next_phase_hour = 1
-    phase_hour(1:5) = [5.0, 8.5, 11.5, 0.0, 0.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
-elseif (mod(iphase_hours,10) == 7) then    ! this is the compute_cycle case for 24h
+    phase_hour(1:3) = [5.0, 8.5, 11.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+    ! Note: output G1, S, G2, M
+elseif (mod(iphase_hours,10) == 9) then    ! this is the compute_cycle case for CC-13
+    expt_tag = "CC-13"
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
-    nphase_hours = 12
+    nphase_hours = 8
     next_phase_hour = 1
-    phase_hour(1:12) = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24]   
+    phase_hour(1:8) = [1, 2, 3, 5, 8, 12, 18, 24]   
+    ! Note: output M
 elseif (mod(iphase_hours,10) == 5) then    ! this is the compute_cycle case for CC-11
-    CC11 = .true.
+    expt_tag = "CC-11"
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 5
     next_phase_hour = 1
     phase_hour(1:5) = [1.0, 1.5, 2.5, 3.5, 4.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+    ! Note: output G1, S, G2
+
 elseif (iphase_hours == 6) then    ! this is the output_DNA_rate case
-    CC11 = .true.
     compute_cycle = .false.
     output_DNA_rate = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
@@ -298,14 +306,12 @@ elseif (iphase_hours == 4) then    ! this is the synchronised IR case
     next_phase_hour = 1
     phase_hour(1:5) = [40, 0, 0, 0, 0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 elseif (mod(iphase_hours,10) == 7) then    ! this is the compute_cycle case for multiple times, no PEST
-    CC11 = .true.
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 25
     next_phase_hour = 1
     phase_hour(1:25) = [0.5,1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,8.5,9.0,9.5,10.0,10.5,11.0,11.5,12.0,24.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)   
 elseif (mod(iphase_hours,10) == 8) then    ! this is the compute_cycle case for M%-only experiments
-    CC11 = .true.
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 5
@@ -716,7 +722,35 @@ t = 3600*th
 end function
 
 !------------------------------------------------------------------------
-! Combined effect of pATM and pATR
+! Combined effect of pATM and pATR in S
+! Time computed in hours, returned in secs
+! CP delay is the sum of delays created by pATM and by pATR
+!------------------------------------------------------------------------
+function S_checkpoint_time(cp) result(t)
+type(cell_type), pointer :: cp
+real(REAL_KIND) :: t, th, th_ATM, th_ATR
+integer :: iph = 2
+
+th_ATM = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*cp%pATM))
+th_ATR = K_ATR(iph,3)*(1 - exp(-K_ATR(iph,4)*cp%pATR))
+!if (kcell_now <= 100) then
+!    write(nflog,'(a,i6,4f8.4)') 'cell, pATM, pATR, th_ATM, th_ATR: ',kcell_now, cp%pATM,cp%pATR,th_ATM,th_ATR
+!    write(*,'(a,i6,4f8.4)') 'cell, pATM, pATR, th_ATM, th_ATR: ',kcell_now, cp%pATM,cp%pATR,th_ATM,th_ATR
+!endif
+th = th_ATM + th_ATR
+!totG2delay = th + totG2delay
+!nG2delay = nG2delay + 1
+if (kcell_now <= 10) then
+    write(nfphase,*)
+    write(nfphase,'(a,i6,3f6.2)') 'S_checkpoint_time: ',kcell_now,th_ATM,th_ATR,th
+!    write(nfphase,'(a,4f8.3)') 'pATM,katm3g2,katm4g2,1-exp(-katm4g2*pATM): ',cp%pATM,K_ATM(iph,3),K_ATM(iph,4),1-exp(-K_ATM(iph,4)*cp%pATM)
+!    write(nfphase,'(a,4f8.3)') 'pATR,katr3g2,katr4g2,1-exp(-katr4g2*pATR): ',cp%pATR,K_ATR(iph,3),K_ATR(iph,4),1-exp(-K_ATR(iph,4)*cp%pATR)
+endif
+t = 3600*th
+end function
+
+!------------------------------------------------------------------------
+! Combined effect of pATM and pATR in G2
 ! Time computed in hours, returned in secs
 ! CP delay is the sum of delays created by pATM and by pATR
 !------------------------------------------------------------------------
@@ -872,6 +906,8 @@ type(cell_type), pointer :: cp
 if (cp%phase == G1_phase) then
     cp%CP_delay = G1_checkpoint_time(cp)
 !    if (kcell_now <= 100) write(*,'(a,i6,f8.3)') 'G1 CP_delay: ',kcell_now,cp%CP_delay/3600
+elseif (cp%phase == S_phase) then
+    cp%CP_delay = S_checkpoint_time(cp)
 elseif (cp%phase == G2_phase .and. .not.use_Jaiswal) then
     cp%CP_delay = G2_checkpoint_time(cp)
 !    write(*,'(a,i6,f8.3)') 'G2 CP_delay: ',kcell_now,cp%CP_delay/3600
@@ -892,17 +928,19 @@ real(8) :: dth
 real(8) :: dt = 0.001
 real(8) :: D_ATR, D_ATM, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact, CC_act0
 real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, T_G2, kkm10
-integer :: it, Nt
+integer :: iph, it, Nt
 type(cycle_parameters_type),pointer :: ccp
 
-if (vary_km10 .and. .not. is_radiation) then
-    ccp => cc_parameters(1)
-    T_G2 = ccp%T_G2*cp%fg(3)/3600
-    kkm10 = 5 + 3*(T_G2 - 2.5)
-!    write(*,'(a,3f8.3)') 'T_G2, fg(3), kkm10: ',T_G2,cp%fg(3),kkm10
-else
-    kkm10 = Km10
-endif
+!if (vary_km10 .and. .not. is_radiation) then
+!    ccp => cc_parameters(1)
+!    T_G2 = ccp%T_G2*cp%fg(3)/3600
+!    kkm10 = 5 + 3*(T_G2 - 2.5)
+!!    write(*,'(a,3f8.3)') 'T_G2, fg(3), kkm10: ',T_G2,cp%fg(3),kkm10
+!else
+!    kkm10 = Km10
+!endif
+iph = cp%phase
+Km10 = km10_alfa(iph) + km10_beta(iph)*kcc2a
 Nt = int(dth/dt + 0.5)
 !if (single_cell) write(nflog,*) 'G2_Jaiswal_update: Nt: ',Nt
 !D = sum(cp%DSB(1:4))*norm_factor
@@ -916,8 +954,8 @@ do it = 1,Nt
     CC_inact = CC_tot - CC_act
     ATR_inact = ATR_tot - ATR_act
     ATM_inact = ATM_tot - ATM_act
-    dCC_act_dt = (Kcc2a + CC_act) * CC_inact / (kkm10 + CC_inact) - cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act) - cp%Ke2cc * ATR_act * CC_act / (kkm10 + CC_act)
-    dATR_act_dt = Kd2e * D_ATR * ATR_inact / (kkm10 + ATR_inact) - Kcc2e * ATR_act * CC_act / (kkm10 + CC_act)
+    dCC_act_dt = (Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact) - cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act) - cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
+    dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Km10 + ATR_inact) - Kcc2e * ATR_act * CC_act / (Km10 + CC_act)
     dATM_act_dt = Kd2t * D_ATM * ATM_inact / (Km1 + ATM_inact) - Kti2t * ATM_act / (Km1 + ATM_act)
     
     CC_act = CC_act + dt * dCC_act_dt
@@ -1049,7 +1087,7 @@ if (Chalf == 0) then
     stop
 endif
 repRateFactor(1:2) = exp(-0.693*Cdrug/Chalf) 
-!if (kcell_now == 1) write(nflog,'(a,4f10.4)') 'Cdrug IC,EC,Chalf,fRR: ',Cdrug,Caverage(MAX_CHEMO + DRUG_A),Chalf,repRateFactor(1)
+if (kcell_now == 1) write(nflog,'(a,4f10.4)') 'Cdrug IC,EC,Chalf,fRR: ',Cdrug,Caverage(MAX_CHEMO + DRUG_A),Chalf,repRateFactor(1)
 ! Reassignment to pathway 4 is (tentatively) constant
 ! Preass is an input parameter = prob of reassignment per hour
 if (Preass > 0) then
@@ -1082,8 +1120,8 @@ if (iph <= G2_phase) then      ! not for 4 (M_phase) or 5 (dividing)
     if (iph == G2_phase .and. use_Jaiswal) then
         call G2_Jaiswal_update(cp, dth)
     else
-        call updateATM(iph,cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth
-        if (iph > G1_phase) call updateATR(iph,cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth
+        call updateATM(iph,cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth (if use_Jaiswal, G1 and S)
+        if (iph > G1_phase) call updateATR(iph,cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth (if use_Jaiswal, S only)
     endif
 endif
 

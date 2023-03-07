@@ -2103,7 +2103,7 @@ if (compute_cycle) then
     total = sum(phase_count)
     phase_dist = 100*phase_count/total
     tadjust = event(1)%time/3600    ! if the RADIATION event is #1
-    write(*,'(a,f8.3,4i8,4f8.3)') 'hour,count, phase_dist: ',real(istep)/nthour,phase_count(1:4),phase_dist(1:4)
+!    write(*,'(a,f8.3,4i8,4f8.3)') 'hour,count, phase_dist: ',real(istep)/nthour,phase_count(1:4),phase_dist(1:4)
 !    write(nflog,'(a,f8.3,i8,f8.3)') 'hour, count, M%: ',real(istep)/nthour - tadjust,phase_count(M_phase),phase_dist(M_phase)
 endif
 if (compute_cycle .or. output_DNA_rate) then
@@ -2161,7 +2161,7 @@ if (dbug .or. mod(istep,nthour) == 0) then
     call get_phase_distribution(phase_count)
     total = sum(phase_count)
     phase_dist = 100*phase_count/total
-    write(*,'(a,4i8,4f8.1)') 'count, phase_dist: ',phase_count(1:4),phase_dist(1:4)
+!    write(*,'(a,4i8,4f8.1)') 'count, phase_dist: ',phase_count(1:4),phase_dist(1:4)
 !	if (single_cell) call medras_compare()
 !	write(nfphase,'(a,2f8.3)') 'S-phase k1, k2: ', K_ATR(2,1),K_ATR(2,2)
 !	if (output_DNA_rate) then
@@ -2378,7 +2378,13 @@ if (compute_cycle) then
                     normalised_phase_dist(i,1:4) = recorded_phase_dist(i,1:4)/control_ave(1:4)
                 enddo
                 write(*,*) 'write PEST output'
-                write(nfres,'(20f10.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
+                if (expt_tag == "CA-135") then
+                    write(nfres,'(20f8.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
+                elseif (expt_tag == "CC-11 ") then
+                    write(nfres,'(20f8.5)') (normalised_phase_dist(i,1:3),i=1,nphase_hours)
+                elseif (expt_tag == "CC-13 ") then
+                    write(nfres,'(20f8.5)') (normalised_phase_dist(i,4),i=1,nphase_hours)
+                endif
                 write(nflog,'(20f10.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
                 write(nflog,'(20f10.5)') control_ave(1:4)
             else
