@@ -2159,10 +2159,10 @@ if (dbug .or. mod(istep,nthour) == 0) then
 !	write(nflog,*)
 	write(nflog,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells, ' N reached mitosis: ',NPsurvive    !,' Napop: ',Napop    !, &
     call get_phase_distribution(phase_count)
-    total = sum(phase_count)
+    total = sum(phase_count(1:4))
     phase_dist = 100*phase_count/total
-    write(*,'(a,4i8,4f8.1)') 'count, phase_dist: ',phase_count(1:4),phase_dist(1:4)
-    write(nflog,'(a,4i8,4f8.1)') 'count, phase_dist: ',phase_count(1:4),phase_dist(1:4)
+    write(*,'(a,4i8,4f7.1)') 'count, phase_dist: ',phase_count(1:4),phase_dist(1:4)
+    write(nflog,'(a,4i8,4f7.1)') 'count, phase_dist: ',phase_count(1:4),phase_dist(1:4)
 !	if (single_cell) call medras_compare()
 !	write(nfphase,'(a,2f8.3)') 'S-phase k1, k2: ', K_ATR(2,1),K_ATR(2,2)
 !	if (output_DNA_rate) then
