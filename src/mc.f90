@@ -984,7 +984,9 @@ enddo
 !if (kcell_now == 1) write(*,'(a,4f8.4)') 'ATR_act, Kd2e,D_ATR, D_ATM: ',ATR_act, Kd2e,D_ATR, D_ATM
 if (kcell_now == 1) then
     write(*,'(a,i8,4f8.4)') 'kcell,ATR,ATM,CC,dCCdt: ',kcell_now,ATR_act,ATM_act,CC_act,dCC_act_dt
+    write(*,'(a,2f6.1,2f8.3)') 'DSB: HR,NHEJ, D_ATR,D_ATM: ',cp%DSB(HR),cp%DSB(NHEJslow),D_ATR,D_ATM
     write(nflog,'(a,i8,4f8.4)') 'kcell,ATR,ATM,CC,dCCdt: ',kcell_now,ATR_act,ATM_act,CC_act,dCC_act_dt
+    write(nflog,'(a,2f6.1,2f8.3)') 'DSB: HR,NHEJ, D_ATR,D_ATM: ',cp%DSB(HR),cp%DSB(NHEJslow),D_ATR,D_ATM
 endif
 cp%ATM_act = ATM_act
 if (iph == G2_phase) then
