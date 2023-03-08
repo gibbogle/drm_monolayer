@@ -91,12 +91,7 @@ elseif (cp%phase == G2_phase) then
         if (is_radiation) then      ! post-IR
             if (single_cell) write(nflog,'(a,2f8.3)') 'G2_phase, CC_act, CC_threshold: ',cp%CC_act, CC_threshold
             tIR = (t_simulation - t_irradiation)/3600   ! time since IR, in hours
-            if (use_slope_threshold) then
-                switch = (tIR > 1.0) .and. (cp%dCC_act_dt < slope_threshold)
-            else
-!                switch = (tIR > 1.0) .and. (cp%CC_act >= CC_threshold)
-                switch = (cp%CC_act >= CC_threshold)
-            endif
+            switch = (cp%CC_act >= CC_threshold)
         else
             switch = (cp%CC_act >= CC_threshold)
         endif

@@ -938,10 +938,17 @@ integer :: iph, it, Nt
 type(cycle_parameters_type),pointer :: ccp
 
 iph = cp%phase
+if (iph >= 7) iph = iph - 6     ! checkpoint phase numbers --> phase number, to continue ATM and ATR processes through checkpoints
+if (iph > G2_phase) then
+    return
+!    write(*,*) 'jaiswal_update: kcell,iph: ',kcell_now,iph
+!    stop
+endif
 Km10 = km10_alfa(iph) + km10_beta(iph)*kcc2a
 Nt = int(dth/dt + 0.5)
 !if (single_cell) write(nflog,*) 'Jaiswal_update: Nt: ',Nt
 !D = sum(cp%DSB(1:4))*norm_factor
+!write(*,*) 'iph,kcell,dth: ',iph, kcell_now, dth
 if (iph == G1_phase) then
     D_ATM = cp%DSB(NHEJslow)*norm_factor
     ATM_act = cp%ATM_act
@@ -958,6 +965,7 @@ elseif (iph == G2_phase) then
 else
     return
 endif
+
 do it = 1,Nt
     ATM_inact = ATM_tot - ATM_act
     if (iph == G2_phase) then
@@ -979,7 +987,8 @@ cp%ATM_act = ATM_act
 if (iph == G2_phase) then
     cp%CC_act = CC_act
     cp%ATR_act = ATR_act
-    cp%dCC_act_dt = dCC_act_dt
+!    write(*,*) 'iph: CC_act: ',iph,CC_act
+!    cp%dCC_act_dt = dCC_act_dt
 endif
 t = t_simulation/3600.
 !if (single_cell) write(nflog,'(a,f6.2,6e12.3)') 'J: t, vars: ',t,CC_act0,cp%CC_act,cp%ATR_act,cp%ATM_act,D_ATR, D_ATM
@@ -1095,7 +1104,7 @@ if (Chalf == 0) then
     stop
 endif
 repRateFactor(1:2) = exp(-0.693*Cdrug/Chalf) 
-if (kcell_now == 1) write(nflog,'(a,4f10.4)') 'Cdrug IC,EC,Chalf,fRR: ',Cdrug,Caverage(MAX_CHEMO + DRUG_A),Chalf,repRateFactor(1)
+!if (kcell_now == 1) write(nflog,'(a,4f10.4)') 'Cdrug IC,EC,Chalf,fRR: ',Cdrug,Caverage(MAX_CHEMO + DRUG_A),Chalf,repRateFactor(1)
 ! Reassignment to pathway 4 is (tentatively) constant
 ! Preass is an input parameter = prob of reassignment per hour
 if (Preass > 0) then
@@ -1123,16 +1132,16 @@ totDSB0 = sum(DSB0)
 
 ATM_DSB = DSB(NHEJslow) + DSB(HR)   ! complex DSB
 ATR_DSB = DSB(HR)
-if (iph >= 7) iph = iph - 6     ! checkpoint phase numbers --> phase number, to continue pATM and pATR processes through checkpoints
-if (iph <= G2_phase) then      ! not for 4 (M_phase) or 5 (dividing)
-    if (iph == G2_phase .and. use_Jaiswal) then
-        call Jaiswal_update(cp, dth)
-    else
-        call Jaiswal_update(cp, dth)
+!if (iph >= 7) iph = iph - 6     ! checkpoint phase numbers --> phase number, to continue pATM and pATR processes through checkpoints
+!if (iph <= G2_phase) then      ! not for 4 (M_phase) or 5 (dividing)
+!    if (iph == G2_phase .and. use_Jaiswal) then
+!        call Jaiswal_update(cp, dth)
+!    else
 !        call updateATM(iph,cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth (if use_Jaiswal, G1 and S)
 !        if (iph > G1_phase) call updateATR(iph,cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth (if use_Jaiswal, S only)
-    endif
-endif
+!    endif
+!endif
+call Jaiswal_update(cp, dth)
 
 DSB = 0
 do k = 1,NP
