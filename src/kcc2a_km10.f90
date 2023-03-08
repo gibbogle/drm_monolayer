@@ -1,10 +1,14 @@
+module km10_mod
+implicit none
+
+contains
 !-------------------------------------------------------------------------------------------
 ! Find x (km10) such that f(x) = tmitosis(CC_tot,kcc2a,x) - Tph = 0
 ! x(n+1) = x(n) - f(x(n))/f'(x(n))
 !-------------------------------------------------------------------------------------------
 subroutine newton(x0,t0,CC_tot,kcc2a,Tph)
 real(8) :: x0, t0, CC_tot, kcc2a, Tph
-real(8) :: f0, f1, dfdx, dx
+real(8) :: f0, f1, dfdx, dx, x1
 integer :: n
 
 dx = 0.01
@@ -80,7 +84,6 @@ integer, parameter :: nka = 8
 real(8) :: Tphase(3) = [5.636, 8.556, 3.951]    ! G1, S, G2
 real(8) :: km10, dt, t, y, dydt, dkm, t0, x0
 real(8) :: kcc2a(nka), km10sol(nka)
-real(8) :: tmitosis
 integer :: iph, ika, ikm, it, Nt=1000
 
 write(*,*) 'kcc2a_km10'
@@ -114,3 +117,5 @@ do iph = 1,3
 !    write(*,*)
 enddo
 end subroutine
+
+end module

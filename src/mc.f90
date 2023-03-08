@@ -4,6 +4,7 @@ use global
 
 use chemokine   ! is this OK?
 use eta_module
+use km10_mod
 
 implicit none
 
