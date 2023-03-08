@@ -967,15 +967,15 @@ else
     return
 endif
 
-dbug = (kcell_now == 1) .and. (istep > 74) .and. (istep < 80)
+dbug = (kcell_now == 1) .and. (istep > 74) .and. (istep < 78)
 do it = 1,Nt
     ATM_inact = ATM_tot - ATM_act
     if (iph == G2_phase) then
         CC_inact = CC_tot - CC_act
         ATR_inact = ATR_tot - ATR_act
         if (dbug) then
-            write(*,*) 'istep,it: ',istep,it,Km10,(Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact), cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act), cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
-            write(*,*) 'istep,it: ',istep,it,Km10,(Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact), cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act), cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
+            write(*,'(a,2i6,4e12.3)') 'istep,it: ',istep,it,Km10,(Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact), cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act), cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
+            write(nflog,'(a,2i6,4e12.3)') 'istep,it: ',istep,it,Km10,(Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact), cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act), cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
         endif
         dCC_act_dt = (Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact) - cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act) - cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
         dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Km10 + ATR_inact) - Kcc2e * ATR_act * CC_act / (Km10 + CC_act)
