@@ -103,7 +103,7 @@ real(8) :: totPmit, totPaber, tottotDSB, totNlethal
 real(8) :: tCPdelay, tATMdelay, tATRdelay
 logical :: use_addATMATRtimes = .false.
 logical :: use_G1_stop = .true.
-logical :: use_S_stop = .false.
+logical :: use_S_stop = .true.
 logical :: use_G2_stop = .false.
 real(8) :: totG1delay, totSdelay, totG2delay
 integer :: nG1delay, nSdelay, nG2delay
@@ -689,9 +689,9 @@ pATR = r/k2 + (pATR - r/k2)*exp(-k2*dth)
 end subroutine
 
 !------------------------------------------------------------------------
-! Effect of pATM
+! Effect of ATM_act
 ! Time computed in hours, returned in secs 
-! CP delay determined by pATM only.
+! CP delay determined by ATM_act (was pATM) only.
 !------------------------------------------------------------------------
 function G1_checkpoint_time(cp) result(t)
 type(cell_type), pointer :: cp
@@ -706,10 +706,10 @@ if (use_G1_CP_factor) then
     t = G1_CP_time
     return
 endif
-th = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*cp%pATM))
+th = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*cp%ATM_act))
 !if (kcell_now == 1) write(*,'(a,i6,2f8.3)') 'G1_checkpoint_time (h): ',kcell_now,cp%pATM,th
 if (isnan(th)) then
-    write(*,*) 'NAN in G1_checkpoint_time: ',cp%pATM
+    write(*,*) 'NAN in G1_checkpoint_time: ',cp%ATM_act
     stop
 endif
 totG1delay = th + totG1delay
@@ -722,17 +722,23 @@ t = 3600*th
 end function
 
 !------------------------------------------------------------------------
-! Combined effect of pATM and pATR in S
+! Combined effect of ATM_act (was pATM) and ATR_act (was pATR) in S
 ! Time computed in hours, returned in secs
-! CP delay is the sum of delays created by pATM and by pATR
+! CP delay is the sum of delays created by ATM_act and by ATR_act
+! Effect of ATR_act is currently turned off.
 !------------------------------------------------------------------------
 function S_checkpoint_time(cp) result(t)
 type(cell_type), pointer :: cp
 real(REAL_KIND) :: t, th, th_ATM, th_ATR
 integer :: iph = 2
+logical :: use_ATR = .false.
 
 th_ATM = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*cp%pATM))
-th_ATR = K_ATR(iph,3)*(1 - exp(-K_ATR(iph,4)*cp%pATR))
+if (use_ATR) then
+    th_ATR = K_ATR(iph,3)*(1 - exp(-K_ATR(iph,4)*cp%pATR))
+else
+    th_ATR = 0
+endif
 !if (kcell_now <= 100) then
 !    write(nflog,'(a,i6,4f8.4)') 'cell, pATM, pATR, th_ATM, th_ATR: ',kcell_now, cp%pATM,cp%pATR,th_ATM,th_ATR
 !    write(*,'(a,i6,4f8.4)') 'cell, pATM, pATR, th_ATM, th_ATR: ',kcell_now, cp%pATM,cp%pATR,th_ATM,th_ATR
@@ -922,7 +928,7 @@ end subroutine
 ! reduced time step employed for the Jaiswal equations.  Therefore damage D
 ! is assumed to be fixed for this updating.
 !------------------------------------------------------------------------
-subroutine G2_Jaiswal_update(cp, dth)
+subroutine Jaiswal_update(cp, dth)
 type(cell_type), pointer :: cp
 real(8) :: dth
 real(8) :: dt = 0.001
@@ -931,50 +937,52 @@ real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, T_G2, kkm10
 integer :: iph, it, Nt
 type(cycle_parameters_type),pointer :: ccp
 
-!if (vary_km10 .and. .not. is_radiation) then
-!    ccp => cc_parameters(1)
-!    T_G2 = ccp%T_G2*cp%fg(3)/3600
-!    kkm10 = 5 + 3*(T_G2 - 2.5)
-!!    write(*,'(a,3f8.3)') 'T_G2, fg(3), kkm10: ',T_G2,cp%fg(3),kkm10
-!else
-!    kkm10 = Km10
-!endif
 iph = cp%phase
 Km10 = km10_alfa(iph) + km10_beta(iph)*kcc2a
 Nt = int(dth/dt + 0.5)
-!if (single_cell) write(nflog,*) 'G2_Jaiswal_update: Nt: ',Nt
+!if (single_cell) write(nflog,*) 'Jaiswal_update: Nt: ',Nt
 !D = sum(cp%DSB(1:4))*norm_factor
-D_ATR = cp%DSB(HR)*norm_factor
-D_ATM = (cp%DSB(HR) + cp%DSB(NHEJslow))*norm_factor
-CC_act = cp%CC_act
-CC_act0 = CC_act
-ATR_act = cp%ATR_act
-ATM_act = cp%ATM_act
+if (iph == G1_phase) then
+    D_ATM = cp%DSB(NHEJslow)*norm_factor
+    ATM_act = cp%ATM_act
+elseif (iph == S_phase) then
+    D_ATM = (cp%DSB(HR) + cp%DSB(NHEJslow))*norm_factor
+    ATM_act = cp%ATM_act
+elseif (iph == G2_phase) then
+    D_ATR = cp%DSB(HR)*norm_factor
+    D_ATM = (cp%DSB(HR) + cp%DSB(NHEJslow))*norm_factor
+    CC_act = cp%CC_act
+    CC_act0 = CC_act
+    ATR_act = cp%ATR_act
+    ATM_act = cp%ATM_act
+else
+    return
+endif
 do it = 1,Nt
-    CC_inact = CC_tot - CC_act
-    ATR_inact = ATR_tot - ATR_act
     ATM_inact = ATM_tot - ATM_act
-    dCC_act_dt = (Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact) - cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act) - cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
-    dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Km10 + ATR_inact) - Kcc2e * ATR_act * CC_act / (Km10 + CC_act)
-    dATM_act_dt = Kd2t * D_ATM * ATM_inact / (Km1 + ATM_inact) - Kti2t * ATM_act / (Km1 + ATM_act)
-    
-    CC_act = CC_act + dt * dCC_act_dt
-    ATR_act = ATR_act + dt * dATR_act_dt
-    ATM_act = ATM_act + dt * dATM_act_dt
-    
+    if (iph == G2_phase) then
+        CC_inact = CC_tot - CC_act
+        ATR_inact = ATR_tot - ATR_act
+        dCC_act_dt = (Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact) - cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act) - cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
+        dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Km10 + ATR_inact) - Kcc2e * ATR_act * CC_act / (Km10 + CC_act)
+        CC_act = CC_act + dt * dCC_act_dt
+        ATR_act = ATR_act + dt * dATR_act_dt
+    endif
+    dATM_act_dt = Kd2t * D_ATM * ATM_inact / (Km1 + ATM_inact) - Kti2t * ATM_act / (Km1 + ATM_act)    
+    ATM_act = ATM_act + dt * dATM_act_dt   
     t = it*dt
 !    write(nflog,'(i6,f8.4,2f10.6)') it,t,CC_act,dCC_act_dt
 enddo
 !if (kcell_now == 1) write(*,'(a,4f8.4)') 'ATR_act, Kd2e,D_ATR, D_ATM: ',ATR_act, Kd2e,D_ATR, D_ATM
 !if (kcell_now == 3) write(nflog,'(a,i8,4f8.4)') 'CC_act: ',kcell_now,ATR_act,ATM_act,CC_act,dCC_act_dt
-cp%CC_act = CC_act
-cp%ATR_act = ATR_act
 cp%ATM_act = ATM_act
-cp%dCC_act_dt = dCC_act_dt
+if (iph == G2_phase) then
+    cp%CC_act = CC_act
+    cp%ATR_act = ATR_act
+    cp%dCC_act_dt = dCC_act_dt
+endif
 t = t_simulation/3600.
-!cp%progress = (cp%CC_act - CC_act0)/(CC_threshold - CC_act0)
-if (single_cell) write(nflog,'(a,f6.2,6e12.3)') 'G2_J: t, vars: ',t,CC_act0,cp%CC_act,cp%ATR_act,cp%ATM_act,D_ATR, D_ATM
-!if (kcell_now == 3) write(*,'(a,f6.2,4e12.3)') 'G2_J: t, vars: ',t,cp%CC_act,dCC_act_dt
+!if (single_cell) write(nflog,'(a,f6.2,6e12.3)') 'J: t, vars: ',t,CC_act0,cp%CC_act,cp%ATR_act,cp%ATM_act,D_ATR, D_ATM
 end subroutine
 
 !------------------------------------------------------------------------
@@ -995,7 +1003,7 @@ cp%ATR_act = 0
 t = 0
 write(nflog,*) 'test_Jaiswal: Nt: ',Nt
 do it = 1,Nt
-    call G2_Jaiswal_update(cp, dth)
+    call Jaiswal_update(cp, dth)
     t = t + dth
     write(nflog,'(2f8.4)') t,cp%CC_act
 enddo
@@ -1118,10 +1126,11 @@ ATR_DSB = DSB(HR)
 if (iph >= 7) iph = iph - 6     ! checkpoint phase numbers --> phase number, to continue pATM and pATR processes through checkpoints
 if (iph <= G2_phase) then      ! not for 4 (M_phase) or 5 (dividing)
     if (iph == G2_phase .and. use_Jaiswal) then
-        call G2_Jaiswal_update(cp, dth)
+        call Jaiswal_update(cp, dth)
     else
-        call updateATM(iph,cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth (if use_Jaiswal, G1 and S)
-        if (iph > G1_phase) call updateATR(iph,cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth (if use_Jaiswal, S only)
+        call Jaiswal_update(cp, dth)
+!        call updateATM(iph,cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth (if use_Jaiswal, G1 and S)
+!        if (iph > G1_phase) call updateATR(iph,cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth (if use_Jaiswal, S only)
     endif
 endif
 

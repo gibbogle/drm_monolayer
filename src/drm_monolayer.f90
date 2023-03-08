@@ -1505,7 +1505,7 @@ elseif (t <= tswitch(3)) then
         cp%DSB = 0
         dth = (t - tswitch(2))/3600
         if (single_cell) write(*,*) 'SetInitialCellCycleStatus: dth: ',dth
-        call G2_Jaiswal_update(cp,dth)
+        call Jaiswal_update(cp,dth)
 !        if (single_cell) write(*,*) 'SetInitialCellCycleStatus: initial CC_act: ',cp%CC_act
 !        if (kcell <= 1000) write(nflog,'(a,i6,2f8.1,2f8.3)') 'SetInitialCellCycleStatus: dth,initial CC_act: ',kcell,dth,T_G2,cp%progress,cp%CC_act
     endif
