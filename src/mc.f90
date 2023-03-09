@@ -66,7 +66,7 @@ logical :: use_phase_dependent_CP_parameters
 real(8) :: K_ATM(3,4) ! = [0.076, 0.3, 1.0, 1.0]    ! (1) and (2) are the parameters of kinase kinetics, (3) and (4) are CP slowdown parameters
 real(8) :: K_ATR(3,4) ! = [0.005, 0.3, 1.0, 1.0]
 real(8) :: Ztime = 0    ! hours
-logical :: use_exp_slowdown = .true.
+logical :: use_exp_slowdown = .false.
 
 real(8) :: sigma_NHEJ = 0.04187
 real(8) :: sigma_TMEJ = 0.08
@@ -103,8 +103,8 @@ real(8) :: totPmit, totPaber, tottotDSB, totNlethal
 
 real(8) :: tCPdelay, tATMdelay, tATRdelay
 logical :: use_addATMATRtimes = .false.
-logical :: use_G1_stop = .true.
-logical :: use_S_stop = .true.
+logical :: use_G1_stop = .false.
+logical :: use_S_stop = .false.
 logical :: use_G2_stop = .false.
 real(8) :: totG1delay, totSdelay, totG2delay
 integer :: nG1delay, nSdelay, nG2delay
@@ -734,7 +734,8 @@ real(REAL_KIND) :: t, th, th_ATM, th_ATR
 integer :: iph = 2
 logical :: use_ATR = .false.
 
-th_ATM = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*cp%pATM))
+!th_ATM = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*cp%pATM))
+th = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*cp%ATM_act))
 if (use_ATR) then
     th_ATR = K_ATR(iph,3)*(1 - exp(-K_ATR(iph,4)*cp%pATR))
 else
@@ -816,18 +817,21 @@ end function
 !------------------------------------------------------------------------
 ! Only G2 is affected by pATR
 ! Best to turn off pATR in S-phase by setting katr1s = katr3s = 0
-! Now slowdown is acting only in S-phase, and only affected by pATM
+! Now slowdown is acting in G1-phase and S-phase, and only affected by pATM
+! fslow in computed for G2, but not used because G2 is controlled by Jaiswal.
 !------------------------------------------------------------------------
 subroutine get_slowdown_factors(cp,iph,fATM,fATR)
 type(cell_type), pointer :: cp
 integer :: iph
 real(REAL_KIND) :: fATM, fATR
-real(REAL_KIND) :: pATM, pATR, k3, k4, N_DSB
+real(REAL_KIND) :: pATM, pATR, k3, k4, N_DSB, ATM_act
 
 fATR = 1
-if (iph /= S_phase) then
-    fATM = 1
-    return
+if (iph > G2_phase) then
+    write(*,*) 'Error: get_slowdown_factors called with iph = ',iph
+    stop
+!    fATM = 1
+!    return
 endif
 if (use_DSB_CP) then
     N_DSB = sum(cp%DSB)
@@ -838,13 +842,19 @@ if (use_DSB_CP) then
     fATM = max(0.01,1 - k3*N_DSB/(k4 + N_DSB))
     return
 endif
-pATM = cp%pATM
+!pATM = cp%pATM
 k3 = K_ATM(iph,3)
 k4 = K_ATM(iph,4)
+!if (use_exp_slowdown) then
+!    fATM = exp(-k4*pATM)
+!else
+!    fATM = max(0.01,1 - k3*pATM/(k4 + pATM))
+!endif
+ATM_act = cp%ATM_act
 if (use_exp_slowdown) then
-    fATM = exp(-k4*pATM)
+    fATM = exp(-k4*ATM_act)
 else
-    fATM = max(0.01,1 - k3*pATM/(k4 + pATM))
+    fATM = max(0.01,1 - k3*ATM_act/(k4 + ATM_act))
 endif
 !write(*,'(a,i3,4f8.4)') 'fATM: ',iph,k3,k4,pATM,fATM
 !if (iph > G1_phase) then
@@ -895,7 +905,10 @@ else
             fslow = max(0.0,fATM + fATR - 1)
         else
             fslow = fATM*fATR
-!            if (kcell_now == 1) write(*,'(a,i6,i4,f6.3)') 'fslow: ',kcell_now,iph,fslow
+            if (kcell_now <= 0) then
+                write(*,'(a,i6,i4,f6.3)') 'fslow: ',kcell_now,iph,fslow
+                write(nflog,'(a,i6,i4,f6.3)') 'fslow: ',kcell_now,iph,fslow
+            endif
         endif
         dtCPdelay = dt*(1 - fslow)
         totSdelay = totSdelay + dtCPdelay
@@ -948,6 +961,10 @@ if (iph > G2_phase) then
 endif
 Km10 = km10_alfa(iph) + km10_beta(iph)*kcc2a
 Nt = int(dth/dt + 0.5)
+dbug = .false.  !(kcell_now <= 10) .and. (iph == S_phase)
+if (dbug) then
+    write(*,'(a,i6,2i4,3e12.3)') 'Jaiswal S_phase: ',istep,kcell_now,Nt,Km10,dth,cp%ATM_act
+endif
 !if (single_cell) write(nflog,*) 'Jaiswal_update: Nt: ',Nt
 !D = sum(cp%DSB(1:4))*norm_factor
 !write(*,*) 'iph,kcell,dth: ',iph, kcell_now, dth
@@ -968,33 +985,36 @@ else
     return
 endif
 
-dbug = .false.  !(kcell_now == 1) .and. (istep > 74) .and. (istep < 78)
 do it = 1,Nt
     ATM_inact = ATM_tot - ATM_act
     if (iph == G2_phase) then
         CC_inact = CC_tot - CC_act
         ATR_inact = ATR_tot - ATR_act
-        if (dbug) then
-            write(*,'(a,2i6,4e12.3)') 'istep,it: ',istep,it,Km10,(Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact), cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act), cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
-            write(nflog,'(a,2i6,4e12.3)') 'istep,it: ',istep,it,Km10,(Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact), cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act), cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
-        endif
+!        if (dbug) then
+!            write(*,'(a,2i6,4e12.3)') 'istep,it: ',istep,it,Km10,(Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact), cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act), cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
+!            write(nflog,'(a,2i6,4e12.3)') 'istep,it: ',istep,it,Km10,(Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact), cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act), cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
+!        endif
         dCC_act_dt = (Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact) - cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act) - cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
         dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Km10 + ATR_inact) - Kcc2e * ATR_act * CC_act / (Km10 + CC_act)
         CC_act = CC_act + dt * dCC_act_dt
         ATR_act = ATR_act + dt * dATR_act_dt
     endif
     dATM_act_dt = Kd2t * D_ATM * ATM_inact / (Km1 + ATM_inact) - Kti2t * ATM_act / (Km1 + ATM_act)    
-    ATM_act = ATM_act + dt * dATM_act_dt   
+    ATM_act = ATM_act + dt * dATM_act_dt
+!    if (dbug) then
+!        write(*,'(a,3i4,3f10.4)') 'istep,it,kcell_now,D_ATM,dATM_act_dt:',istep,it,kcell_now,D_ATM,dATM_act_dt
+!        write(nflog,'(a,3i4,3f10.4)') 'istep,it,kcell_now,D_ATM,dATM_act_dt:',istep,it,kcell_now,D_ATM,dATM_act_dt
+!    endif   
     t = it*dt
 !    write(nflog,'(i6,f8.4,2f10.6)') it,t,CC_act,dCC_act_dt
 enddo
 !if (kcell_now == 1) write(*,'(a,4f8.4)') 'ATR_act, Kd2e,D_ATR, D_ATM: ',ATR_act, Kd2e,D_ATR, D_ATM
-if (kcell_now == -1) then
-    write(*,'(a,i8,4f8.4)') 'kcell,ATR,ATM,CC,dCCdt: ',kcell_now,ATR_act,ATM_act,CC_act,dCC_act_dt
-    write(*,'(a,2f6.1,2f8.3)') 'DSB: HR,NHEJ, D_ATR,D_ATM: ',cp%DSB(HR),cp%DSB(NHEJslow),D_ATR,D_ATM
-    write(nflog,'(a,i8,4f8.4)') 'kcell,ATR,ATM,CC,dCCdt: ',kcell_now,ATR_act,ATM_act,CC_act,dCC_act_dt
-    write(nflog,'(a,2f6.1,2f8.3)') 'DSB: HR,NHEJ, D_ATR,D_ATM: ',cp%DSB(HR),cp%DSB(NHEJslow),D_ATR,D_ATM
-endif
+!if (dbug) then
+!    write(*,'(a,i8,4f8.4)') 'kcell,ATR,ATM,CC,dCCdt: ',kcell_now,ATR_act,ATM_act,CC_act,dCC_act_dt
+!    write(*,'(a,2f6.1,2f8.3)') 'DSB: HR,NHEJ, D_ATR,D_ATM: ',cp%DSB(HR),cp%DSB(NHEJslow),D_ATR,D_ATM
+!    write(nflog,'(a,i8,4f8.4)') 'kcell,ATR,ATM,CC,dCCdt: ',kcell_now,ATR_act,ATM_act,CC_act,dCC_act_dt
+!    write(nflog,'(a,2f6.1,2f8.3)') 'DSB: HR,NHEJ, D_ATR,D_ATM: ',cp%DSB(HR),cp%DSB(NHEJslow),D_ATR,D_ATM
+!endif
 cp%ATM_act = ATM_act
 if (iph == G2_phase) then
     cp%CC_act = CC_act
@@ -1317,11 +1337,11 @@ subroutine get_DNA_synthesis_rate(DNA_rate)
 real(8) :: DNA_rate
 type(cell_type), pointer :: cp
 integer :: kcell, iph, cnt
-real(8) :: pATM, k1, k2, fATM, rate_sum, pATM_ave
+real(8) :: pATM, k3, k4, fATM, rate_sum, pATM_ave
 
 !write(*,'(a)') 'get_DNA_synthesis_rate'
-k1 = K_ATM(S_phase,3)
-k2 = K_ATM(S_phase,4)
+k3 = K_ATM(S_phase,3)
+k4 = K_ATM(S_phase,4)
 cnt = 0
 rate_sum = 0
 pATM_ave = 0
@@ -1330,15 +1350,17 @@ do kcell = 1,nlist
     iph = cp%phase
     if (iph == S_phase) then
         cnt = cnt + 1
-        pATM = cp%pATM
+!        pATM = cp%pATM
+        pATM = cp%ATM_act
         pATM_ave = pATM_ave + pATM
-        fATM = max(0.01,1 - k1*pATM/(k2 + pATM))
+        fATM = max(0.01,1 - k3*pATM/(k4 + pATM))
+!        if (kcell<= 10) write(*,'(a,i4,4e12.3)') 'DNA_rate: ',kcell, pATM, k3, k4, fATM
         rate_sum = rate_sum + fATM
     endif
 enddo
 DNA_rate = rate_sum/cnt
 pATM_ave = pATM_ave/cnt
-!write(*,'(a,3f8.3,e12.3)') 'DNA growth rate factor: ',DNA_rate,k1,k2,pATM_ave
+!write(*,'(a,3f8.3,e12.3)') 'DNA growth rate factor: ',DNA_rate,k3,k4,pATM_ave
 end subroutine
 
 !------------------------------------------------------------------------
@@ -1348,13 +1370,13 @@ subroutine show_S_phase_statistics()
 real(8) :: hour
 type(cell_type), pointer :: cp
 integer :: kcell, iph, cnt, nthour
-real(8) :: pATM, k1, k2, fATM, fATM_ave, pATM_ave, ATM_DSB, ATM_DSB_ave
+real(8) :: pATM, k3, k4, fATM, fATM_ave, pATM_ave, ATM_DSB, ATM_DSB_ave
 
 !write(nflog,'(a)') 'S_phase_statistics'
 nthour = 3600/DELTA_T
 hour = real(istep)/nthour
-k1 = K_ATM(S_phase,3)
-k2 = K_ATM(S_phase,4)
+!k3 = K_ATM(S_phase,3)
+!k4 = K_ATM(S_phase,4)
 cnt = 0
 ATM_DSB_ave = 0
 fATM_ave = 0
@@ -1366,16 +1388,16 @@ do kcell = 1,nlist
         cnt = cnt + 1
         ATM_DSB = cp%DSB(NHEJslow) + cp%DSB(HR)   ! complex DSB
         ATM_DSB_ave = ATM_DSB_ave + ATM_DSB
-        pATM = cp%pATM
+        pATM = cp%ATM_act
         pATM_ave = pATM_ave + pATM
-        fATM = max(0.01,1 - k1*pATM/(k2 + pATM))
-        fATM_ave = fATM_ave + fATM
+!        fATM = max(0.01,1 - k3*pATM/(k4 + pATM))
+!        fATM_ave = fATM_ave + fATM
     endif
 enddo
 ATM_DSB_ave = ATM_DSB_ave/cnt
-fATM_ave = fATM_ave/cnt
+!fATM_ave = fATM_ave/cnt
 pATM_ave = pATM_ave/cnt
-write(nflog,'(i6,f8.2,i6,3f8.3)') istep, hour,cnt, ATM_DSB_ave,pATM_ave,fATM_ave
+write(nflog,'(a,i6,f8.2,i6,3f8.3)') 'S stats: ',istep, hour,cnt, ATM_DSB_ave,pATM_ave
 
 end subroutine
 

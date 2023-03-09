@@ -2413,6 +2413,7 @@ if (output_DNA_rate) then
     else
         tadjust = 6
     endif
+    tadjust = 0
     if (nphase_hours > 0) then
         write(*,*) 'write DNA_rate'
         write(nfres,'(20e15.6)') (recorded_DNA_rate(i),i=1,nphase_hours)

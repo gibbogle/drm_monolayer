@@ -563,7 +563,7 @@ real(REAL_KIND) :: totNmis = 0
 real(REAL_KIND) :: G2_katm3_factor=1.0, G2_katm4_factor=1.0, G2_katr3_factor=1.0, G2_katr4_factor=1.0
 
 logical :: use_inhibiter = .false.
-logical :: use_fixed_CP != .false.
+logical :: use_fixed_CP = .false.
 logical :: compute_cycle
 logical :: use_constant_drug_conc = .true.   ! This is used in the SN39536 experiments
 
