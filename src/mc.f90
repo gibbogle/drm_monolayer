@@ -60,13 +60,9 @@ real(8) :: mitRate  = 0.0141    ! (McMahon: mitoticRate)
 real(8) :: Msurvival = 0.05
 real(8) :: Kaber = 1.0          ! now fixed, McMahon has 1.  
 real(8) :: Klethal = 0.4
-!real(8) :: K_ATM(4) = [1.0, 0.076, 0.3, 10.6]   ! Now fix K_ATM(1), K_ATR(1) at 1.0
-!real(8) :: K_ATR(4) = [1.0, 0.005, 0.3, 3.4]
-logical :: use_phase_dependent_CP_parameters
 real(8) :: K_ATM(3,4) ! = [0.076, 0.3, 1.0, 1.0]    ! (1) and (2) are the parameters of kinase kinetics, (3) and (4) are CP slowdown parameters
 real(8) :: K_ATR(3,4) ! = [0.005, 0.3, 1.0, 1.0]
 real(8) :: Ztime = 0    ! hours
-logical :: use_exp_slowdown = .false.
 
 real(8) :: sigma_NHEJ = 0.04187
 real(8) :: sigma_TMEJ = 0.08
@@ -103,7 +99,7 @@ real(8) :: totPmit, totPaber, tottotDSB, totNlethal
 
 real(8) :: tCPdelay, tATMdelay, tATRdelay
 logical :: use_addATMATRtimes = .false.
-logical :: use_G1_stop = .false.
+logical :: use_G1_stop = .false.    ! These flags control use of either CP delay (true) or slowdown (false)
 logical :: use_S_stop = .false.
 logical :: use_G2_stop = .false.
 real(8) :: totG1delay, totSdelay, totG2delay
@@ -114,6 +110,12 @@ logical :: FIX_katm1s_eq_katm1g2 = .false.  ! handle this in the input files, ma
 logical :: negligent_G2_CP = .false.
 logical :: use_DSB_CP = .false.
 logical :: use_D_model = .true.
+logical :: use_G1_pATM = .true.
+logical :: use_S_pATM = .true.
+
+logical :: use_km10_kcc2a_dependence = .false.
+logical :: use_exp_slowdown = .true.
+logical :: use_phase_dependent_CP_parameters = .true.      ! now always true
 
 ! Normalisation
 real(8) :: control_ave(4)   ! now set equal to ccp%f_G1, ...
@@ -174,7 +176,6 @@ read(nfin,*) Klethal
 !        enddo
 !    enddo
 !elseif (nCPparams == 3) then
-    use_phase_dependent_CP_parameters = .true.      ! now always true
     write(nflog,*) 'K_ATM'
     do j = 1,4
         do iph = 1,3
@@ -237,6 +238,8 @@ if (use_Jaiswal) then
     endif
 !    Km10 = 2.36*Kcc2a + 1.7     ! to give T_G2 = 3.9, from line fit in jaiswal.xlsm
     call kcc2a_km10(CC_tot,km10_alfa,km10_beta)
+    write(nflog,'(a,3f8.3)') 'kcc2a_km10: alfa: ',km10_alfa
+    write(nflog,'(a,3f8.3)') 'kcc2a_km10: beta: ',km10_beta
 endif
 call make_eta_table(sigma_NHEJ, sigma_TMEJ, fsmin)
 
@@ -357,10 +360,8 @@ nG2delay = 0
 ! Initialise misjoining counts
 misjoins = 0
 
-! Test changes to repRate(HR)
-!write(nflog,*) '!!!!!!!!!!!!!!!!!!!! changing repRate(HR) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-!repRate(HR) = 0.4*repRate(HR)
-!write(nflog,*) '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+! Set use of pATM in G1
+use_G1_stop = use_G1_pATM  ! this overrides the default, which was set above (to use ATM_act in G1)
 end subroutine
 
 !!--------------------------------------------------------------------------
@@ -621,6 +622,16 @@ subroutine updateATM(iph,pATM,ATM_DSB,dth)
 integer :: iph
 real(8) :: pATM, ATM_DSB, dth, pATM0
 real(8) :: r, t, fz, kdecay
+logical :: OK
+
+OK = .true.
+if (iph == G1_phase .and. .not.use_G1_pATM) OK = .false.
+if (iph == S_phase .and. .not.use_S_pATM) OK = .false.
+if (iph == G2_phase) OK = .false.
+if (.not.OK) then
+    write(*,*) 'ERROR: updateATM: should not get here with iph, use_G1_pATM, use_S_pATM: ',iph,use_G1_pATM,use_S_pATM
+    stop
+endif
 
 pATM0 = pATM
 if (use_G2_pATM_Nindependent .and. iph == G2_phase) then
@@ -629,21 +640,11 @@ else
     r = K_ATM(iph,1)*ATM_DSB   ! rate of production of pATM
 endif
 t = (tnow - t_irradiation)/3600
-if (Ztime > 0) then
-    if (t > Ztime) then
-        fz = 0
-    else
-        fz = 1 - t/Ztime
-    endif
-else    ! no reduction in pATM production
-    fz = 1
-endif
-r = fz*r
 kdecay = max(1.0e-8,K_ATM(iph,2))  ! decay rate constant
-if ((iph == 3) .and. use_D_model) then
-    r = 0
-    kdecay = max(1.0e-8,K_ATM(iph,3))  ! decay rate constant
-endif
+!if ((iph == 3) .and. use_D_model) then
+!    r = 0
+!    kdecay = max(1.0e-8,K_ATM(iph,3))  ! decay rate constant
+!endif
 pATM = r/kdecay + (pATM - r/kdecay)*exp(-kdecay*dth)
 if (isnan(pATM)) then
     write(*,*) 'NAN in updateATM: ',iph, r, kdecay, r/kdecay
@@ -690,15 +691,18 @@ pATR = r/k2 + (pATR - r/k2)*exp(-k2*dth)
 end subroutine
 
 !------------------------------------------------------------------------
-! Effect of ATM_act
 ! Time computed in hours, returned in secs 
-! CP delay determined by ATM_act (was pATM) only.
+! CP delay determined by ATM_act or pATM.
 !------------------------------------------------------------------------
 function G1_checkpoint_time(cp) result(t)
 type(cell_type), pointer :: cp
-real(REAL_KIND) :: t, th
+real(REAL_KIND) :: t, th, atm
 integer :: iph = 1
 
+if (.not.use_G1_stop) then
+    write(*,*) 'Error: G1_checkpoint_time: should not get here with use_G1_stop = ',use_G1_stop
+    stop
+endif
 if (use_DSB_CP) then
     t = 0
     return
@@ -707,47 +711,51 @@ if (use_G1_CP_factor) then
     t = G1_CP_time
     return
 endif
-th = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*cp%ATM_act))
-!if (kcell_now == 1) write(*,'(a,i6,2f8.3)') 'G1_checkpoint_time (h): ',kcell_now,cp%pATM,th
+if (use_G1_pATM) then
+    atm = cp%pATM
+else
+    atm = cp%ATM_act
+endif
+th = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*atm))
+!if (kcell_now == 1) write(*,'(a,i6,2f8.3)') 'G1_checkpoint_time (h): ',kcell_now,atm,th
 if (isnan(th)) then
-    write(*,*) 'NAN in G1_checkpoint_time: ',cp%ATM_act
+    write(*,*) 'NAN in G1_checkpoint_time: ',atm
     stop
 endif
 totG1delay = th + totG1delay
 nG1delay = nG1delay + 1
 t = 3600*th
-!if (is_radiation) then
-!    Sthsum = Sthsum + th
-!    NSth = NSth + 1
-!endif
 end function
 
 !------------------------------------------------------------------------
-! Combined effect of ATM_act (was pATM) and ATR_act (was pATR) in S
+! Combined effect of ATM_act (or pATM) and ATR_act (was pATR) in S
 ! Time computed in hours, returned in secs
 ! CP delay is the sum of delays created by ATM_act and by ATR_act
 ! Effect of ATR_act is currently turned off.
 !------------------------------------------------------------------------
 function S_checkpoint_time(cp) result(t)
 type(cell_type), pointer :: cp
-real(REAL_KIND) :: t, th, th_ATM, th_ATR
+real(REAL_KIND) :: t, th, th_ATM, th_ATR, atm
 integer :: iph = 2
 logical :: use_ATR = .false.
 
+if (.not.use_S_stop) then
+    write(*,*) 'Error: S_checkpoint_time: should not get here with use_S_stop = ',use_S_stop
+    stop
+endif
+if (use_S_pATM) then
+    atm = cp%pATM
+else
+    atm = cp%ATM_act
+endif
 !th_ATM = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*cp%pATM))
-th = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*cp%ATM_act))
+th = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*atm))
 if (use_ATR) then
     th_ATR = K_ATR(iph,3)*(1 - exp(-K_ATR(iph,4)*cp%pATR))
 else
     th_ATR = 0
 endif
-!if (kcell_now <= 100) then
-!    write(nflog,'(a,i6,4f8.4)') 'cell, pATM, pATR, th_ATM, th_ATR: ',kcell_now, cp%pATM,cp%pATR,th_ATM,th_ATR
-!    write(*,'(a,i6,4f8.4)') 'cell, pATM, pATR, th_ATM, th_ATR: ',kcell_now, cp%pATM,cp%pATR,th_ATM,th_ATR
-!endif
 th = th_ATM + th_ATR
-!totG2delay = th + totG2delay
-!nG2delay = nG2delay + 1
 if (kcell_now <= 10) then
     write(nfphase,*)
     write(nfphase,'(a,i6,3f6.2)') 'S_checkpoint_time: ',kcell_now,th_ATM,th_ATR,th
@@ -820,43 +828,47 @@ end function
 ! Now slowdown is acting in G1-phase and S-phase, and only affected by pATM
 ! fslow in computed for G2, but not used because G2 is controlled by Jaiswal.
 !------------------------------------------------------------------------
-subroutine get_slowdown_factors(cp,iph,fATM,fATR)
+subroutine get_slowdown_factors(cp,fATM,fATR)
 type(cell_type), pointer :: cp
 integer :: iph
 real(REAL_KIND) :: fATM, fATR
-real(REAL_KIND) :: pATM, pATR, k3, k4, N_DSB, ATM_act
+real(REAL_KIND) :: pATM, pATR, k3, k4, N_DSB, atm
+logical :: OK
 
-fATR = 1
+iph = cp%phase
 if (iph > G2_phase) then
     write(*,*) 'Error: get_slowdown_factors called with iph = ',iph
     stop
-!    fATM = 1
-!    return
 endif
+OK = .true.
+if ((iph == G1_phase) .and. use_G1_stop) OK = .false.
+if ((iph == S_phase) .and. use_S_stop) OK = .false.
+if (.not.OK) then
+    write(*,*) 'Error: get_slowdown_factors: iph, use_G1_stop, use_S_stop: ',iph, use_G1_stop, use_S_stop
+    stop
+endif
+fATR = 1
 if (use_DSB_CP) then
     N_DSB = sum(cp%DSB)
     k3 = K_ATM(iph,3)
     k4 = K_ATM(iph,4)
-    fATR = 1
 !    if (kcell_now == 1) write(*,'(a,i6,4f8.3)') 'k3,k4,N_DSB: ',kcell_now,k3,k4,N_DSB,k3*N_DSB/(k4 + N_DSB)
     fATM = max(0.01,1 - k3*N_DSB/(k4 + N_DSB))
     return
 endif
-!pATM = cp%pATM
+if (iph == G1_phase) then
+    atm = cp%pATM
+else
+    atm = cp%ATM_act
+endif
 k3 = K_ATM(iph,3)
 k4 = K_ATM(iph,4)
-!if (use_exp_slowdown) then
-!    fATM = exp(-k4*pATM)
-!else
-!    fATM = max(0.01,1 - k3*pATM/(k4 + pATM))
-!endif
-ATM_act = cp%ATM_act
 if (use_exp_slowdown) then
-    fATM = exp(-k4*ATM_act)
+    fATM = exp(-k4*atm)
 else
-    fATM = max(0.01,1 - k3*ATM_act/(k4 + ATM_act))
+    fATM = max(0.01,1 - k3*atm/(k4 + atm))
 endif
-!write(*,'(a,i3,4f8.4)') 'fATM: ',iph,k3,k4,pATM,fATM
+!write(*,'(a,i3,4f8.4)') 'fATM: ',iph,k3,k4,atm,fATM
 !if (iph > G1_phase) then
 !    pATR = cp%pATR
 !    k3 = K_ATR(iph,3)   !*G2_katr3_factor
@@ -869,6 +881,7 @@ endif
 end subroutine
 
 !------------------------------------------------------------------------
+! Whether a phase uses CP delay or slowdown is handled here.
 !------------------------------------------------------------------------
 function slowdown(cp) result(fslow)
 type(cell_type), pointer :: cp
@@ -899,7 +912,7 @@ else
         fslow = 1.0
     else
         dt = DELTA_T
-        call get_slowdown_factors(cp,iph,fATM, fATR)
+        call get_slowdown_factors(cp,fATM, fATR)
         if (use_addATMATRtimes) then
             dt = DELTA_T
             fslow = max(0.0,fATM + fATR - 1)
@@ -959,7 +972,9 @@ if (iph > G2_phase) then
 !    write(*,*) 'jaiswal_update: kcell,iph: ',kcell_now,iph
 !    stop
 endif
-Km10 = km10_alfa(iph) + km10_beta(iph)*kcc2a
+if (use_km10_kcc2a_dependence) then
+    Km10 = km10_alfa(iph) + km10_beta(iph)*kcc2a
+endif
 Nt = int(dth/dt + 0.5)
 dbug = .false.  !(kcell_now <= 10) .and. (iph == S_phase)
 if (dbug) then
@@ -1337,30 +1352,33 @@ subroutine get_DNA_synthesis_rate(DNA_rate)
 real(8) :: DNA_rate
 type(cell_type), pointer :: cp
 integer :: kcell, iph, cnt
-real(8) :: pATM, k3, k4, fATM, rate_sum, pATM_ave
+real(8) :: atm, k3, k4, fATM, rate_sum, atm_ave
 
 !write(*,'(a)') 'get_DNA_synthesis_rate'
 k3 = K_ATM(S_phase,3)
 k4 = K_ATM(S_phase,4)
 cnt = 0
 rate_sum = 0
-pATM_ave = 0
+atm_ave = 0
 do kcell = 1,nlist
     cp => cell_list(kcell)
     iph = cp%phase
     if (iph == S_phase) then
         cnt = cnt + 1
-!        pATM = cp%pATM
-        pATM = cp%ATM_act
-        pATM_ave = pATM_ave + pATM
-        fATM = max(0.01,1 - k3*pATM/(k4 + pATM))
+        if (use_S_pATM) then
+            atm = cp%pATM
+        else
+            atm = cp%ATM_act
+        endif
+        atm_ave = atm_ave + atm
+        fATM = max(0.01,1 - k3*atm/(k4 + atm))  ! 0.01 ??
 !        if (kcell<= 10) write(*,'(a,i4,4e12.3)') 'DNA_rate: ',kcell, pATM, k3, k4, fATM
         rate_sum = rate_sum + fATM
     endif
 enddo
 DNA_rate = rate_sum/cnt
-pATM_ave = pATM_ave/cnt
-!write(*,'(a,3f8.3,e12.3)') 'DNA growth rate factor: ',DNA_rate,k3,k4,pATM_ave
+atm_ave = atm_ave/cnt
+!write(*,'(a,3f8.3,e12.3)') 'DNA growth rate factor: ',DNA_rate,k3,k4,atm_ave
 end subroutine
 
 !------------------------------------------------------------------------

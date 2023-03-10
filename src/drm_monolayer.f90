@@ -2065,7 +2065,7 @@ call getNviable
 kcell = 1
 cp => cell_list(kcell)
 if (use_synchronise .and. .false.) then
-    call get_slowdown_factors(cp,cp%phase,fATM,fATR)
+    call get_slowdown_factors(cp,fATM,fATR)
     fCP = fATM*fATR
     dt = DELTA_T
     dtCPdelay = dt*(1 - fCP)

@@ -769,7 +769,7 @@ type(cell_type), pointer :: cp
 real(REAL_KIND) :: dt
 real(REAL_KIND) :: Cin_0(NCONST), Cex_0(NCONST)		! at some point NCONST -> MAX_CHEMO
 real(REAL_KIND) :: dVdt,  Vin_0, dV,  metab_O2, metab_glucose, metab, Cdrug(2), f_CP
-integer :: ityp
+integer :: ityp, iph
 logical :: oxygen_growth, glucose_growth, tagged
 
 if (cp%phase >= M_phase) then
@@ -829,6 +829,8 @@ endif
 
 ! Here compute the progress factor %fp, used in cycle.f90
 ! This is definitive
+iph = cp%phase
+
 f_CP = slowdown(cp)
 if (.not.is_radiation .and. f_CP < 1.0) then
     write(*,*) 'growcell: f_CP < 1'
