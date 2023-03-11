@@ -1256,10 +1256,11 @@ cp%metab%C_GlnEx_prev = 0
 
 ! Jaiswal
 R = par_rnor(kpar)
+if (abs(R) > 2) R = R/2
 kfactor = max(0.0,1 + R*jaiswal_std)
 cp%kt2cc = kt2cc*kfactor
 cp%ke2cc = ke2cc*kfactor
-!write(*,'(a,5f10.4)') 'Jaiswal R: ',R,kfactor,cp%kt2cc,cp%ke2cc
+!if (kcell == 5388) write(*,'(a,5f10.4)') 'Jaiswal R: ',R,kfactor,cp%kt2cc,cp%ke2cc
 cp%CC_act = CC_act0
 !R = par_uni(kpar)
 !cp%CC_act = CC_act0 + R*(CC_threshold - CC_act0)
@@ -2188,10 +2189,14 @@ if (dbug .or. mod(istep,nthour) == 0) then
     enddo    
 endif
 ! write(nflog,'(a,f8.3)') 'did simulate_step: time: ',wtime()-start_wtime
-
+!kcell = 5388
+!cp => cell_list(kcell)
+!write(nflog,'(a,3i8)') 'cell, state, phase: ',kcell,cp%state,cp%phase
+!write(*,'(a,3i8)') 'cell, state, phase: ',kcell,cp%state,cp%phase
 istep = istep + 1
 if (istep == 99*nthour) then
     write(*,*) 'overstepped the mark'
+    call nondivided()
     stop
 endif
 !write(*,*) 'end simulate_step: t_simulation: ',t_simulation
@@ -2255,6 +2260,24 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
     res = 1
 endif
 
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+! When the mark is overstepped, locate cells that have not reached mitosis
+!-----------------------------------------------------------------------------------------
+subroutine nondivided
+integer :: kcell, n
+type(cell_type), pointer :: cp
+
+n = 0
+do kcell = 1,nlist
+    cp => cell_list(kcell)
+    if (cp%state /= DEAD .and. cp%psurvive < 0) then
+        n = n+1
+        write(*,*) 'nondivided: ',kcell
+    endif
+enddo
+write(*,*) 'Total nondivided: ',n
 end subroutine
 
 !-----------------------------------------------------------------------------------------

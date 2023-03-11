@@ -113,7 +113,7 @@ logical :: use_D_model = .true.
 logical :: use_G1_pATM = .true.
 logical :: use_S_pATM = .true.
 
-logical :: use_km10_kcc2a_dependence = .false.
+logical :: use_km10_kcc2a_dependence = .true.
 logical :: use_exp_slowdown = .true.
 logical :: use_phase_dependent_CP_parameters = .true.      ! now always true
 
@@ -973,10 +973,7 @@ if (use_km10_kcc2a_dependence) then
     Km10 = km10_alfa(iph) + km10_beta(iph)*kcc2a
 endif
 Nt = int(dth/dt + 0.5)
-dbug = .false.  !(kcell_now <= 10) .and. (iph == S_phase)
-if (dbug) then
-    write(*,'(a,i6,2i4,3e12.3)') 'Jaiswal S_phase: ',istep,kcell_now,Nt,Km10,dth,cp%ATM_act
-endif
+dbug = (kcell_now == -5388)
 !if (single_cell) write(nflog,*) 'Jaiswal_update: Nt: ',Nt
 !D = sum(cp%DSB(1:4))*norm_factor
 !write(*,*) 'iph,kcell,dth: ',iph, kcell_now, dth
@@ -995,6 +992,9 @@ elseif (iph == G2_phase) then
     ATM_act = cp%ATM_act
 else
     return
+endif
+if (dbug) then
+    write(*,'(a,2i6,4e12.3,f6.3)') 'J: ',istep,kcell_now,D_ATM,D_ATR,ATM_act,ATR_act,CC_act/CC_tot
 endif
 
 do it = 1,Nt
