@@ -99,9 +99,6 @@ real(8) :: totPmit, totPaber, tottotDSB, totNlethal
 
 real(8) :: tCPdelay, tATMdelay, tATRdelay
 logical :: use_addATMATRtimes = .false.
-logical :: use_G1_stop = .false.    ! These flags control use of either CP delay (true) or slowdown (false)
-logical :: use_S_stop = .false.
-logical :: use_G2_stop = .false.
 real(8) :: totG1delay, totSdelay, totG2delay
 integer :: nG1delay, nSdelay, nG2delay
 logical :: use_G2_pATM_Nindependent = .false.
@@ -109,13 +106,17 @@ logical :: output_DNA_rate = .false.
 logical :: FIX_katm1s_eq_katm1g2 = .false.  ! handle this in the input files, making katm1g2 = katm1s
 logical :: negligent_G2_CP = .false.
 logical :: use_DSB_CP = .false.
-logical :: use_D_model = .true.
+logical :: use_D_model = .false.
+
+logical :: use_km10_kcc2a_dependence = .true.
+logical :: use_exp_slowdown = .false.
+logical :: use_G1_stop = .false.    ! These flags control use of either CP delay (true) or slowdown (false)
+logical :: use_S_stop = .false.
 logical :: use_G1_pATM = .true.
 logical :: use_S_pATM = .true.
 
-logical :: use_km10_kcc2a_dependence = .true.
-logical :: use_exp_slowdown = .true.
-logical :: use_phase_dependent_CP_parameters = .true.      ! now always true
+logical :: use_G2_stop = .false.                        ! because use_Jaiswal is true
+logical :: use_phase_dependent_CP_parameters = .true.   ! now always true
 
 ! Normalisation
 real(8) :: control_ave(4)   ! now set equal to ccp%f_G1, ...
