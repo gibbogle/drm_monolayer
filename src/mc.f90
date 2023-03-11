@@ -624,10 +624,11 @@ real(8) :: pATM, ATM_DSB, dth, pATM0
 real(8) :: r, t, fz, kdecay
 logical :: OK
 
+!write(*,*) 'updateATM: iph: ',iph
 OK = .true.
 if (iph == G1_phase .and. .not.use_G1_pATM) OK = .false.
 if (iph == S_phase .and. .not.use_S_pATM) OK = .false.
-if (iph == G2_phase) OK = .false.
+if (iph >= G2_phase) OK = .false.
 if (.not.OK) then
     write(*,*) 'ERROR: updateATM: should not get here with iph, use_G1_pATM, use_S_pATM: ',iph,use_G1_pATM,use_S_pATM
     stop
@@ -641,16 +642,12 @@ else
 endif
 t = (tnow - t_irradiation)/3600
 kdecay = max(1.0e-8,K_ATM(iph,2))  ! decay rate constant
-!if ((iph == 3) .and. use_D_model) then
-!    r = 0
-!    kdecay = max(1.0e-8,K_ATM(iph,3))  ! decay rate constant
-!endif
 pATM = r/kdecay + (pATM - r/kdecay)*exp(-kdecay*dth)
 if (isnan(pATM)) then
     write(*,*) 'NAN in updateATM: ',iph, r, kdecay, r/kdecay
     stop
 endif
-!if (kcell_now == 1) write(*,'(a,i4,6f6.2)') 'updateATM: fz,r,k,r/k,ATM_DSB,pATM: ',kcell_now,fz,r,kdecay,r/kdecay,ATM_DSB,pATM
+!if (kcell_now <= 10) write(*,'(a,i4,6f6.2)') 'updateATM: r,k,r/k,ATM_DSB,pATM: ',kcell_now,r,kdecay,r/kdecay,ATM_DSB,pATM
 !write(*,'(a,i3,6f8.4)') 'updateATM: ',iph,ATM_DSB,r,k,r/k,pATM
 !if (iph == 2) stop
 end subroutine
@@ -1189,6 +1186,9 @@ ATR_DSB = DSB(HR)
 !    endif
 !endif
 call Jaiswal_update(cp, dth)
+if ((iph == 1 .and. use_G1_pATM) .or. (iph == 2 .and. use_S_pATM)) then 
+    call updateATM(iph,cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth
+endif
 
 DSB = 0
 do k = 1,NP
@@ -1372,7 +1372,7 @@ do kcell = 1,nlist
         endif
         atm_ave = atm_ave + atm
         fATM = max(0.01,1 - k3*atm/(k4 + atm))  ! 0.01 ??
-!        if (kcell<= 10) write(*,'(a,i4,4e12.3)') 'DNA_rate: ',kcell, pATM, k3, k4, fATM
+!        if (kcell<= 10) write(*,'(a,i4,L3,4e12.3)') 'DNA_rate: ',kcell, use_S_pATM, atm, k3, k4, fATM
         rate_sum = rate_sum + fATM
     endif
 enddo
