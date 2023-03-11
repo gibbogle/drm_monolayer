@@ -1371,7 +1371,12 @@ do kcell = 1,nlist
             atm = cp%ATM_act
         endif
         atm_ave = atm_ave + atm
-        fATM = max(0.01,1 - k3*atm/(k4 + atm))  ! 0.01 ??
+!        fATM = max(0.01,1 - k3*atm/(k4 + atm))  ! 0.01 ??
+        if (use_exp_slowdown) then
+            fATM = exp(-k4*atm)
+        else
+            fATM = max(0.01,1 - k3*atm/(k4 + atm))
+        endif
 !        if (kcell<= 10) write(*,'(a,i4,L3,4e12.3)') 'DNA_rate: ',kcell, use_S_pATM, atm, k3, k4, fATM
         rate_sum = rate_sum + fATM
     endif
