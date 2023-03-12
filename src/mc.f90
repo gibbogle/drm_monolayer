@@ -110,7 +110,7 @@ logical :: use_D_model = .false.
 
 logical :: use_km10_kcc2a_dependence = .true.
 logical :: use_exp_slowdown = .false.
-logical :: use_G1_stop = .false.    ! These flags control use of either CP delay (true) or slowdown (false)
+logical :: use_G1_stop = .true.    ! These flags control use of either CP delay (true) or slowdown (false)
 logical :: use_S_stop = .false.
 logical :: use_G1_pATM = .true.
 logical :: use_S_pATM = .true.
