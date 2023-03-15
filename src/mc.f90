@@ -110,10 +110,10 @@ logical :: use_D_model = .false.
 
 logical :: use_km10_kcc2a_dependence = .true.
 logical :: use_exp_slowdown = .false.
-logical :: use_G1_stop = .true.    ! These flags control use of either CP delay (true) or slowdown (false)
+logical :: use_G1_stop = .false.    ! These flags control use of either CP delay (true) or slowdown (false)
 logical :: use_S_stop = .false.
-logical :: use_G1_pATM = .false.
-logical :: use_S_pATM = .false.
+logical :: use_G1_pATM = .true.
+logical :: use_S_pATM = .true.
 
 logical :: use_G2_stop = .false.                        ! because use_Jaiswal is true
 logical :: use_phase_dependent_CP_parameters = .true.   ! now always true
@@ -362,7 +362,7 @@ nG2delay = 0
 misjoins = 0
 
 ! Set use of pATM in G1
-use_G1_stop = use_G1_pATM  ! this overrides the default, which was set above (to use ATM_act in G1)
+!use_G1_stop = use_G1_pATM  ! this overrides the default, which was set above (to use ATM_act in G1)
 end subroutine
 
 !!--------------------------------------------------------------------------
