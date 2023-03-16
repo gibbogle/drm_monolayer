@@ -89,7 +89,7 @@ real(8) :: CC_tot, ATR_tot, ATM_tot, CC_act0, CC_threshold, norm_factor
 real(8) :: km10_alfa(3), km10_beta(3)
 logical :: use_Jaiswal = .true.
 logical :: vary_km10 = .true.
-real(8) :: jaiswal_std = 0.4
+real(8) :: jaiswal_std = 0.2    ! 0.4
 
 real(8) :: ATMsum, ATRsum, Sthsum, G2thsum(2)
 integer :: NSth, NG2th
@@ -974,7 +974,7 @@ if (use_km10_kcc2a_dependence) then
     Km10 = km10_alfa(iph) + km10_beta(iph)*kcc2a
 endif
 Nt = int(dth/dt + 0.5)
-dbug = (kcell_now == -5388)
+dbug = (kcell_now == -623)
 !if (single_cell) write(nflog,*) 'Jaiswal_update: Nt: ',Nt
 !D = sum(cp%DSB(1:4))*norm_factor
 !write(*,*) 'iph,kcell,dth: ',iph, kcell_now, dth
@@ -1022,12 +1022,12 @@ do it = 1,Nt
 !    write(nflog,'(i6,f8.4,2f10.6)') it,t,CC_act,dCC_act_dt
 enddo
 !if (kcell_now == 1) write(*,'(a,4f8.4)') 'ATR_act, Kd2e,D_ATR, D_ATM: ',ATR_act, Kd2e,D_ATR, D_ATM
-!if (dbug) then
-!    write(*,'(a,i8,4f8.4)') 'kcell,ATR,ATM,CC,dCCdt: ',kcell_now,ATR_act,ATM_act,CC_act,dCC_act_dt
+if (dbug) then
+    write(*,'(a,i8,4f8.4)') 'kcell,ATR,ATM,CC,dCCdt: ',kcell_now,ATR_act,ATM_act,CC_act,dCC_act_dt
 !    write(*,'(a,2f6.1,2f8.3)') 'DSB: HR,NHEJ, D_ATR,D_ATM: ',cp%DSB(HR),cp%DSB(NHEJslow),D_ATR,D_ATM
-!    write(nflog,'(a,i8,4f8.4)') 'kcell,ATR,ATM,CC,dCCdt: ',kcell_now,ATR_act,ATM_act,CC_act,dCC_act_dt
+    write(nflog,'(a,i8,6f8.4)') 'kcell,ATR,ATM,CC,dCCdt: ',kcell_now,ATR_act,ATM_act,CC_act,cp%Kt2cc,cp%Ke2cc,dCC_act_dt
 !    write(nflog,'(a,2f6.1,2f8.3)') 'DSB: HR,NHEJ, D_ATR,D_ATM: ',cp%DSB(HR),cp%DSB(NHEJslow),D_ATR,D_ATM
-!endif
+endif
 cp%ATM_act = ATM_act
 if (iph == G2_phase) then
     cp%CC_act = CC_act
