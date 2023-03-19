@@ -561,6 +561,7 @@ real(REAL_KIND) :: S_phase_RR_progress
 real(REAL_KIND) :: G1_delay, S_delay, G2_delay  ! test values are specified in drm_monolayer_main
 real(REAL_KIND) :: totNmis = 0
 real(REAL_KIND) :: G2_katm3_factor=1.0, G2_katm4_factor=1.0, G2_katr3_factor=1.0, G2_katr4_factor=1.0
+integer :: maxhours = 99
 
 logical :: use_inhibiter = .false.
 logical :: use_fixed_CP = .false.

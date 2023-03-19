@@ -1027,15 +1027,19 @@ do it = 1,Nt
 !            write(nflog,'(a,2i6,4e12.3)') 'istep,it: ',istep,it,Km10,(Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact), cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act), cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
 !        endif
         dCC_act_dt = (Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact) - cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act) - cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
+!        dCC_act_dt = (Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact) - Kt2cc * ATM_act * CC_act / (Km10t + CC_act) - Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
         dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Km10 + ATR_inact) - Kcc2e * ATR_act * CC_act / (Km10 + CC_act)
         CC_act = CC_act + dt * dCC_act_dt
         ATR_act = ATR_act + dt * dATR_act_dt
+        ATR_act = min(ATR_act, ATR_tot)
     elseif (use_ATR_S) then
         dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Km10 + ATR_inact) - Kcc2e * ATR_act * CC_act / (Km10 + CC_act)
         ATR_act = ATR_act + dt * dATR_act_dt
+        ATR_act = min(ATR_act, ATR_tot)
     endif
     dATM_act_dt = Kd2t * D_ATM * ATM_inact / (Km1 + ATM_inact) - Kti2t * ATM_act / (Km1 + ATM_act)    
     ATM_act = ATM_act + dt*dATM_act_dt
+    ATM_act = min(ATM_act, ATM_tot)
 
     if (dbug) then
 !       write(*,'(a,i8,4f8.4)') 'kcell,dATM_dt,ATM: ',kcell_now,dATM_act_dt,ATM_act

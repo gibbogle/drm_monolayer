@@ -2194,7 +2194,7 @@ endif
 !write(nflog,'(a,3i8)') 'cell, state, phase: ',kcell,cp%state,cp%phase
 !write(*,'(a,3i8)') 'cell, state, phase: ',kcell,cp%state,cp%phase
 istep = istep + 1
-if (istep == 99*nthour) then
+if (istep == maxhours*nthour) then
     write(*,*) 'overstepped the mark'
     call nondivided()
     stop
@@ -2274,7 +2274,8 @@ do kcell = 1,nlist
     cp => cell_list(kcell)
     if (cp%state /= DEAD .and. cp%psurvive < 0) then
         n = n+1
-        write(*,*) 'nondivided: ',kcell
+        write(*,'(a,2i6,2f8.4)') 'nondivided: kcell, phase, kt2cc,ke2cc: ',kcell, cp%phase,cp%kt2cc,cp%ke2cc
+        write(nflog,'(a,2i6,2f8.4)') 'nondivided: kcell, phase, kt2cc,ke2cc: ',kcell, cp%phase,cp%kt2cc,cp%ke2cc
     endif
 enddo
 write(*,*) 'Total nondivided: ',n
