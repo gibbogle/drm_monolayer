@@ -90,7 +90,7 @@ real(8) :: km10_alfa(3), km10_beta(3)
 logical :: use_Jaiswal = .true.
 logical :: vary_km10 = .true.
 real(8) :: jaiswal_std = 0.2    ! 0.4
-logical :: use_ATR_S = .true.
+logical :: use_ATR_S = .false.
 
 real(8) :: ATMsum, ATRsum, Sthsum, G2thsum(2)
 integer :: NSth, NG2th
@@ -970,7 +970,7 @@ type(cell_type), pointer :: cp
 real(8) :: dth
 real(8) :: dt = 0.001
 real(8) :: D_ATR, D_ATM, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact, CC_act0
-real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, T_G2, kkm10
+real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, T_G2, Kkcc2a
 integer :: iph, it, Nt
 type(cycle_parameters_type),pointer :: ccp
 logical :: dbug
@@ -982,8 +982,11 @@ if (iph > G2_phase) then
 !    write(*,*) 'jaiswal_update: kcell,iph: ',kcell_now,iph
 !    stop
 endif
-if (use_km10_kcc2a_dependence) then
-    Km10 = km10_alfa(iph) + km10_beta(iph)*kcc2a
+if (use_km10_kcc2a_dependence .and. (iph == G2_phase)) then
+!    Km10 = km10_alfa(iph) + km10_beta(iph)*kcc2a
+    Kkcc2a = (Km10 - km10_alfa(iph))/km10_beta(iph)
+else
+    Kkcc2a = Kcc2a
 endif
 Nt = int(dth/dt + 0.5)
 dbug = (iph == 2 .and. (kcell_now <= 0))
@@ -1026,7 +1029,7 @@ do it = 1,Nt
 !            write(*,'(a,2i6,4e12.3)') 'istep,it: ',istep,it,Km10,(Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact), cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act), cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
 !            write(nflog,'(a,2i6,4e12.3)') 'istep,it: ',istep,it,Km10,(Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact), cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act), cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
 !        endif
-        dCC_act_dt = (Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact) - cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act) - cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
+        dCC_act_dt = (Kkcc2a + CC_act) * CC_inact / (Km10 + CC_inact) - cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act) - cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
 !        dCC_act_dt = (Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact) - Kt2cc * ATM_act * CC_act / (Km10t + CC_act) - Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
         dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Km10 + ATR_inact) - Kcc2e * ATR_act * CC_act / (Km10 + CC_act)
         CC_act = CC_act + dt * dCC_act_dt
