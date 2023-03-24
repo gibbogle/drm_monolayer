@@ -2403,12 +2403,22 @@ if (compute_cycle) then
                     normalised_phase_dist(i,1:4) = recorded_phase_dist(i,1:4)/control_ave(1:4)
                 enddo
                 write(*,*) 'write PEST output'
-                if (expt_tag == "CA-135") then
-                    write(nfres,'(20f8.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
-                elseif (expt_tag == "CC-11 ") then
-                    write(nfres,'(20f8.5)') (normalised_phase_dist(i,1:3),i=1,nphase_hours)
-                elseif (expt_tag == "CC-13 ") then
-                    write(nfres,'(20f8.5)') (normalised_phase_dist(i,4),i=1,nphase_hours)
+                if (G2M_only) then
+                    if (expt_tag == "CA-135") then
+                        write(nfres,'(20f8.5)') (normalised_phase_dist(i,3:4),i=1,nphase_hours)
+                    elseif (expt_tag == "CC-11 ") then
+                        write(nfres,'(20f8.5)') (normalised_phase_dist(i,3:3),i=1,nphase_hours)
+                    elseif (expt_tag == "CC-13 ") then
+                        write(nfres,'(20f8.5)') (normalised_phase_dist(i,4),i=1,nphase_hours)
+                    endif
+                else
+                    if (expt_tag == "CA-135") then
+                        write(nfres,'(20f8.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
+                    elseif (expt_tag == "CC-11 ") then
+                        write(nfres,'(20f8.5)') (normalised_phase_dist(i,1:3),i=1,nphase_hours)
+                    elseif (expt_tag == "CC-13 ") then
+                        write(nfres,'(20f8.5)') (normalised_phase_dist(i,4),i=1,nphase_hours)
+                    endif
                 endif
                 write(nflog,'(20f10.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
                 write(nflog,'(20f10.5)') control_ave(1:4)
