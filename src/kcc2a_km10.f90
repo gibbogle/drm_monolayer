@@ -80,7 +80,7 @@ end subroutine
 subroutine kcc2a_km10(CC_tot, alfa, beta)
 implicit none
 real(8) :: CC_tot, alfa(3), beta(3)
-integer, parameter :: nka = 8
+integer, parameter :: nka = 12
 real(8) :: Tphase(3) = [5.636, 8.556, 3.951]    ! G1, S, G2
 real(8) :: km10, dt, t, y, dydt, dkm, t0, x0
 real(8) :: kcc2a(nka), km10sol(nka)
@@ -90,10 +90,10 @@ write(*,*) 'kcc2a_km10'
 dt = 0.01
 dkm = 1
 !CC_tot = 5
-do iph = 1,3
+do iph = 3,3
     do ika = 1,nka
-        kcc2a(ika) = 1 + ika*0.5
-        do ikm = 1,30
+        kcc2a(ika) = 2 + ika*2
+        do ikm = 20,60
             km10 = ikm*dkm
             t = tmitosis(CC_tot,kcc2a(ika),km10)
 !            write(*,'(i4,3f8.3)') iph, kcc2a(ika), km10, t
@@ -112,7 +112,8 @@ do iph = 1,3
 !    write(*,'(a,10f8.3)') 'kcc2a: ',kcc2a
 !    write(*,'(a,10f8.3)') 'km10 : ',km10sol
     ! linear fit
-    call fit(nka,kcc2a,km10sol,alfa(iph),beta(iph))   ! km10 = alfa + beta*kcc2a
+!    call fit(nka,kcc2a,km10sol,alfa(iph),beta(iph))   ! km10 = alfa + beta*kcc2a
+    call fit(nka,km10sol,kcc2a,alfa(iph),beta(iph))   ! kcc2a = alfa + beta*km10
 !    write(*,'(a,2f8.4)') 'alfa, beta: ',alfa(iph),beta(iph)
 !    write(*,*)
 enddo

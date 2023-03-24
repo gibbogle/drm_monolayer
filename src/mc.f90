@@ -984,7 +984,8 @@ if (iph > G2_phase) then
 endif
 if (use_km10_kcc2a_dependence .and. (iph == G2_phase)) then
 !    Km10 = km10_alfa(iph) + km10_beta(iph)*kcc2a
-    Kkcc2a = (Km10 - km10_alfa(iph))/km10_beta(iph)
+!    Kkcc2a = (Km10 - km10_alfa(iph))/km10_beta(iph)
+    Kkcc2a = km10_alfa(iph) + Km10*km10_beta(iph)
 else
     Kkcc2a = Kcc2a
 endif
