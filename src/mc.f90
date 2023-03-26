@@ -502,7 +502,6 @@ if (use_Jeggo) then
         DSB0(NHEJfast) = (1-pComplex)*Npre + (1-pComplex)*(1-pHRs)*Npost     ! fast
         DSB0(NHEJslow) = pComplex*Npre + pComplex*(1-pHRc)*Npost     ! slow
         DSB0(HR) = pHR*Npost
-        write(*,*) 'DSB0: ',DSB0
     endif
 else
     if (phase == G1_phase) then
