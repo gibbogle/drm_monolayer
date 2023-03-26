@@ -535,6 +535,9 @@ endif
 close(nfcell)
 call logger('Finished reading input data')
 
+Kcc2a = get_Kcc2a(kmccp,CC_tot,cc_parameters(1)%T_G2/3600)
+write(*,*) 'kmccp, kcc2a: ',kmccp, kcc2a
+
 !single_cell = (use_synchronise .and. initial_count==1)
 single_cell = (initial_count==1)
 write(nflog,*) 'single_cell: ',single_cell
@@ -777,6 +780,7 @@ ccp%T_S = 3600*ccp%T_S
 ccp%T_G2 = 3600*ccp%T_G2
 ccp%T_M = 3600*ccp%T_M
 enddo
+
 end subroutine
 
 !-----------------------------------------------------------------------------------------

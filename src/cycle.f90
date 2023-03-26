@@ -41,13 +41,13 @@ type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
 real(REAL_KIND) :: dt
 real(REAL_KIND) :: tIR
+integer :: Nwrite
 logical :: switch
 
 !if (cp%dVdt == 0) then
 !	write(nflog,*) 'dVdt=0, kcell: ',kcell_now,cp%phase
 !	stop
 !endif
-if (single_cell) write(nflog,'(a,2i4,8f7.3)') 'kcell, phase, progress, fp: ',kcell_now,cp%phase, cp%progress, cp%fp
 !if (kcell_now <= 10) write(nflog,'(a,2i4,f6.3)') 'kcell_now, phase, progress: ',kcell_now,cp%phase,cp%progress
 10 continue
 if (cp%phase == G1_phase) then
@@ -89,7 +89,9 @@ elseif (cp%phase == G2_phase) then
     if (use_Jaiswal) then
         !cp%progress = (cp%CC_act - CC_act0)/(CC_threshold - CC_act0)    ! not really needed, and not correct
         if (is_radiation) then      ! post-IR
-            if (single_cell) write(nflog,'(a,2f8.3)') 'G2_phase, CC_act, CC_threshold: ',cp%CC_act, CC_threshold
+            Nwrite = 0.1*3600/DELTA_T
+            if (single_cell .and. istep <= Nwrite) write(nflog,'(f6.3,2f9.6)') istep*DELTA_T/3600.0,cp%CC_act,cp%dCC_act_dt
+            if (single_cell .and. mod(istep,Nwrite) == 0) write(nflog,'(a,7f8.4)') 'G2_phase: ',istep*DELTA_T/3600.0,cp%CC_act,cp%ATR_act,cp%ATM_act,cp%DSB(2:3),cp%dCC_act_dt
             tIR = (t_simulation - t_irradiation)/3600   ! time since IR, in hours
             switch = (cp%CC_act >= CC_threshold)
         else

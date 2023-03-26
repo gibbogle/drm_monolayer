@@ -84,9 +84,13 @@ real(8) :: Preass   ! rate of reassignment to pathway 4, TMEJ (prob of reass/hou
 !logical :: alt_EJ_suppressed = .false.
 
 ! Jaiswal formulation (26/09/22)
-real(8) :: Kcc2a, Kcc2e, Kd2e, Kd2t, Ke2cc, Km1, Km10, Kt2cc, Kti2t, Km10t
+real(8) :: Kcc2a, Kcc2e, Kd2e, Kd2t, Ke2cc, Kt2cc, Kti2t
+real(8) :: Km1, Km10, Km10t
+real(8) :: kmmp, kmmd               ! ATM production, decay
+real(8) :: kmrp, kmrd               ! ATR production, decay
+real(8) :: kmccp, kmccrd, kmccmd    ! CC production, ATR-driven decay, ATM-driven decay
 real(8) :: CC_tot, ATR_tot, ATM_tot, CC_act0, CC_threshold, norm_factor
-real(8) :: km10_alfa(3), km10_beta(3)
+real(8) :: km10_alfa, km10_beta     ! for G2 only
 logical :: use_Jaiswal = .true.
 logical :: vary_km10 = .true.
 real(8) :: jaiswal_std = 0.2    ! 0.4
@@ -221,11 +225,15 @@ if (use_Jaiswal) then
     read(nfin,*) Kd2e
     read(nfin,*) Kd2t
     read(nfin,*) Ke2cc
-    read(nfin,*) Km1
-    read(nfin,*) Km10
     read(nfin,*) Kt2cc
     read(nfin,*) Kti2t
-    read(nfin,*) Km10t
+    read(nfin,*) Kmccp
+    read(nfin,*) Kmccmd
+    read(nfin,*) Kmccrd
+    read(nfin,*) Kmrp
+    read(nfin,*) Kmrd
+    read(nfin,*) Kmmp
+    read(nfin,*) Kmmd
     read(nfin,*) CC_tot
     read(nfin,*) ATR_tot
     read(nfin,*) ATM_tot
@@ -239,10 +247,6 @@ if (use_Jaiswal) then
         use_slope_threshold = .false.
         CC_threshold = CC_threshold*CC_tot
     endif
-!    Km10 = 2.36*Kcc2a + 1.7     ! to give T_G2 = 3.9, from line fit in jaiswal.xlsm
-    call kcc2a_km10(CC_tot,km10_alfa,km10_beta)
-    write(nflog,'(a,3f8.3)') 'kcc2a_km10: alfa: ',km10_alfa
-    write(nflog,'(a,3f8.3)') 'kcc2a_km10: beta: ',km10_beta
 endif
 call make_eta_table(sigma_NHEJ, sigma_TMEJ, fsmin)
 
@@ -498,6 +502,7 @@ if (use_Jeggo) then
         DSB0(NHEJfast) = (1-pComplex)*Npre + (1-pComplex)*(1-pHRs)*Npost     ! fast
         DSB0(NHEJslow) = pComplex*Npre + pComplex*(1-pHRc)*Npost     ! slow
         DSB0(HR) = pHR*Npost
+        write(*,*) 'DSB0: ',DSB0
     endif
 else
     if (phase == G1_phase) then
@@ -971,7 +976,7 @@ type(cell_type), pointer :: cp
 real(8) :: dth
 real(8) :: dt = 0.001
 real(8) :: D_ATR, D_ATM, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact, CC_act0
-real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, T_G2, Kkcc2a
+real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, T_G2
 integer :: iph, it, Nt
 type(cycle_parameters_type),pointer :: ccp
 logical :: dbug
@@ -980,21 +985,9 @@ iph = cp%phase
 if (iph >= 7) iph = iph - 6     ! checkpoint phase numbers --> phase number, to continue ATM and ATR processes through checkpoints
 if (iph > G2_phase) then
     return
-!    write(*,*) 'jaiswal_update: kcell,iph: ',kcell_now,iph
-!    stop
-endif
-if (use_km10_kcc2a_dependence .and. (iph == G2_phase)) then
-!    Km10 = km10_alfa(iph) + km10_beta(iph)*kcc2a
-!    Kkcc2a = (Km10 - km10_alfa(iph))/km10_beta(iph)
-    Kkcc2a = km10_alfa(iph) + Km10*km10_beta(iph)
-else
-    Kkcc2a = Kcc2a
 endif
 Nt = int(dth/dt + 0.5)
 dbug = (iph == 2 .and. (kcell_now <= 0))
-!if (single_cell) write(nflog,*) 'Jaiswal_update: Nt: ',Nt
-!D = sum(cp%DSB(1:4))*norm_factor
-!write(*,*) 'iph,kcell,dth: ',iph, kcell_now, dth
 if (iph == G1_phase) then
     D_ATM = cp%DSB(NHEJslow)*norm_factor
     ATM_act = cp%ATM_act
@@ -1015,11 +1008,6 @@ elseif (iph == G2_phase) then
 else
     return
 endif
-!if (dbug) then
-!!    write(*,'(a,2i6,4e12.3,f6.3)') 'J: ',istep,kcell_now,D_ATM,D_ATR,ATM_act,ATR_act,CC_act/CC_tot
-!    write(*,'(a,3i6,4f8.3,f6.3)') 'J: istep, kcell_now, iph, D_ATM, ATM_act: ',istep,kcell_now,iph,D_ATM,ATM_act
-!    write(nflog,'(a,3i6,4f8.3,f6.3)') 'J: istep, kcell_now, iph, D_ATM, ATM_act: ',istep,kcell_now,iph,D_ATM,ATM_act
-!endif
 
 do it = 1,Nt
     ATM_inact = ATM_tot - ATM_act
@@ -1027,56 +1015,35 @@ do it = 1,Nt
     if (iph == G2_phase) then
         CC_inact = CC_tot - CC_act
         ATR_inact = ATR_tot - ATR_act
-!        if (dbug) then
-!            write(*,'(a,2i6,4e12.3)') 'istep,it: ',istep,it,Km10,(Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact), cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act), cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
-!            write(nflog,'(a,2i6,4e12.3)') 'istep,it: ',istep,it,Km10,(Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact), cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act), cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
-!        endif
-        dCC_act_dt = (Kkcc2a + CC_act) * CC_inact / (Km10 + CC_inact) - cp%Kt2cc * ATM_act * CC_act / (Km10t + CC_act) - cp%Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
-!        dCC_act_dt = (Kcc2a + CC_act) * CC_inact / (Km10 + CC_inact) - Kt2cc * ATM_act * CC_act / (Km10t + CC_act) - Ke2cc * ATR_act * CC_act / (Km10 + CC_act)
-        dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Km10 + ATR_inact) - Kcc2e * ATR_act * CC_act / (Km10 + CC_act)
+        dCC_act_dt = (Kcc2a + CC_act) * CC_inact / (Kmccp + CC_inact) - cp%Kt2cc * ATM_act * CC_act / (Kmccmd + CC_act) - cp%Ke2cc * ATR_act * CC_act / (Kmccrd + CC_act)
+        dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Kmrp + ATR_inact) - Kcc2e * ATR_act * CC_act / (Kmrd + CC_act)
         CC_act = CC_act + dt * dCC_act_dt
         ATR_act = ATR_act + dt * dATR_act_dt
         ATR_act = min(ATR_act, ATR_tot)
     elseif (use_ATR_S) then
-        dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Km10 + ATR_inact) - Kcc2e * ATR_act * CC_act / (Km10 + CC_act)
+        dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Kmrp + ATR_inact) - Kcc2e * ATR_act * CC_act / (Kmrd + CC_act)
         ATR_act = ATR_act + dt * dATR_act_dt
         ATR_act = min(ATR_act, ATR_tot)
     endif
-    dATM_act_dt = Kd2t * D_ATM * ATM_inact / (Km1 + ATM_inact) - Kti2t * ATM_act / (Km1 + ATM_act)    
+    dATM_act_dt = Kd2t * D_ATM * ATM_inact / (Kmmp + ATM_inact) - Kti2t * ATM_act / (Kmmd + ATM_act)    
     ATM_act = ATM_act + dt*dATM_act_dt
     ATM_act = min(ATM_act, ATM_tot)
 
-    if (dbug) then
-!       write(*,'(a,i8,4f8.4)') 'kcell,dATM_dt,ATM: ',kcell_now,dATM_act_dt,ATM_act
-!        write(nflog,'(a,i8,4f8.4)') 'kcell,dATM_dt,ATM: ',kcell_now,dATM_act_dt,ATM_act,dATR_act_dt,ATR_act
-    endif
-!    if (dbug) then
-!        write(*,'(a,3i4,3f10.4)') 'istep,it,kcell_now,D_ATM,dATM_act_dt:',istep,it,kcell_now,D_ATM,dATM_act_dt
-!        write(nflog,'(a,3i4,3f10.4)') 'istep,it,kcell_now,D_ATM,dATM_act_dt:',istep,it,kcell_now,D_ATM,dATM_act_dt
-!    endif   
     t = it*dt
-!    write(nflog,'(i6,f8.4,2f10.6)') it,t,CC_act,dCC_act_dt
 enddo
-!if (kcell_now == 1) write(*,'(a,4f8.4)') 'ATR_act, Kd2e,D_ATR, D_ATM: ',ATR_act, Kd2e,D_ATR, D_ATM
 if (dbug) then
-!    write(*,'(a,i8,4f8.4)') 'kcell,ATR,ATM,CC,dCCdt: ',kcell_now,ATR_act,ATM_act,CC_act,dCC_act_dt
-!!    write(*,'(a,2f6.1,2f8.3)') 'DSB: HR,NHEJ, D_ATR,D_ATM: ',cp%DSB(HR),cp%DSB(NHEJslow),D_ATR,D_ATM
-!    write(nflog,'(a,i8,6f8.4)') 'kcell,ATR,ATM,CC,dCCdt: ',kcell_now,ATR_act,ATM_act,CC_act,cp%Kt2cc,cp%Ke2cc,dCC_act_dt
-!!    write(nflog,'(a,2f6.1,2f8.3)') 'DSB: HR,NHEJ, D_ATR,D_ATM: ',cp%DSB(HR),cp%DSB(NHEJslow),D_ATR,D_ATM
-    write(*,'(a,2i4,4f8.4)') 'kcell,iph,ATR,ATM: ',kcell_now,iph,ATR_act,ATM_act
-    write(nflog,'(a,2i4,4f8.4)') 'kcell,iph,ATR,ATM: ',kcell_now,iph,ATR_act,ATM_act
+!    write(*,'(a,2i4,4f8.4)') 'kcell,iph,ATR,ATM: ',kcell_now,iph,ATR_act,ATM_act
+!    write(nflog,'(a,2i4,4f8.4)') 'kcell,iph,ATR,ATM: ',kcell_now,iph,ATR_act,ATM_act
 endif
 cp%ATM_act = ATM_act
 if (iph == G2_phase) then
     cp%CC_act = CC_act
     cp%ATR_act = ATR_act
-!    write(*,*) 'iph: CC_act: ',iph,CC_act
-!    cp%dCC_act_dt = dCC_act_dt
+    cp%dCC_act_dt = dCC_act_dt
 elseif (iph == S_phase .and. use_ATR_S) then
     cp%ATR_act = ATR_act
 endif
 t = t_simulation/3600.
-!if (single_cell) write(nflog,'(a,f6.2,6e12.3)') 'J: t, vars: ',t,CC_act0,cp%CC_act,cp%ATR_act,cp%ATM_act,D_ATR, D_ATM
 end subroutine
 
 !------------------------------------------------------------------------

@@ -110,7 +110,7 @@ else
 endif
 
 ! Synchronisation of cell IR
-use_synchronise = .false.
+use_synchronise = .true.
 if (use_synchronise) then
     call syncher(Nph, phase, progress)
     do i = 1,Nph
