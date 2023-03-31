@@ -2305,8 +2305,10 @@ do kcell = 1,nlist
     cp => cell_list(kcell)
     if (cp%state /= DEAD .and. cp%psurvive < 0) then
         n = n+1
-        write(*,'(a,2i6,2f8.4)') 'nondivided: kcell, phase, kt2cc,ke2cc: ',kcell, cp%phase,cp%kt2cc,cp%ke2cc
-        write(nflog,'(a,2i6,2f8.4)') 'nondivided: kcell, phase, kt2cc,ke2cc: ',kcell, cp%phase,cp%kt2cc,cp%ke2cc
+        write(*,'(a,i6,i3,3f8.4)') 'nondivided: kcell, phase, kt2cc,ke2cc,kcc2a: ',kcell, cp%phase,cp%kt2cc,cp%ke2cc,cp%kcc2a
+        write(*,*) 'fg: ',cp%fg
+        write(nflog,'(a,i6,i3,3f8.4)') 'nondivided: kcell, phase, kt2cc,ke2cc,kcc2a: ',kcell, cp%phase,cp%kt2cc,cp%ke2cc,cp%kcc2a
+        write(nflog,*) 'fg: ',cp%fg
     endif
 enddo
 write(*,*) 'Total nondivided: ',n
