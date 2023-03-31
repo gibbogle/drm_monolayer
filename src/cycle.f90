@@ -91,7 +91,7 @@ elseif (cp%phase == G2_phase) then
         if (is_radiation) then      ! post-IR
             Nwrite = 0.1*3600/DELTA_T
             if (single_cell .and. istep <= Nwrite) write(nflog,'(f6.3,2f9.6)') istep*DELTA_T/3600.0,cp%CC_act,cp%dCC_act_dt
-            if (single_cell .and. mod(istep,Nwrite) == 0) write(nflog,'(a,7f8.4)') 'G2_phase: ',istep*DELTA_T/3600.0,cp%CC_act,cp%ATR_act,cp%ATM_act,cp%DSB(2:3),cp%dCC_act_dt
+ !           if (single_cell .and. mod(istep,Nwrite) == 0) write(nflog,'(a,7f8.4)') 'G2_phase: ',istep*DELTA_T/3600.0,cp%CC_act,cp%ATR_act,cp%ATM_act,cp%DSB(2:3),cp%dCC_act_dt
             tIR = (t_simulation - t_irradiation)/3600   ! time since IR, in hours
             switch = (cp%CC_act >= CC_threshold)
         else
@@ -107,7 +107,7 @@ elseif (cp%phase == G2_phase) then
                 write(nflog,*) 'Reached mitosis at: ',t_simulation/3600
                 write(nflog,*) 'CC_act: ',cp%CC_act
             endif
-!            if (kcell_now <= 100) write(nflog,'(a,i4,3f8.3)') 'Exit G2: CC_act, threshold, t: ',kcell_now,cp%CC_act,CC_threshold,t_simulation/3600
+            if (istep == 0) write(nflog,'(a,i4,3f8.3)') 'Exit G2: CC_act, threshold, t: ',kcell_now,cp%CC_act,CC_threshold,t_simulation/3600
 !            if (cp%generation == 1) then
 !                npet = npet+1
 !                phase_exit_time_sum = t_simulation + phase_exit_time_sum + dt

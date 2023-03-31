@@ -86,7 +86,7 @@ integer, parameter :: EXTRA = 1
 integer, parameter :: INTRA = 2
 integer, parameter :: MAX_CELLTYPES = 2
 integer, parameter :: MAX_DRUGTYPES = 2
-integer, parameter :: max_nlist = 200000
+integer, parameter :: max_nlist = 300000
 integer, parameter :: NRF = 4
 integer, parameter :: LIMIT_THRESHOLD = 1500
 
@@ -154,6 +154,7 @@ type cell_type
 	logical :: active
 	integer :: state
 	logical :: Iphase
+	logical :: irradiated
 !    integer :: nspheres             ! =1 for Iphase, =2 for Mphase
 !	real(REAL_KIND) :: radius(2)	! sphere radii (um) -> cm
 !	real(REAL_KIND) :: centre(3,2)  ! sphere centre positions
@@ -230,7 +231,7 @@ type cell_type
 	real(8) :: Nlethal, Psurvive, mitosis_time
 	
 	! Jaiswal section (26/09/22)
-	real(REAL_KIND) :: CC_act, ATR_act, ATM_act, dCC_act_dt, kt2cc, ke2cc
+	real(REAL_KIND) :: CC_act, ATR_act, ATM_act, dCC_act_dt, kt2cc, ke2cc, kcc2a
 
 end type
 
@@ -547,11 +548,11 @@ logical :: include_daughters = .true.
 !logical, parameter :: phase_dist = .true.
 real(REAL_KIND) :: t_irradiation, SFave
 logical :: use_SF = .true.
-real(REAL_KIND) :: phase_hour(30)
+real(REAL_KIND) :: phase_hour(60)
 integer :: nphase_hours, next_phase_hour
 real(REAL_KIND) :: phase_dist(0:4)    ! % of cells in each phase
-real(REAL_KIND) :: recorded_phase_dist(30,0:4)   ! % of cells in each phase phase_hour after IR
-real(REAL_KIND) :: recorded_DNA_rate(30)         ! average S-phase DNA rate in each phase_hour after IR
+real(REAL_KIND) :: recorded_phase_dist(60,0:4)   ! % of cells in each phase phase_hour after IR
+real(REAL_KIND) :: recorded_DNA_rate(60)         ! average S-phase DNA rate in each phase_hour after IR
 integer, allocatable :: nphase(:,:)
 logical, parameter :: hourly_cycle_dist = .true.
 logical, parameter :: track_cell_phase = .true.
@@ -760,13 +761,14 @@ end subroutine
 ! Assumes maximum growth rate.
 ! S-phase duration is fixed.  
 ! M-phase duration has already been assigned as cp%mitosis_duration
+! Times are seconds
 !-----------------------------------------------------------------------------------------
 subroutine set_divide_volume(cp,V0)
+type(cell_type), pointer :: cp
 real(REAL_KIND) :: V0
 real(REAL_KIND) :: Tdiv, fg(4), Tfixed, Tgrowth0, Tgrowth, rVmax, V
 real(REAL_KIND) :: T_G1, T_S, T_G2, T_M
 integer :: ityp, kpar=0
-type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
 
 ityp = cp%celltype
@@ -797,23 +799,19 @@ if (use_exponential_cycletime) then
     fg = 1
 else
 #endif
-! Now set both T_S and T_M fixed
-!fg(S_phase) = 1.0
 fg(M_phase) = 1.0
 T_S = ccp%T_S
 !T_M = ccp%T_M
 T_M = cp%mitosis_duration
-!Tfixed = T_S + T_M
 Tfixed = T_M
 Tdiv = DivideTime(ityp)     ! log-normally distributed
-!Tdiv = 26*3600
 Tgrowth = Tdiv - Tfixed
 !T_G1 = Tgrowth*ccp%T_G1/(ccp%T_G1 + ccp%T_G2)
 !T_G2 = Tgrowth*ccp%T_G2/(ccp%T_G1 + ccp%T_G2)
 T_G1 = Tgrowth*ccp%T_G1/(ccp%T_G1 + ccp%T_S + ccp%T_G2)
 T_S = Tgrowth*ccp%T_S/(ccp%T_G1 + ccp%T_S + ccp%T_G2)
 T_G2 = Tgrowth*ccp%T_G2/(ccp%T_G1 + ccp%T_S + ccp%T_G2)
-!if (kcell_now <= 100) write(*,'(a,i7,f6.3)') 'set_divide_volume: T_G2: ',kcell_now,T_G2/3600
+!if (kcell_now <= 10) write(*,'(a,i7,f6.3)') 'set_divide_volume: T_G2: ',kcell_now,T_G2/3600
 fg(G1_phase) = T_G1/ccp%T_G1
 fg(S_phase) = T_S/ccp%T_S
 fg(G2_phase) = T_G2/ccp%T_G2

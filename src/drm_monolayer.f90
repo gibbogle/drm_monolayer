@@ -181,6 +181,7 @@ rad_count = 0
 ! To compute average phase time
 phase_exit_time_sum = 0
 npet = 0
+call counter
 end subroutine
 
 !----------------------------------------------------------------------------------------- 
@@ -535,8 +536,13 @@ endif
 close(nfcell)
 call logger('Finished reading input data')
 
+!call checkPD
+!stop
+
+! Try making this for each cell
 Kcc2a = get_Kcc2a(kmccp,CC_tot,cc_parameters(1)%T_G2/3600)
-write(*,*) 'kmccp, kcc2a: ',kmccp, kcc2a
+!write(*,*) 'kmccp, kcc2a: ',kmccp, kcc2a
+!write(nflog,*) 'kmccp, kcc2a: ',kmccp, kcc2a
 
 !single_cell = (use_synchronise .and. initial_count==1)
 single_cell = (initial_count==1)
@@ -800,6 +806,7 @@ ccp%T_M = log(1 + ccp%f_M)/b     ! Smith & Dendy
 ccp%T_G2 = Tc - ccp%T_G1 - ccp%T_S - ccp%T_M
 !ccp%T_G2 = -(log(1-(ccp%f_G1+ccp%f_S+ccp%f_G2)/2))/b - ccp%T_G1 - ccp%T_S
 !ccp%T_M = Tc - ccp%T_G1 - ccp%T_S - ccp%T_G2
+
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -1166,10 +1173,12 @@ real(REAL_KIND) :: fract(0:8), total
 real(REAL_KIND) :: kt2cc_min, kt2cc_max
 !integer :: phase_count(0:8), hour
 integer :: counts(NP)
-
+type(cell_type), pointer :: cp
+type(cycle_parameters_type),pointer :: ccp
+	
 !call checkInitialPhaseDistribution
 !stop
-
+ccp => cc_parameters(1)
 counts = 0
 lastID = 0
 kcell = 0
@@ -1190,12 +1199,16 @@ rsite = [0.,0.,0.]
 kt2cc_min = 9999
 kt2cc_max = 0
 do kcell = 1,initial_count
+!    write(*,*) 'PlaceCells: kcell: ',kcell,initial_count
 	call AddCell(kcell,rsite)
-	kt2cc_min = min(kt2cc_min,cell_list(kcell)%kt2cc)
-	kt2cc_max = max(kt2cc_max,cell_list(kcell)%kt2cc)
+!	write(*,*) 'Added kcell: ',kcell
+    cp => cell_list(kcell)
+	kt2cc_min = min(kt2cc_min,cp%kt2cc)
+	kt2cc_max = max(kt2cc_max,cp%kt2cc)
 	phase = cell_list(kcell)%phase
-	phase = min(phase,NP)
+	phase = min(phase,M_phase)
 	counts(phase) = counts(phase) + 1
+!    write(*,*) 'Kcc2a: ',cp%Kcc2a
 enddo
 write(*,'(a,2f10.4)') 'kt2cc min, max: ',kt2cc_min,kt2cc_max
 write(nflog,'(a,2f10.4)') 'kt2cc min, max: ',kt2cc_min,kt2cc_max
@@ -1292,8 +1305,14 @@ cp%ATM_act = 0
 !    cp%N_Ch2 = 0
 !    cp%irrepairable = .false.
     ! Need to assign phase, volume to complete phase, current volume
+    if (use_km10_kcc2a_dependence) then
+        cp%Kcc2a = get_Kcc2a(kmccp,CC_tot,cp%fg(3)*ccp%T_G2/3600)
+    endif
     call SetInitialCellCycleStatus(kcell,cp)
-!    if (cp%phase == M_phase) write(*,'(a,i8,f6.3)') 'mitosis_duration: ',kcell,cp%mitosis_duration/3600
+    if (cp%phase == M_phase) then
+        write(*,'(a,i8,f6.3)') 'M_phase, mitosis_duration: ',kcell,cp%mitosis_duration/3600
+        stop
+    endif
 !endif
 !cp%dVdt = max_growthrate(ityp)
 !if (use_metabolism) then	! Fraction of I needed to divide = fraction of volume needed to divide
@@ -1439,7 +1458,8 @@ T_G2 = ccp%T_G2/fp(3)
 T_M = cp%mitosis_duration
 
 if (kcell <= 10) then
-    write(*,'(a,i4,9f8.3)') 'kcell,fg,Tc,T_M,sum: ',kcell,fg(:),Tc/3600,T_M/3600,(T_G1+T_S+T_G2+T_M)/3600
+    write(*,'(a,i4,8f6.3)') 'kcell,fg,T_G1-M: ',kcell,fg(:),T_G1/3600,T_S/3600,T_G2/3600,T_M/3600
+    write(nflog,'(a,i4,8f6.3)') 'kcell,fg,T_G1-M: ',kcell,fg(:),T_G1/3600,T_S/3600,T_G2/3600,T_M/3600
 endif
 if (use_synchronise) then
     if (kcell == 1) then
@@ -1464,7 +1484,7 @@ else
     R = par_uni(kpar)
     t = -(1/b)*log(1 - R/2)     ! cycle progression, log-normal r.v. (t/Tc = fractional progression)
 endif
-!if (kcell <= 10) write(*,*) 'kcell, t: ',kcell,t/Tc
+!if (kcell <= 10) write(*,*) 'kcell, t/Tc: ',kcell,t/Tc
 tswitch(1) = T_G1 
 tswitch(2) = tswitch(1) + T_S
 tswitch(3) = tswitch(2) + T_G2
@@ -1509,10 +1529,10 @@ elseif (t <= tswitch(3)) then
     if (use_Jaiswal) then   ! need to initialise CC_act
         cp%DSB = 0
         dth = (t - tswitch(2))/3600
-        if (single_cell) write(*,*) 'SetInitialCellCycleStatus: dth: ',dth
+        if (single_cell) write(nflog,*) 'SetInitialCellCycleStatus: dth: ',dth
         call Jaiswal_update(cp,dth)
-!        if (single_cell) write(*,*) 'SetInitialCellCycleStatus: initial CC_act: ',cp%CC_act
-!        if (kcell <= 1000) write(nflog,'(a,i6,2f8.1,2f8.3)') 'SetInitialCellCycleStatus: dth,initial CC_act: ',kcell,dth,T_G2,cp%progress,cp%CC_act
+        if (single_cell) write(nflog,*) 'SetInitialCellCycleStatus: initial CC_act: ',cp%CC_act
+        if (cp%CC_act > CC_threshold) write(nflog,'(a,i6,f8.1,3f8.3)') 'SetInitialCellCycleStatus: dth,T_G2,progress,CC_act: ',kcell,dth,T_G2/3600,cp%progress,cp%CC_act
     endif
 else
 !    cp%fp = metab*f_CP/fg(M_phase)      ! not used
@@ -1525,7 +1545,7 @@ else
     cp%phase = dividing
  !   write(nflog,'(a,i6,f8.1)') 'Cell dividing: t_start_mitosis: ',kcell,cp%t_start_mitosis
 !    cp%progress = 1.0
-    if (kcell <= 100) write(*,'(a,i6,2f6.3)') 'SetInitialCellCycleStatus: mitosis_duration, t_start: ',kcell,cp%mitosis_duration/3600,cp%t_start_mitosis/3600
+!    if (kcell <= 10) write(*,'(a,2i6,2f6.3)') 'SetInitialCellCycleStatus: phase, mitosis_duration, t_start: ',kcell,cp%phase,cp%mitosis_duration/3600,cp%t_start_mitosis/3600
 endif
 if (single_cell) then
     write(*,*)
@@ -1935,7 +1955,7 @@ logical :: dbug
 !call test_Jaiswal
 !res = 1
 !return
-
+if (istep < 2) call counter
 mp => master_cell%metab
 
 t_simulation = istep*DELTA_T	! seconds
@@ -2114,7 +2134,14 @@ endif
 if (compute_cycle .or. output_DNA_rate) then
     if (next_phase_hour > 0) then  ! check if this is a phase_hour
         if (real(istep)/nthour >= phase_hour(next_phase_hour)) then   ! record phase_dist
-!            write(*,*) 'Reached phase hour: ',next_phase_hour,phase_hour(next_phase_hour)
+            if (next_phase_hour == 1) then
+                write(*,*) 'Reached phase hour: ',next_phase_hour,phase_hour(next_phase_hour)
+                write(*,'(a,4i8)') 'count: ',phase_count(1:4)
+                write(nflog,*) 'Reached phase hour: ',next_phase_hour,phase_hour(next_phase_hour)
+                write(nflog,'(a,4i8)') 'count: ',phase_count(1:4)
+                write(nflog,'(a,4f8.3)') 'dist: ',phase_dist(1:4)
+                write(nflog,'(a,4f8.3)') '%dist: ',100*phase_dist(1:4)/sum(phase_dist(1:4))
+            endif
 	        if (compute_cycle) then
 !	            call get_phase_distribution(phase_count)
 !	            total = sum(phase_count)
@@ -2162,7 +2189,7 @@ if (dbug .or. mod(istep,nthour) == 0) then
     nphase(hour,:) = nphaseh
 	ntphase = nphaseh + ntphase
 !	write(nflog,*)
-	write(nflog,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells, ' N reached mitosis: ',NPsurvive    !,' Napop: ',Napop    !, &
+	write(nflog,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells   !, ' N reached mitosis: ',NPsurvive    ,' Napop: ',Napop    !, &
     call get_phase_distribution(phase_count)
     total = sum(phase_count(1:4))
     phase_dist = 100*phase_count/total
@@ -2353,15 +2380,15 @@ end function
 !-----------------------------------------------------------------------------------------
 subroutine completed
 !real(REAL_KIND) :: fract(0:4)
-integer :: kcell, ph, nir(4), nsum, kcellmax, i, ityp
+integer :: kcell, ph, nir(4), nsum, kcellmax, i, j, ityp
 real(REAL_KIND) :: sftot(4), sfsum, sfmax
 integer :: tadjust
 type(cycle_parameters_type), pointer :: ccp
 type(cell_type), pointer :: cp
 logical :: only_M_phase = .false.
 logical :: PDS4 = .false.
-real(REAL_KIND) :: phi, PDS4_M(3) = [0.191, 0.414286, 0.732812]
-real(REAL_KIND) :: normalised_phase_dist(30,0:4)   
+real(REAL_KIND) :: dt, phi, PDS4_M(3) = [0.191, 0.414286, 0.732812]
+real(REAL_KIND) :: normalised_phase_dist(60,0:4)   
 
 if (compute_cycle) then
     write(nflog,*) 'Completed compute cycle'
@@ -2372,12 +2399,14 @@ if (compute_cycle) then
         tadjust = event(1)%time/3600
     endif
     do i = 1,nphase_hours
-        write(nflog,'(f6.1,4x,4f8.4)') phase_hour(i)-tadjust,recorded_phase_dist(i,1:4)
-        write(*,'(f6.1,4x,4f8.4)') phase_hour(i)-tadjust,recorded_phase_dist(i,1:4)
+        write(nflog,'(f6.1,4x,4f8.3)') phase_hour(i)-tadjust,recorded_phase_dist(i,1:4)
+        write(*,'(f6.1,4x,4f8.3)') phase_hour(i)-tadjust,recorded_phase_dist(i,1:4)
         if (PDS4) then
             phi = phi + (recorded_phase_dist(i,4) - PDS4_M(i))**2
         endif
     enddo
+    write(*,*) 'wrote recorded_phase_dist'
+    write(nflog,*) 'wrote recorded_phase_dist'
     if (PDS4) then 
         write(nflog,'(a)') '    hour    expt   model   error'
         write(*,'(a)') '    hour    expt   model   error'
@@ -2403,8 +2432,13 @@ if (compute_cycle) then
 
                 write(*,*) 'Normalising PDs'
                 write(nflog,*) 'Normalising PDs'
+                write(nflog,'(a,4f8.3)') 'control: ',control_ave(1:4)
+                dt = 0.5
                 do i = 1,nphase_hours
-                    normalised_phase_dist(i,1:4) = recorded_phase_dist(i,1:4)/control_ave(1:4)
+                    do j = 1,4
+                        normalised_phase_dist(i,j) = recorded_phase_dist(i,j)/control_ave(j)
+                    enddo
+                    write(nflog,'(f6.1,4f8.3)') (i-1)*dt,normalised_phase_dist(i,1:4)
                 enddo
                 write(*,*) 'write PEST output'
                 if (G2M_only) then
@@ -2730,6 +2764,7 @@ else
 	res = 1
 endif
 execute_t1 = wtime()
+call counter
 
 end subroutine
 
@@ -2918,6 +2953,85 @@ if (par_zig_init) then
 	call par_zigfree
 endif
 call logger('freed par_zig')
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+! To test different ways of specifying phase durations
+!-----------------------------------------------------------------------------------------
+subroutine checkPD
+real(8) :: Tc, b, V0
+integer :: kcell, counts(5), ityp = 1
+logical :: ok
+type(cycle_parameters_type),pointer :: ccp
+type(cell_type), pointer :: cp
+
+ccp => cc_parameters(ityp)
+Tc = divide_time_mean(ityp)/3600    ! seconds -> hours
+b = log(2.0)/Tc
+ccp%T_G1 = -(log(1-ccp%f_G1/2))/b
+ccp%T_S = -(log(1-(ccp%f_G1+ccp%f_S)/2))/b - ccp%T_G1
+ccp%T_M = log(1 + ccp%f_M)/b     ! Smith & Dendy
+ccp%T_G2 = Tc - ccp%T_G1 - ccp%T_S - ccp%T_M
+
+write(*,'(a,4f8.2)') 'T_G1, T_S, T_G2, T_M (Dendy): ',ccp%T_G1, ccp%T_S, ccp%T_G2, ccp%T_M
+write(nflog,'(a,4f8.2)') 'T_G1, T_S, T_G2, T_M (Dendy): ',ccp%T_G1, ccp%T_S, ccp%T_G2, ccp%T_M
+! hours to seconds
+ccp%T_G1 = 3600*ccp%T_G1
+ccp%T_S = 3600*ccp%T_S
+ccp%T_G2 = 3600*ccp%T_G2
+ccp%T_M = 3600*ccp%T_M
+Mnodes = 1
+call ArrayInitialisation(ok)
+if (.not.ok) then
+    write(*,*) 'Not OK'
+    stop
+endif
+write(*,*) 'Initialised arrays'
+! Create cells and assign initial cycle status
+do kcell = 1,initial_count
+    write(*,*) 'kcell: ',kcell
+    cp => cell_list(kcell)
+    cp%ID = kcell
+    cp%celltype = 1
+    cp%state = ALIVE
+    cp%generation = 1
+    cp%rad_state = 0
+    cp%mitosis_duration = get_mitosis_duration()
+!    write(*,*) 'mitosis_duration: ',cp%mitosis_duration
+    call set_divide_volume(cp, V0)  ! sets %divide_volume and %divide_time
+!    if (kcell <= 10) write(*,'(a,i6,4f8.1)') 'kcell,T_G1,T_S,T_G2,T_M: ',kcell,ccp%T_G1,ccp%T_S,ccp%T_G2,ccp%T_M
+!    write(*,*) 'divide_time, fg: ',cp%divide_time,cp%fg
+!    stop
+    call SetInitialCellCycleStatus(kcell,cp)
+enddo
+! Determine phase distribution
+Ncells = initial_count
+counts = 0
+do kcell = 1,Ncells
+    cp => cell_list(kcell)
+    counts(cp%phase) = counts(cp%phase) + 1
+enddo
+write(*,'(a,5i6)') 'counts: ',counts
+write(*,'(a,5f8.3)') 'PD: ',counts/real(Ncells)
+write(*,'(a,4f8.3)') 'control: ',ccp%f_G1,ccp%f_S,ccp%f_G2,ccp%f_M
+write(nflog,'(a,5i6)') 'counts: ',counts
+write(nflog,'(a,5f8.3)') 'PD: ',counts/real(Ncells)
+write(nflog,'(a,4f8.3)') 'control: ',ccp%f_G1,ccp%f_S,ccp%f_G2,ccp%f_M
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+subroutine counter
+integer :: kcell, iph, counts(4)
+
+counts = 0
+do kcell = 1,Ncells
+    iph = cell_list(kcell)%phase
+    iph = min (iph,M_phase)
+    counts(iph) = counts(iph) + 1
+enddo
+write(*,'(a,5i6)') 'counter, istep: ',istep,counts  
+write(nflog,'(a,5i6)') 'counter, istep: ',istep,counts  
 end subroutine
 
 end module

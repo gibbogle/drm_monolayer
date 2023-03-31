@@ -652,7 +652,9 @@ logical :: changed, ok
 integer :: k, kcell, nlist0, ityp, idrug, prev_phase, kpar=0
 type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
-real(REAL_KIND) :: rr(3), c(3), rad, d_desired, R, rrsum, pdeath, mitosis_duration
+real(REAL_KIND) :: rr(3), c(3), rad, d_desired, R, rrsum, pdeath, mitosis_duration, f_CP
+real(REAL_KIND) :: fslow(3)
+integer :: nslow(3)
 integer, parameter :: MAX_DIVIDE_LIST = 100000
 integer :: ndivide, divide_list(MAX_DIVIDE_LIST)
 logical :: drugkilled, radkilled
@@ -663,6 +665,8 @@ changed = .false.
 nlist0 = nlist
 ndivide = 0
 
+fslow = 0
+nslow = 0
 do kcell = 1,nlist0
 	kcell_now = kcell
 	if (colony_simulation) then
@@ -685,13 +689,17 @@ do kcell = 1,nlist0
     mitosis_duration = cp%mitosis_duration
     prev_phase = cp%phase
 	if (cp%phase < M_phase) then
-	    call growcell(cp,dt)
+	    call growcell(cp,dt,f_CP)
+	    if (cp%irradiated) then
+	        nslow(cp%phase) = nslow(cp%phase) + 1
+	        fslow(cp%phase) = fslow(cp%phase) + f_CP
+	    endif
 	endif
 !	if (cp%dVdt > 0) then
         call log_timestep(cp, ccp, dt)
 !    endif
     if (cp%phase == M_phase) then
-!        write(nflog,'(a,i6,f6.3)') 'Enter M_phase: kcell, time: ',kcell_now,t_simulation/3600
+        if (istep == 0) write(nflog,'(a,i6,f6.3)') 'Enter M_phase: kcell, time: ',kcell_now,t_simulation/3600
 !        write(nflog,*)
 		cp%mitosis = 0
 		cp%t_start_mitosis = tnow
@@ -712,10 +720,10 @@ do kcell = 1,nlist0
 		enddo
 		if (drugkilled) cycle
 		cp%mitosis = (tnow - cp%t_start_mitosis)/mitosis_duration
-        if (kcell == -27) write(nflog,'(a,i6,3f8.1,f8.3)') 'grower: kcell, mitosis: ',kcell,tnow, cp%t_start_mitosis,mitosis_duration,cp%mitosis
+!        if (istep == 0) write(nflog,'(a,i6,3f8.1,f8.3)') 'grower: kcell, mitosis: ',kcell,tnow, cp%t_start_mitosis,mitosis_duration,cp%mitosis
 		
         if (cp%mitosis >= 1) then
-            if (kcell == -27) write(nflog,*) 'grower: divide cell: ',kcell
+            if (istep == 0) write(nflog,*) 'grower: divide cell: ',kcell
 !            write(nflog,'(a,i6,f6.3)') 'Exit M_phase: kcell, time: ',kcell_now,t_simulation/3600
 !         write(nflog,*)
 !			divide = .true.
@@ -746,6 +754,12 @@ do kcell = 1,nlist0
 		divide_list(ndivide) = kcell
 	endif
 enddo
+do k = 1,3
+    if (nslow(k) > 0) then
+        fslow(k) = fslow(k)/nslow(k)
+    endif
+enddo
+!if (mod(istep,1) == 0) write(nflog,'(a,2i6,4x,2f8.3)') 'nslow, fslow: ',nslow(1:2),fslow(1:2)
 do k = 1,ndivide
 	changed = .true.
 	kcell = divide_list(k)
@@ -764,11 +778,11 @@ end subroutine
 ! Need to check phase-dependence of growth
 ! colony_simulation not fixed
 !-----------------------------------------------------------------------------------------
-subroutine growcell(cp, dt)
+subroutine growcell(cp, dt, f_CP)
 type(cell_type), pointer :: cp
-real(REAL_KIND) :: dt
+real(REAL_KIND) :: dt, f_CP
 real(REAL_KIND) :: Cin_0(NCONST), Cex_0(NCONST)		! at some point NCONST -> MAX_CHEMO
-real(REAL_KIND) :: dVdt,  Vin_0, dV,  metab_O2, metab_glucose, metab, Cdrug(2), f_CP
+real(REAL_KIND) :: dVdt,  Vin_0, dV,  metab_O2, metab_glucose, metab, Cdrug(2)
 integer :: ityp, iph
 logical :: oxygen_growth, glucose_growth, tagged
 
@@ -942,9 +956,11 @@ type(cell_type), pointer :: cp1, cp2
 type(cycle_parameters_type), pointer :: ccp
 integer :: kpar = 0
 
-!write(logmsg,*) 'divider: ',kcell1 
+!write(nflog,*) 'divider: ',kcell1 
 !call logger(logmsg)
 ok = .true.
+ityp = 1
+ccp => cc_parameters(ityp)
 ndivided = ndivided + 1
 if (colony_simulation) then
     cp1 => ccell_list(kcell1)
@@ -958,8 +974,6 @@ else
 !	    stop
 !	endif
 endif
-!stop
-
 
 cp1%state = ALIVE
 cp1%generation = cp1%generation + 1
@@ -972,6 +986,7 @@ cp1%birthtime = tnow
 !cp1%fg = gfactor
 !call set_divide_volume(kcell1, V0)
 kcell_now = kcell1
+cp1%mitosis_duration = get_mitosis_duration()
 call set_divide_volume(cp1, V0)
 !dVdt = cp1%dVdt
 !cp1%dVdt = dVdt/cp1%fg
@@ -982,7 +997,6 @@ call set_divide_volume(cp1, V0)
 ! Set cell's mitosis duration as a Gaussian rv
 !R = par_rnor(kpar)	! N(0,1)
 !cp1%mitosis_duration = (1 + mitosis_std*R)*ccp%T_M
-cp1%mitosis_duration = get_mitosis_duration()
 cp1%mitosis = 0
 cfse0 = cp1%CFSE
 cp1%CFSE = generate_CFSE(cfse0/2)
@@ -1039,7 +1053,9 @@ cp1%t_divide_last = tnow
 cp1%CC_act = CC_act0
 cp1%ATR_act = 0
 cp1%ATM_act = 0
-
+cp1%Kcc2a = get_Kcc2a(kmccp,CC_tot,cp1%fg(G2_phase)*ccp%T_G2/3600)
+!write(nflog,'(a,i6,f8.3)') 'divider kcell1, Kcc2a: ',kcell1,cp1%kcc2a
+cp1%irradiated = .false.
 if (is_radiation .and. use_SF) return   ! in this case there is no need to actually have the cell divide
 
 ! Second cell
@@ -1112,6 +1128,8 @@ if (cp2%radiation_tag) then
 endif
 cp2%DSB = 0
 cp2%totDSB0 = 0
+cp2%Kcc2a = get_Kcc2a(kmccp,CC_tot,cp2%fg(G2_phase)*ccp%T_G2/3600)
+!write(nflog,'(a,i6,f8.3)') 'divider kcell2, Kcc2a: ',kcell2,cp2%kcc2a
 !cp2%Psurvive = 0
 !if (colony_simulation) write(*,'(a,i6,2e12.3)') 'new cell: ',kcell2,cp2%V,cp2%divide_volume
 end subroutine

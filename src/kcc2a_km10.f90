@@ -8,24 +8,33 @@ contains
 !-------------------------------------------------------------------------------------------
 subroutine newton(x0,t0,CC_tot,kmccp,Tph)
 real(8) :: x0, t0, CC_tot, kmccp, Tph
-real(8) :: f0, f1, dfdx, dx, x1
+real(8) :: f0, f1, dfdx, dx, x1, x,t
 integer :: n
 
 dx = 0.01
 n = 0
+x = x0
+t = t0
 do
     n = n+1
-    t0 = tmitosis(CC_tot,x0,kmccp)
-    f0 = t0 - Tph
-    dfdx = (tmitosis(CC_tot,x0+dx,kmccp) - t0)/dx
+    t = tmitosis(CC_tot,x,kmccp)
+    f0 = t - Tph
+    dfdx = (tmitosis(CC_tot,x+dx,kmccp) - t)/dx
     if (dfdx == 0) exit
-    x1 = x0 - f0/dfdx
-    if (abs(x0-x1)/x0 < 0.001) exit
+    x1 = x - f0/dfdx
+    if (abs(x-x1)/x < 0.002) exit
 !    write(*,'(i4,4f8.4)') n,dfdx,x0,x1,f0
-    x0 = x1
-    t0 = tmitosis(CC_tot,x0,kmccp)
-    if (n > 10) stop
+    x = x1
+    t = tmitosis(CC_tot,x,kmccp)
+    if (n > 20) then
+        write(*,*) 'newton, n > 20'
+        write(*,'(a,3f8.3)') 'Initial x0, t0, Tph: ',x0,t0,Tph
+        write(*,'(a,2f8.3)') 'Final x, t: ',x,t
+        stop
+    endif
 enddo
+x0 = x
+t0 = t
 end subroutine
 
 !-------------------------------------------------------------------------------------------
@@ -54,11 +63,11 @@ end function
 function get_Kcc2a(kmccp, CC_tot, T_G2) result(kcc2a)
 real(8) :: kmccp, CC_tot, T_G2, kcc2a
 real(8) :: x0, t0
-real(8),parameter :: alfa = -2.3, beta = 0.55
+real(8),parameter :: alfa = -1.0, beta = 0.45
 
 x0 = alfa + beta*kmccp      ! initial guess
 t0 = tmitosis(CC_tot,x0,kmccp)
-write(*,*) 't0,T_G2: ',t0,T_G2
+!write(*,*) 't0,T_G2: ',t0,T_G2
 call newton(x0,t0,CC_tot,kmccp,T_G2)    ! find x0 = kcc2a such that tmitosis = T_G2
 kcc2a = x0
 end function

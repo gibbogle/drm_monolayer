@@ -93,7 +93,7 @@ real(8) :: CC_tot, ATR_tot, ATM_tot, CC_act0, CC_threshold, norm_factor
 real(8) :: km10_alfa, km10_beta     ! for G2 only
 logical :: use_Jaiswal = .true.
 logical :: vary_km10 = .true.
-real(8) :: jaiswal_std = 0.2    ! 0.4
+real(8) :: jaiswal_std = 0.4
 logical :: use_ATR_S = .false.
 
 real(8) :: ATMsum, ATRsum, Sthsum, G2thsum(2)
@@ -318,10 +318,14 @@ elseif (iphase_hours == 4) then    ! this is the synchronised IR case
     phase_hour(1:5) = [40, 0, 0, 0, 0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 elseif (mod(iphase_hours,10) == 7) then    ! this is the compute_cycle case for multiple times, no PEST
     compute_cycle = .true.
+    normalise = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
-    nphase_hours = 25
+    nphase_hours = 49
     next_phase_hour = 1
-    phase_hour(1:25) = [0.5,1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,8.5,9.0,9.5,10.0,10.5,11.0,11.5,12.0,24.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)   
+    do j = 1,49
+        phase_hour(j) = (j-1)*0.5
+    enddo
+!    phase_hour(1:25) = [0.5,1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,8.5,9.0,9.5,10.0,10.5,11.0,11.5,12.0,24.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)   
 elseif (mod(iphase_hours,10) == 8) then    ! this is the compute_cycle case for M%-only experiments
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
@@ -448,6 +452,7 @@ integer, parameter :: option = 2
 type(cycle_parameters_type),pointer :: ccp
 logical :: use_Jeggo = .true.
 
+cp%irradiated = .true.
 ccp => cc_parameters(1)
 phase = cp%phase
 cp%phase0 = min(phase, M_phase)
@@ -831,6 +836,12 @@ end function
 ! Best to turn off pATR in S-phase by setting katr1s = katr3s = 0
 ! Now slowdown is acting in G1-phase and S-phase, and only affected by pATM
 ! fslow in computed for G2, but not used because G2 is controlled by Jaiswal.
+! Slowdown must occur only for cells that were irradiated.  
+! This means for cells that were present at IR.  In other words:
+! Initially, every cell has cp%irradiated = false
+! At IR, every cell has cp%irradiated = true
+! At cell division, each daughter cell should have cp%irradiated = false
+! Fixed: 30/03/2023
 !------------------------------------------------------------------------
 subroutine get_slowdown_factors(cp,fATM,fATR)
 type(cell_type), pointer :: cp
@@ -839,6 +850,11 @@ real(REAL_KIND) :: fATM, fATR
 real(REAL_KIND) :: pATM, pATR, k3, k4, N_DSB, atm, atr
 logical :: OK
 
+if (.not.cp%irradiated) then
+    fATM = 1
+    fATR = 1
+    return
+endif
 iph = cp%phase
 if (iph > G2_phase) then
     write(*,*) 'Error: get_slowdown_factors called with iph = ',iph
@@ -975,7 +991,7 @@ type(cell_type), pointer :: cp
 real(8) :: dth
 real(8) :: dt = 0.001
 real(8) :: D_ATR, D_ATM, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact, CC_act0
-real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, T_G2
+real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, T_G2, Kkcc2a
 integer :: iph, it, Nt
 type(cycle_parameters_type),pointer :: ccp
 logical :: dbug
@@ -1007,14 +1023,19 @@ elseif (iph == G2_phase) then
 else
     return
 endif
-
+if (single_cell) write(nflog,*) 'CC_act: ',CC_act
+if (use_km10_kcc2a_dependence) then
+    Kkcc2a = cp%Kcc2a
+else
+    Kkcc2a = Kcc2a
+endif
 do it = 1,Nt
     ATM_inact = ATM_tot - ATM_act
     ATR_inact = ATR_tot - ATR_act
     if (iph == G2_phase) then
         CC_inact = CC_tot - CC_act
         ATR_inact = ATR_tot - ATR_act
-        dCC_act_dt = (Kcc2a + CC_act) * CC_inact / (Kmccp + CC_inact) - cp%Kt2cc * ATM_act * CC_act / (Kmccmd + CC_act) - cp%Ke2cc * ATR_act * CC_act / (Kmccrd + CC_act)
+        dCC_act_dt = (Kkcc2a + CC_act) * CC_inact / (Kmccp + CC_inact) - cp%Kt2cc * ATM_act * CC_act / (Kmccmd + CC_act) - cp%Ke2cc * ATR_act * CC_act / (Kmccrd + CC_act)
         dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Kmrp + ATR_inact) - Kcc2e * ATR_act * CC_act / (Kmrd + CC_act)
         CC_act = CC_act + dt * dCC_act_dt
         ATR_act = ATR_act + dt * dATR_act_dt
