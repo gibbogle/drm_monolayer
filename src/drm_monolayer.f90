@@ -2190,6 +2190,7 @@ if (dbug .or. mod(istep,nthour) == 0) then
 	ntphase = nphaseh + ntphase
 !	write(nflog,*)
 	write(nflog,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells   !, ' N reached mitosis: ',NPsurvive    ,' Napop: ',Napop    !, &
+	write(*,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells   !, ' N reached mitosis: ',NPsurvive    ,' Napop: ',Napop    !, &
     call get_phase_distribution(phase_count)
     total = sum(phase_count(1:4))
     phase_dist = 100*phase_count/total
@@ -2284,10 +2285,10 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
     write(logmsg,'(a,e12.4,f8.3)') 'SFave,log10(SFave): ',SFave,log10(SFave)
     call logger(logmsg)
     call completed
-    write(nflog,'(a)') 'nphase:'
-    do hour = 0,istep/nthour
-        write(nflog,'(i3,8i8)') hour,nphase(hour,:)
-    enddo
+!    write(nflog,'(a)') 'nphase:'
+!    do hour = 0,istep/nthour
+!        write(nflog,'(i3,8i8)') hour,nphase(hour,:)
+!    enddo
     res = 1
 endif
 

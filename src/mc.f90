@@ -142,6 +142,12 @@ logical :: check_G2_slow = .true.
 integer :: nslow_sum
 real(8) :: pHR_sum, pNHEJslow_sum, fdecay_sum
 
+! Iliakis
+integer :: nIliakis = 1
+real(8) :: kIliakis = 2
+real(8) :: fIliakis
+logical :: use_Iliakis = .true.
+
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
@@ -481,8 +487,8 @@ if (use_Jeggo) then
     End If
     Npost = totDSB0 - Npre
     If (f_S > 0) Then
-        pHRs = pHRs_max * ((1 - rmin) * fdecay(th) + rmin)
-        pHRc = pHRc_max * ((1 - rmin) * fdecay(th) + rmin)
+        pHRs = fIliakis*pHRs_max * ((1 - rmin) * fdecay(th) + rmin)
+        pHRc = fIliakis*pHRc_max * ((1 - rmin) * fdecay(th) + rmin)
     else
         pHRs = 0
         pHRc = 0

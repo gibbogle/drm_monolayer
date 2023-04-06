@@ -92,6 +92,13 @@ pHR_sum = 0
 pNHEJslow_sum = 0
 fdecay_sum = 0
 
+
+if (use_Iliakis) then
+    fIliakis = kIliakis**nIliakis/(kIliakis**nIliakis + dose**nIliakis)
+else
+    fIliakis = 1.0
+endif
+
 if (use_G1_CP_factor) then
     G1_CP_time = G1_CP_factor*dose*3600
 endif
