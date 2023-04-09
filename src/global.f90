@@ -563,6 +563,7 @@ real(REAL_KIND) :: G1_delay, S_delay, G2_delay  ! test values are specified in d
 real(REAL_KIND) :: totNmis = 0
 real(REAL_KIND) :: G2_katm3_factor=1.0, G2_katm4_factor=1.0, G2_katr3_factor=1.0, G2_katr4_factor=1.0
 integer :: maxhours = 99
+logical :: overstepped
 
 logical :: use_inhibiter = .false.
 logical :: use_fixed_CP = .false.

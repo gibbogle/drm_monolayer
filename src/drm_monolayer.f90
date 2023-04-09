@@ -2226,10 +2226,14 @@ endif
 !write(nflog,'(a,3i8)') 'cell, state, phase: ',kcell,cp%state,cp%phase
 !write(*,'(a,3i8)') 'cell, state, phase: ',kcell,cp%state,cp%phase
 istep = istep + 1
-if (istep == maxhours*nthour) then
+overstepped = (istep == maxhours*nthour)
+if (overstepped) then
     write(*,*) 'overstepped the mark'
-    call nondivided()
-    stop
+!    call nondivided()
+!    stop
+    call completed
+    res = 1
+    return
 endif
 !write(*,*) 'end simulate_step: t_simulation: ',t_simulation
 !call averages
@@ -2393,6 +2397,10 @@ logical :: PDS4 = .false.
 real(REAL_KIND) :: dt, phi, PDS4_M(3) = [0.191, 0.414286, 0.732812]
 real(REAL_KIND) :: normalised_phase_dist(60,0:4)   
 
+if (overstepped) then
+    SFave = 1.0E-6
+    goto 99
+endif
 if (compute_cycle) then
     write(nflog,*) 'Completed compute cycle'
     write(*,*) 'Completed compute cycle'
@@ -2552,7 +2560,7 @@ endif
 !call logger(logmsg)
 !write(*,'(a,f8.3)') 'Final average pATM: ',ATMsum/nirradiated
 !write(*,'(a,f8.3)') 'Final average pATR: ',ATRsum/nirradiated
-
+99 continue
 if (use_PEST) then
     if (use_SF) then
         write(nfres,'(e15.6)') log10(SFave)
