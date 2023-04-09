@@ -93,7 +93,7 @@ real(8) :: CC_tot, ATR_tot, ATM_tot, CC_act0, CC_threshold, norm_factor
 real(8) :: km10_alfa, km10_beta     ! for G2 only
 logical :: use_Jaiswal = .true.
 logical :: vary_km10 = .true.
-real(8) :: jaiswal_std = 0.4
+real(8) :: jaiswal_std = 0.0
 logical :: use_ATR_S = .false.
 
 real(8) :: ATMsum, ATRsum, Sthsum, G2thsum(2)
