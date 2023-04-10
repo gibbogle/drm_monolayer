@@ -900,10 +900,15 @@ elseif (iph == S_phase) then
 endif
 k3 = K_ATM(iph,3)
 k4 = K_ATM(iph,4)
+if (kcell_now == -3) write(*,'(a,i6,3e12.4)') 'get_slowdown_factors: kcell,k3,k4,atm: ',kcell_now,k3,k4,atm
 if (use_exp_slowdown) then
     fATM = exp(-k4*atm)
 else
-    fATM = max(0.01,1 - k3*atm/(k4 + atm))
+    if ((k4 + atm) > 0) then
+        fATM = max(0.01,1 - k3*atm/(k4 + atm))
+    else
+        fATM = 1.0
+    endif
 endif
 if (iph == S_phase .and. use_ATR_S) then
     k3 = K_ATR(iph,3)   !*G2_katr3_factor
@@ -955,7 +960,7 @@ else
             fslow = max(0.0,fATM + fATR - 1)
         else
             fslow = fATM*fATR
-            if (kcell_now <= -10) then
+            if (kcell_now == -3) then
                 write(*,'(a,i6,i4,3f6.3)') 'fslow: ',kcell_now,iph,fATM,fATR,fslow
                 write(nflog,'(a,i6,i4,3f6.3)') 'fslow: ',kcell_now,iph,fATM,fATR,fslow
             endif
