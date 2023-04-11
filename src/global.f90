@@ -185,6 +185,8 @@ type cell_type
 	real(REAL_KIND) :: p_rad_death
 	real(REAL_KIND) :: p_drug_death(MAX_DRUGTYPES)
 	real(REAL_KIND) :: t_start_mitosis
+	real(REAL_KIND) :: t_start_G2
+	real(REAL_KIND) :: G2_time
 	real(REAL_KIND) :: mitosis
 	real(REAL_KIND) :: CP_delay
 !	logical :: growth_delay

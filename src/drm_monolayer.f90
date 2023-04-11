@@ -1170,7 +1170,7 @@ logical :: ok
 integer :: kcell, k, ichemo, ityp, site(3), phase
 real(REAL_KIND) :: rsite(3)
 real(REAL_KIND) :: fract(0:8), total
-real(REAL_KIND) :: kt2cc_min, kt2cc_max
+real(REAL_KIND) :: kt2cc_min, kt2cc_max, kcc2a_sum
 !integer :: phase_count(0:8), hour
 integer :: counts(NP)
 type(cell_type), pointer :: cp
@@ -1198,6 +1198,10 @@ write(*,*) '!!!!!!!!!!!!!!!!! use_synchronise: ',use_synchronise
 rsite = [0.,0.,0.]
 kt2cc_min = 9999
 kt2cc_max = 0
+if (use_km10_kcc2a_dependence) then
+     Kcc2a_ave = get_Kcc2a(kmccp,CC_tot,ccp%T_G2/3600)
+endif
+kcc2a_sum = 0
 do kcell = 1,initial_count
 !    write(*,*) 'PlaceCells: kcell: ',kcell,initial_count
 	call AddCell(kcell,rsite)
@@ -1205,11 +1209,16 @@ do kcell = 1,initial_count
     cp => cell_list(kcell)
 	kt2cc_min = min(kt2cc_min,cp%kt2cc)
 	kt2cc_max = max(kt2cc_max,cp%kt2cc)
-	phase = cell_list(kcell)%phase
+	phase = cp%phase
 	phase = min(phase,M_phase)
 	counts(phase) = counts(phase) + 1
+	if (phase == G2_phase) then
+	    cp%t_start_G2 = 0
+	endif
+	kcc2a_sum = kcc2a_sum + cp%kcc2a
 !    write(*,*) 'Kcc2a: ',cp%Kcc2a
 enddo
+write(nflog,'(a,2f8.3)') 'kcc2a_ave, calc: ',kcc2a_ave,kcc2a_sum/initial_count
 write(*,'(a,2f10.4)') 'kt2cc min, max: ',kt2cc_min,kt2cc_max
 write(nflog,'(a,2f10.4)') 'kt2cc min, max: ',kt2cc_min,kt2cc_max
 write(*,*)
@@ -1239,6 +1248,7 @@ integer :: kcell
 real(REAL_KIND) :: rsite(3)
 integer :: ityp, k, kpar = 0
 real(REAL_KIND) :: v(3), c(3), R1, R2, V0, Tdiv, Vdiv, p(3), R, gfactor, kfactor
+real(8) :: kcc2a_std = 0.7
 type(cell_type), pointer :: cp
 type(cycle_parameters_type),pointer :: ccp
 	
@@ -1275,15 +1285,17 @@ cp%metab%C_GlnEx_prev = 0
 R = par_rnor(kpar)
 if (abs(R) > 2) R = R/2
 kfactor = max(0.0,1 + R*jaiswal_std)
+!kfactor = rv_lognormal(0.0d0,1.001d0,kpar)
+!kfactor = 1
 cp%kt2cc = kt2cc*kfactor
-cp%ke2cc = ke2cc*kfactor
-!if (kcell == 5388) write(*,'(a,5f10.4)') 'Jaiswal R: ',R,kfactor,cp%kt2cc,cp%ke2cc
+!cp%ke2cc = ke2cc*kfactor
+!if (kcell <= 100) write(nflog,'(a,5f10.4)') 'Jaiswal R: ',R,kfactor,cp%kt2cc
 cp%CC_act = CC_act0
 !R = par_uni(kpar)
 !cp%CC_act = CC_act0 + R*(CC_threshold - CC_act0)
 cp%ATR_act = 0
 cp%ATM_act = 0
-
+cp%G2_time = 0
 !if (use_volume_method) then
 !    !cp%divide_volume = Vdivide0
 !    if (initial_count == 1) then
@@ -1306,7 +1318,13 @@ cp%ATM_act = 0
 !    cp%irrepairable = .false.
     ! Need to assign phase, volume to complete phase, current volume
     if (use_km10_kcc2a_dependence) then
-        cp%Kcc2a = get_Kcc2a(kmccp,CC_tot,cp%fg(3)*ccp%T_G2/3600)
+!        cp%Kcc2a = get_Kcc2a(kmccp,CC_tot,cp%fg(3)*ccp%T_G2/3600)
+        R = par_rnor(kpar)
+!        if (abs(R) > 2) R = R/2
+        kfactor = max(0.5,1 + R*kcc2a_std)
+        kfactor = 0.9*kfactor
+        cp%Kcc2a = kfactor*Kcc2a_ave
+        if (kcell <= 100) write(nflog,'(a,5f10.4)') 'Kcc2a R: ',R,kfactor,cp%kcc2a
     endif
     call SetInitialCellCycleStatus(kcell,cp)
     if (cp%phase == M_phase) then
@@ -2561,6 +2579,7 @@ endif
 !write(*,'(a,f8.3)') 'Final average pATM: ',ATMsum/nirradiated
 !write(*,'(a,f8.3)') 'Final average pATR: ',ATRsum/nirradiated
 99 continue
+if (use_synchronise) call G2_time_distribution()
 if (use_PEST) then
     if (use_SF) then
         write(nfres,'(e15.6)') log10(SFave)
@@ -2570,6 +2589,35 @@ if (use_PEST) then
 !        write(nfres,'(20e15.6)') (recorded_phase_dist(i,1:4),i=1,nphase_hours)
 !    endif
 endif
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+subroutine G2_time_distribution
+integer :: kcell, n, k
+integer :: cnt(40)
+real(REAL_KIND) :: t
+type(cell_type), pointer :: cp
+
+n = 0
+cnt = 0
+do kcell = 1,nlist
+    cp => cell_list(kcell)
+    if (cp%state == DEAD) cycle
+    t = cp%G2_time/3600
+    if (t == 0) cycle
+    n = n+1
+    k = t + 1
+    cnt(k) = cnt(k) + 1
+enddo
+write(*,*) 'G2_time distribution (h): n: ',n
+write(nflog,*) 'G2_time distribution (h): n: ',n
+do k = 1,40
+    if (cnt(k) > 0) then
+        write(*,'(i2,a,i2,i6,f8.3)') k-1, '-', k, cnt(k), cnt(k)/real(n)
+        write(nflog,'(i2,a,i2,i6,f8.3)') k-1, '-', k, cnt(k), cnt(k)/real(n)
+    endif
+enddo
 end subroutine
 
 !-----------------------------------------------------------------------------------------

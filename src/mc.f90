@@ -93,7 +93,7 @@ real(8) :: CC_tot, ATR_tot, ATM_tot, CC_act0, CC_threshold, norm_factor
 real(8) :: km10_alfa, km10_beta     ! for G2 only
 logical :: use_Jaiswal = .true.
 logical :: vary_km10 = .true.
-real(8) :: jaiswal_std = 0.0
+real(8) :: jaiswal_std = 0.6
 logical :: use_ATR_S = .false.
 
 real(8) :: ATMsum, ATRsum, Sthsum, G2thsum(2)
@@ -114,6 +114,7 @@ logical :: use_DSB_CP = .false.
 logical :: use_D_model = .false.
 
 logical :: use_km10_kcc2a_dependence = .true.
+real(8) :: kcc2a_ave
 logical :: use_exp_slowdown = .false.
 logical :: use_G1_stop = .false.    ! These flags control use of either CP delay (true) or slowdown (false)
 logical :: use_S_stop = .false.
@@ -1002,7 +1003,7 @@ type(cell_type), pointer :: cp
 real(8) :: dth
 real(8) :: dt = 0.001
 real(8) :: D_ATR, D_ATM, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact, CC_act0
-real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, T_G2, Kkcc2a
+real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, t_G2, Kkcc2a
 integer :: iph, it, Nt
 type(cycle_parameters_type),pointer :: ccp
 logical :: dbug
@@ -1031,6 +1032,12 @@ elseif (iph == G2_phase) then
     CC_act0 = CC_act
     ATR_act = cp%ATR_act
     ATM_act = cp%ATM_act
+    t_G2 = (tnow - cp%t_start_G2)/3600
+    if (t_G2 > 40) then
+        ATR_act = 0
+    elseif (t_G2 > 30) then
+        ATR_act = ATR_act*(t_G2 - 30)/(40 - 30)
+    endif
 else
     return
 endif

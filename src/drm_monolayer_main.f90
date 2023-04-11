@@ -111,12 +111,13 @@ endif
 
 ! Synchronisation of cell IR
 use_synchronise = .false.
-if (use_synchronise) then
-    call syncher(Nph, phase, progress)
-    do i = 1,Nph
-        write(*,'(2i6,f6.3)') i-1, phase(i), progress(i)
-    enddo
-endif
+!if (use_synchronise) then
+!    call syncher(Nph, phase, progress)
+!    do i = 1,Nph
+!        write(*,'(2i6,f6.3)') i-1, phase(i), progress(i)
+!        write(nflog,'(2i6,f6.3)') i-1, phase(i), progress(i)
+!    enddo
+!endif
 synch_phase = G2_phase   !G1 is 1 - 6, S is 7 - 15, G2 is 16 - 19
 synch_fraction = 0.0
 G2_katm3_factor = 1.0

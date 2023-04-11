@@ -79,6 +79,7 @@ elseif (cp%phase == S_phase) then
         endif
         cp%phase = G2_phase
         cp%progress = 0
+        cp%t_start_G2 = istep*DELTA_T
         nSdelay = nSdelay + 1   ! only S doesn't use stops
         if (single_cell) then
             write(*,*) 'G2 entry: N_DSB: ',sum(cp%DSB(1:3))

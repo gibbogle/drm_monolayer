@@ -730,13 +730,9 @@ do kcell = 1,nlist0
 !        if (istep == 0) write(nflog,'(a,i6,3f8.1,f8.3)') 'grower: kcell, mitosis: ',kcell,tnow, cp%t_start_mitosis,mitosis_duration,cp%mitosis
 		
         if (cp%mitosis >= 1) then
-            if (istep == 0) write(nflog,*) 'grower: divide cell: ',kcell
+			cp%G2_time = tnow - cp%t_start_G2
+            if (kcell <= 10) write(nflog,'(a,2i6,f8.3)') 'grower: divide cell, time: ',istep,kcell,cp%G2_time/3600
 !            write(nflog,'(a,i6,f6.3)') 'Exit M_phase: kcell, time: ',kcell_now,t_simulation/3600
-!         write(nflog,*)
-!			divide = .true.
-			! Post-IR, and this cell has not previously had %Psurvive computed
-			! i.e. this is first mitosis post-IR
-			
 ! if use_SF (i.e. we are computing SF_ave) then only cells not satisfying (is_radiation .and. cp%Psurvive < 0) need to divide
 			if (use_SF) then
 			    if (is_radiation .and. cp%Psurvive < 0) then
