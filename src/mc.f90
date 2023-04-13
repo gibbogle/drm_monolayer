@@ -128,7 +128,7 @@ logical :: use_phase_dependent_CP_parameters = .true.   ! now always true
 real(8) :: control_ave(4)   ! now set equal to ccp%f_G1, ...
 logical :: normalise, M_only
 character(6) :: expt_tag
-logical :: G2M_only = .true.
+logical :: G2M_only = .false.
 
 ! G1 checkpoint
 logical :: use_G1_CP_factor = .false.
