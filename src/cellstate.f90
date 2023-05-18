@@ -706,7 +706,7 @@ do kcell = 1,nlist0
         call log_timestep(cp, ccp, dt)
 !    endif
     if (cp%phase == M_phase) then
-        if (istep == 0) write(nflog,'(a,i6,f6.3)') 'Enter M_phase: kcell, time: ',kcell_now,t_simulation/3600
+!        if (istep == 0) write(nflog,'(a,i6,f6.3)') 'Enter M_phase: kcell, time: ',kcell_now,t_simulation/3600
 !        write(nflog,*)
 		cp%mitosis = 0
 		cp%t_start_mitosis = tnow

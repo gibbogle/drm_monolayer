@@ -182,6 +182,8 @@ rad_count = 0
 phase_exit_time_sum = 0
 npet = 0
 call counter
+count_Nlethal = 0
+count_totDSB = 0
 end subroutine
 
 !----------------------------------------------------------------------------------------- 
@@ -1324,7 +1326,7 @@ cp%G2_time = 0
         kfactor = max(0.5,1 + R*kcc2a_std)
         kfactor = 0.9*kfactor
         cp%Kcc2a = kfactor*Kcc2a_ave
-        if (kcell <= 100) write(nflog,'(a,5f10.4)') 'Kcc2a R: ',R,kfactor,cp%kcc2a
+!        if (kcell <= 100) write(nflog,'(a,5f10.4)') 'Kcc2a R: ',R,kfactor,cp%kcc2a
     endif
     call SetInitialCellCycleStatus(kcell,cp)
     if (cp%phase == M_phase) then
@@ -1475,16 +1477,16 @@ T_G2 = ccp%T_G2/fp(3)
 !T_M = ccp%T_M/fp(4)
 T_M = cp%mitosis_duration
 
-if (kcell <= 10) then
-    write(*,'(a,i4,8f6.3)') 'kcell,fg,T_G1-M: ',kcell,fg(:),T_G1/3600,T_S/3600,T_G2/3600,T_M/3600
-    write(nflog,'(a,i4,8f6.3)') 'kcell,fg,T_G1-M: ',kcell,fg(:),T_G1/3600,T_S/3600,T_G2/3600,T_M/3600
-endif
+!if (kcell <= 10) then
+!    write(*,'(a,i4,8f6.3)') 'kcell,fg,T_G1-M: ',kcell,fg(:),T_G1/3600,T_S/3600,T_G2/3600,T_M/3600
+!    write(nflog,'(a,i4,8f6.3)') 'kcell,fg,T_G1-M: ',kcell,fg(:),T_G1/3600,T_S/3600,T_G2/3600,T_M/3600
+!endif
 if (use_synchronise) then
-    if (kcell == 1) then
-        write(nfphase,'(a,i4,f6.3)') 'synch_phase, synch_fraction: ',synch_phase, synch_fraction
-        write(nflog,'(a,i4,f6.3)') 'synch_phase, synch_fraction: ',synch_phase, synch_fraction
-        write(*,'(a,i4,f6.3)') 'synch_phase, synch_fraction: ',synch_phase, synch_fraction
-    endif
+!    if (kcell == 1) then
+!        write(nfphase,'(a,i4,f6.3)') 'synch_phase, synch_fraction: ',synch_phase, synch_fraction
+!        write(nflog,'(a,i4,f6.3)') 'synch_phase, synch_fraction: ',synch_phase, synch_fraction
+!        write(*,'(a,i4,f6.3)') 'synch_phase, synch_fraction: ',synch_phase, synch_fraction
+!    endif
     if (synch_phase == G1_phase) then
         t = synch_fraction*T_G1
     elseif (synch_phase == S_phase) then
@@ -2129,7 +2131,7 @@ if (use_synchronise .and. .false.) then
     tATRdelay = tATRdelay + dtATRdelay 
 !    write(nfphase,'(2i6,11f8.3)') istep,cp%phase,cp%progress,t_simulation/3600,cp%pATM,cp%pATR,fATM,fATR,fCP,tCPdelay/3600,tATMdelay/3600,tATRdelay/3600
     ATM_DSB = cp%DSB(NHEJslow) + cp%DSB(HR)   ! complex DSB
-    write(nfphase,'(2i6,11f8.3)') istep,cp%phase,cp%progress,t_simulation/3600,ATM_DSB,cp%pATM
+    if (phase_log) write(nfphase,'(2i6,11f8.3)') istep,cp%phase,cp%progress,t_simulation/3600,ATM_DSB,cp%pATM
     if (cp%phase == S_phase) stop
     if (cp%phase == dividing) then
         write(*,*) 'Reached mitosis'
@@ -2227,7 +2229,7 @@ if (dbug .or. mod(istep,nthour) == 0) then
             pATM_sum = pATM_sum + cp%pATM
             pATR_sum = pATR_sum + cp%pATR
         enddo
-        write(nfphase,'(a,i4,2f8.4)') 'hour, ave pATM, pATR: ',hour,pATM_sum/nlist, pATR_sum/nlist
+        if (phase_log) write(nfphase,'(a,i4,2f8.4)') 'hour, ave pATM, pATR: ',hour,pATM_sum/nlist, pATR_sum/nlist
 !        write(*,'(a,i4,f6.3,i4)') 'phase, progress: ',cp%phase, cp%progress, next_phase_hour
 !        write(nfphase,'(2i4,2f6.1,2f6.3)') hour,cp%phase,tnow/3600,cp%G2_time/3600,cp%V/Vdivide0,cp%divide_volume/Vdivide0
     endif
@@ -2274,11 +2276,13 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
     ! getSFlive computes the average psurvive for all cells that reach mitosis,
     ! which number NPsurvive = Nirradiated - Napop.
     SFlive = getSFlive()
-    ! To adjust SFlive to replace a cell that reached mitosis before CA with its daughter cells.
     SFtot = SFlive*(Nirradiated - Napop)
     write(*,*)
     write(*,'(a,3i6,e12.3)') 'NPsurvive,Nirradiated,Napop,SFtot: ',NPsurvive,Nirradiated,Napop,SFtot
+    write(*,'(a,f8.4)') 'Unadjusted SFave = SFtot/NPsurvive: ',SFtot/NPsurvive
+    write(*,'(a,f8.4)') 'SFave including apoptosis killing: ',SFtot/Nirradiated
     if (include_daughters) then
+    ! To adjust SFlive to replace a cell that reached mitosis before CA with its daughter cells.
     ! In order to compare simulated SFave with SF determined by experimental CA (clonogenic analysis),
     ! SFave needs to be calculated as the average of cells that make it to CA.
         do kcell = 1,nlist
@@ -2412,7 +2416,7 @@ type(cycle_parameters_type), pointer :: ccp
 type(cell_type), pointer :: cp
 logical :: only_M_phase = .false.
 logical :: PDS4 = .false.
-real(REAL_KIND) :: dt, phi, PDS4_M(3) = [0.191, 0.414286, 0.732812]
+real(REAL_KIND) :: dt, phi, nmitosis, PDS4_M(3) = [0.191, 0.414286, 0.732812]
 real(REAL_KIND) :: normalised_phase_dist(60,0:4)   
 
 if (overstepped) then
@@ -2501,9 +2505,11 @@ if (compute_cycle) then
     endif
     write(*,'(a,3f8.3)') 'Average G1, S, G2 CP delays: ',totG1delay/nG1delay,totSdelay/(3600.*nSdelay),totG2delay/nG2delay
     write(*,'(a,3f8.3)') 'Average G2 delay: pATM, pATR, total: ',G2thsum/NG2th,sum(G2thsum)/NG2th
-    write(nfphase,'(a,3f8.3)') 'Average G2 delay: pATM, pATR, total: ',G2thsum/NG2th,sum(G2thsum)/NG2th
-    write(nfphase,'(a,i6)') 'Number of cells averaged: ',NG2th
-    if (npet > 0) write(*,'(a,i6,f6.3)') 'Average phase time: ',npet,phase_exit_time_sum/(3600*npet)
+    if (phase_log) then
+        write(nfphase,'(a,3f8.3)') 'Average G2 delay: pATM, pATR, total: ',G2thsum/NG2th,sum(G2thsum)/NG2th
+        write(nfphase,'(a,i6)') 'Number of cells averaged: ',NG2th
+        if (npet > 0) write(*,'(a,i6,f6.3)') 'Average phase time: ',npet,phase_exit_time_sum/(3600*npet)
+    endif
 !    return
 endif
 if (output_DNA_rate) then
@@ -2568,16 +2574,26 @@ do kcell = 1,nlist
     sftot(ph) = sftot(ph) + cp%Psurvive
 enddo
 nir = max(nir,1)
+nmitosis = sum(nir)
 write(*,'(a,4i6)') 'nir: ',nir
 write(*,'(a,4f10.6)') 'Average SF by phase: ',sftot/nir
 if (use_synchronise) then
-    write(nfphase,'(a,4f8.4)') 'Average SF by phase: ',sftot/nir
+    if (phase_log) write(nfphase,'(a,4f8.4)') 'Average SF by phase: ',sftot/nir
 endif
+write(nflog,'(a,4f12.3)') 'totPmit, totPaber, tottotDSB, totNlethal: ',totPmit, totPaber, tottotDSB, totNlethal
+write(*,'(a,i6,4f11.1)') 'Nmitosis, totPmit, totPaber, tottotDSB: ',int(Nmitosis),totPmit, totPaber, tottotDSB
+write(*,'(a,4f11.1)') 'totPaber, totNlethal, totMis: ',totPaber, totNlethal, totNlethal/klethal
 
 !write(logmsg,'(a,8f8.3)') 'phase_dist:      ',phase_dist(0:3)
 !call logger(logmsg)
 !write(*,'(a,f8.3)') 'Final average pATM: ',ATMsum/nirradiated
 !write(*,'(a,f8.3)') 'Final average pATR: ',ATRsum/nirradiated
+
+!write(nflog,'(a,2f6.2)') 'Distributions of Nlethal, totDSB: ddist_Nlethal, ddist_totDSB: ',ddist_Nlethal,ddist_totDSB
+!do i = 1,NMDIST
+!    write(nflog,'(i6,2(f8.3,f8.4,2x))') i,ddist_Nlethal*(i-0.5),count_Nlethal(i)/nmitosis,ddist_totDSB*(i-0.5),count_totDSB(i)/nmitosis
+!enddo
+
 99 continue
 if (use_synchronise) call G2_time_distribution()
 if (use_PEST) then
@@ -2758,13 +2774,14 @@ logfile = infile(1:i)//'log'
 open(nflog,file=logfile,status='replace')
 
 write(nflog,*) 'irun: ',res
-write(numstr,'(i1)') res
-fname = 'phase'//numstr//'.log'
-write(nflog,'(a)') fname
-inquire(unit=nfphase,OPENED=isopen)
-if (isopen) close(nfphase)
-open(nfphase,file=fname,status='replace')
-
+if (phase_log) then
+    write(numstr,'(i1)') res
+    fname = 'phase'//numstr//'.log'
+    write(nflog,'(a)') fname
+    inquire(unit=nfphase,OPENED=isopen)
+    if (isopen) close(nfphase)
+    open(nfphase,file=fname,status='replace')
+endif
 
 res = 0
 #ifdef GFORTRAN

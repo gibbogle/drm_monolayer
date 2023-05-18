@@ -144,10 +144,16 @@ integer :: nslow_sum
 real(8) :: pHR_sum, pNHEJslow_sum, fdecay_sum
 
 ! Iliakis
-integer :: nIliakis = 1
-real(8) :: kIliakis = 2
+integer :: nIliakis
+real(8) :: kIliakis     ! if kIliakis = 0, fIliakis = 1
 real(8) :: fIliakis
-logical :: use_Iliakis = .true.
+logical :: use_Iliakis 
+
+! Distributions of Nlethal, totDSB at mitosis
+integer, parameter :: NMDIST = 100
+integer :: count_Nlethal(NMDIST), count_totDSB(NMDIST)
+real(8), parameter :: ddist_Nlethal = 20.0/NMDIST
+real(8), parameter :: ddist_totDSB = 200.0/NMDIST
 
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
@@ -222,6 +228,8 @@ read(nfin,*) pHRc_max
 read(nfin,*) rmin
 read(nfin,*) ksig
 read(nfin,*) csig
+read(nfin,*) nIliakis
+read(nfin,*) kIliakis
 read(nfin,*) Chalf
 read(nfin,*) Preass
 read(nfin,*) dsigma_dt
@@ -263,6 +271,8 @@ ATRsum = 0  ! to investigate ATR dependence on parameters
 NSth = 0
 G2thsum = 0
 NG2th = 0
+
+use_Iliakis = (kIliakis > 0)
 
 ! For PEST runs, iphase_hours must be -1 (for M runs) or -2 (for C runs) or -3 (for MC runs)
 use_SF = .false.
@@ -495,10 +505,10 @@ if (use_Jeggo) then
         pHRc = 0
     End If
     pHR = (1 - pComplex)*pHRs + pComplex*pHRc
-!    if (single_cell) then
-!        write(*,'(a,2f8.3)') 'th, fdecay(th): ',th, fdecay(th)
-!        write(*,'(a,2f8.3)') 'pHRs,pHRc: ',pHRs,pHRc
-!    endif
+    if (kcell_now == 1) then
+        write(*,'(a,2f8.3)') 'th, fdecay(th): ',th, fdecay(th)
+        write(*,'(a,3f8.3)') 'fIliakis,pHRs,pHRc: ',fIliakis,pHRs,pHRc
+    endif
     if (option == 1) then
         pNHEJ = 1 - pHR
         DSB0(NHEJfast) = (1 - pComplex) * Npre + pJeggo * pNHEJ * Npost     ! fast
@@ -514,6 +524,10 @@ if (use_Jeggo) then
         DSB0(NHEJfast) = (1-pComplex)*Npre + (1-pComplex)*(1-pHRs)*Npost     ! fast
         DSB0(NHEJslow) = pComplex*Npre + pComplex*(1-pHRc)*Npost     ! slow
         DSB0(HR) = pHR*Npost
+        if (kcell_now == 1) then
+            write(*,*) 'Npre, Npost: ',Npre,Npost
+            write(*,'(2(a,3f8.1))') 'DSB at IR: ',DSB0(1:3),'  NNHEJ: ',sum(DSB0(1:2))
+        endif
     endif
 else
     if (phase == G1_phase) then
@@ -1354,11 +1368,16 @@ end subroutine
 subroutine survivalProbability(cp)
 type(cell_type), pointer :: cp
 real(8) :: DSB(NP), totDSB, Nlethal,Nmisjoins, Paber, Pbase, Papop, Pmit, Psurv
+integer :: k
 
 DSB = cp%DSB
 totDSB = sum(DSB)
 Nlethal = cp%Nlethal
-Nmisjoins = Nlethal/Klethal
+if (klethal > 0) then
+    Nmisjoins = Nlethal/Klethal
+else
+    Nmisjoins = 0
+endif
 if (kcell_now == -27) write(nflog,'(a,3i4,2e12.3)') 'kcell, phase0, phase, totDSB, Nlethal: ',kcell_now, cp%phase0, cp%phase, totDSB, Nlethal
 if (cp%phase0 < M_phase) then   ! G1, S, G2
     Paber = exp(-Nlethal)
@@ -1371,12 +1390,13 @@ else    ! M_phase or dividing
     cp%Psurvive = Pmit*Msurvival
 !    write(nflog,'(a,i6,3f10.4)') 'IR in mitosis: ',kcell_now,totDSB,cp%totDSB0,Pmit
 endif
-if (kcell_now <= 10) then
-    write(*,*)
-    write(*,'(a,i3)') 'Computed psurvive for cell: ',kcell_now
-    write(*,'(a,i3,2f8.2)') 'phase0,Nmisjoins,totDSB: ',cp%phase0,Nmisjoins,totDSB
-    write(*,'(a,3e12.3)') 'Paber,Pmit,Psurvive: ',Paber,Pmit,cp%Psurvive
-    write(*,*)
+if (kcell_now <= 100) then
+!    write(*,*)
+!    write(*,'(a,i3)') 'Computed psurvive for cell: ',kcell_now
+!    write(*,'(a,i3,2f8.2)') 'phase0,Nmisjoins,totDSB: ',cp%phase0,Nmisjoins,totDSB
+!    write(*,'(a,3e12.3)') 'Paber,Pmit,Psurvive: ',Paber,Pmit,cp%Psurvive
+!    write(*,*)
+!    write(nflog,'(a,2f10.2)') 'Nlethal, totDSB: ',Nlethal,totDSB
 endif
 NPsurvive = NPsurvive + 1   ! this is the count of cells for which Psurvive has been computed
 cp%mitosis_time = tnow      ! needed to determine if mitosis occurs before or after CA
@@ -1389,6 +1409,19 @@ totPmit = totPmit + Pmit
 totPaber = totPaber + Paber
 tottotDSB = tottotDSB + totDSB
 totNlethal = totNlethal + Nlethal
+
+if (Nlethal > NMDIST*ddist_Nlethal) then
+    count_Nlethal(NMDIST) = count_Nlethal(NMDIST) + 1
+else
+    k = Nlethal/ddist_Nlethal + 1
+    count_Nlethal(k) = count_Nlethal(k) + 1
+endif
+if (totDSB > NMDIST*ddist_totDSB) then
+    count_totDSB(NMDIST) = count_totDSB(NMDIST) + 1
+else
+    k = totDSB/ddist_totDSB + 1
+    count_totDSB(k) = count_totDSB(k) + 1
+endif
 
 end subroutine
 

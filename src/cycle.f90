@@ -108,7 +108,7 @@ elseif (cp%phase == G2_phase) then
                 write(nflog,*) 'Reached mitosis at: ',t_simulation/3600
                 write(nflog,*) 'CC_act: ',cp%CC_act
             endif
-            if (istep == 0) write(nflog,'(a,i4,3f8.3)') 'Exit G2: CC_act, threshold, t: ',kcell_now,cp%CC_act,CC_threshold,t_simulation/3600
+!            if (istep == 0) write(nflog,'(a,i4,3f8.3)') 'Exit G2: CC_act, threshold, t: ',kcell_now,cp%CC_act,CC_threshold,t_simulation/3600
 !            if (cp%generation == 1) then
 !                npet = npet+1
 !                phase_exit_time_sum = t_simulation + phase_exit_time_sum + dt
