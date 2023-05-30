@@ -1956,7 +1956,7 @@ integer(c_int) :: res
 integer :: kcell, site(3), hour, nthour, kpar=0
 real(REAL_KIND) :: r(3), rmax, tstart, dt, dts, radiation_dose, diam_um, framp, area, diam
 !integer, parameter :: NT_CONC = 6
-integer :: i, ic, ichemo, ndt, iz, idrug, ityp, idiv, ndiv, Nmetabolisingcells
+integer :: i, ic, ichemo, ndt, iz, idrug, ityp, idiv, ndiv, Nmetabolisingcells, NpreCA, Nd, Nnew
 integer :: nvars, ns, nphaseh(8), ph
 real(REAL_KIND) :: dxc, ex_conc(120*CYCLE_PHASE+1)		! just for testing
 real(REAL_KIND) :: DELTA_T_save, t_sim_0, SFlive
@@ -1967,7 +1967,7 @@ integer :: phase_count(0:4), nG2
 real(REAL_KIND) :: total, tadjust
 real(REAL_KIND) :: fATM, fATR, fCP, dtCPdelay, dtATMdelay, dtATRdelay, ATM_DSB, DNA_rate
 real(REAL_KIND) :: pATM_sum, pATR_sum, DSB_sum
-real(REAL_KIND) :: SFtot, Pp, Pd
+real(REAL_KIND) :: SFtot, Pp, Pd, newSFtot
 logical :: PEST_OK
 logical :: ok = .true.
 logical :: dbug
@@ -2130,7 +2130,7 @@ if (use_synchronise .and. .false.) then
     tATMdelay = tATMdelay + dtATMdelay
     tATRdelay = tATRdelay + dtATRdelay 
 !    write(nfphase,'(2i6,11f8.3)') istep,cp%phase,cp%progress,t_simulation/3600,cp%pATM,cp%pATR,fATM,fATR,fCP,tCPdelay/3600,tATMdelay/3600,tATRdelay/3600
-    ATM_DSB = cp%DSB(NHEJslow) + cp%DSB(HR)   ! complex DSB
+    ATM_DSB = sum(cp%DSB(NHEJslow,:)) + sum(cp%DSB(HR,:))   ! complex DSB
     if (phase_log) write(nfphase,'(2i6,11f8.3)') istep,cp%phase,cp%progress,t_simulation/3600,ATM_DSB,cp%pATM
     if (cp%phase == S_phase) stop
     if (cp%phase == dividing) then
@@ -2140,9 +2140,9 @@ if (use_synchronise .and. .false.) then
     endif
 endif
 
-if (output_DNA_rate .and. (Nirradiated > 0)) then
-    call show_S_phase_statistics()
-endif
+!if (output_DNA_rate .and. (Nirradiated > 0)) then
+!    call show_S_phase_statistics()
+!endif
 if (compute_cycle) then
     call get_phase_distribution(phase_count)
     total = sum(phase_count)
@@ -2249,7 +2249,7 @@ istep = istep + 1
 overstepped = (istep == maxhours*nthour)
 if (overstepped) then
     write(*,*) 'overstepped the mark'
-!    call nondivided()
+    call nondivided()
 !    stop
     call completed
     res = 1
@@ -2285,17 +2285,42 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
     ! To adjust SFlive to replace a cell that reached mitosis before CA with its daughter cells.
     ! In order to compare simulated SFave with SF determined by experimental CA (clonogenic analysis),
     ! SFave needs to be calculated as the average of cells that make it to CA.
+        newSFtot = 0
+        Nnew = 0
+        NpreCA = 0
+        Nd = 0
         do kcell = 1,nlist
             cp => cell_list(kcell)
-            if (cp%psurvive > 1.0e-8 .and. cp%mitosis_time < CA_time) then
-                Pp = cp%psurvive
-                Pd = 1 - sqrt(1.0 - Pp)   ! Pd = psurvive for the 2 daughters: Pp = 2Pd - Pd^2
-                NPsurvive = NPsurvive + 1
-                SFtot = SFtot - Pp + 2*Pd
-!                if (kcell <= 100) write(*,'(a,i6,2e12.3)') 'daughters: kcell, Pp, Pd: ',kcell,Pp,Pd
+            if (cp%psurvive > 1.0e-8) then
+                if (cp%mitosis_time < CA_time) then
+                    NpreCA = NpreCA + 1
+                    Pp = cp%psurvive
+                    Pd = 1 - sqrt(1.0 - Pp)   ! Pd = psurvive for the 2 daughters: Pp = 2Pd - Pd^2
+! Try this !
+!    Pd = Pp/2  No good - dose = 0.01 --> SFave = 0.54
+                    NPsurvive = NPsurvive + 1
+                    SFtot = SFtot - Pp + 2*Pd
+                    newSFtot = newSFtot + 2*Pd
+                    Nnew = Nnew + 2
+                    if (kcell <= 100) then
+    !                    write(*,'(a,i6,2e12.3)') 'daughters: kcell, Pp, Pd: ',kcell,Pp,Pd
+    !                    write(*,'(a,2i3,2f8.3)') 'kcell,phase0,Pp,2*Pd: ',kcell,cp%phase0,Pp,2*Pd
+                    endif
+!                    if (cp%phase0 < 4 .and. Pd < 0.3) then
+!                        Nd = Nd + 2
+!                        write(*,'(a,2i6,f8.3)') 'daughters: ', kcell, cp%phase0,Pd
+!                    endif
+                else
+                    newSFtot = newSFtot + cp%psurvive
+                    Nnew = Nnew + 1
+                    if (cp%phase0 < 4 .and. cp%psurvive < 0.4) write(*,'(a,2i6,f8.3)') 'psurvive: ',kcell, cp%phase0,cp%psurvive
+                endif
             endif
         enddo
+        write(*,'(a,3i6,2f10.3)') 'NpreCA, Nd, Nnew, newSFtot, newSFave: ',NpreCA,Nd,Nnew,newSFtot,newSFtot/Nnew
+        write(*,'(a,3i6,f8.4)') 'nlist,Nirradiated,NPsurvive, new SFave: ',nlist,Nirradiated,NPsurvive,newSFtot/nlist
     endif
+    
     if (NPsurvive > 0) then
         SFave = SFtot/NPsurvive
     else
@@ -2341,6 +2366,7 @@ enddo
 write(*,*) 'Total nondivided: ',n
 end subroutine
 
+#if 0
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
 subroutine medras_compare()
@@ -2355,6 +2381,7 @@ Pmit = exp(-mitRate*totDSB)
 Psurvive = Pmit*Paber  
 write(nflog,'(a,3f8.4)') 'Paber, Pmit, Psurvive: ',Paber, Pmit, Psurvive
 end subroutine
+#endif
 
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------

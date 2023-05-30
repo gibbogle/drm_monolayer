@@ -82,8 +82,8 @@ elseif (cp%phase == S_phase) then
         cp%t_start_G2 = istep*DELTA_T
         nSdelay = nSdelay + 1   ! only S doesn't use stops
         if (single_cell) then
-            write(*,*) 'G2 entry: N_DSB: ',sum(cp%DSB(1:3))
-            write(nflog,*) 'G2 entry: N_DSB: ',sum(cp%DSB(1:3))
+            write(*,*) 'G2 entry: N_DSB: ',sum(cp%DSB(1:3,:))
+            write(nflog,*) 'G2 entry: N_DSB: ',sum(cp%DSB(1:3,:))
         endif
     endif
 elseif (cp%phase == G2_phase) then

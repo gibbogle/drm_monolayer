@@ -229,7 +229,7 @@ type cell_type
 	
 	! DRM section
 	integer :: phase0
-	real(8) :: pATM, pATR, DSB(NP), totDSB0, totMis
+	real(8) :: pATM, pATR, DSB(NP,2), totDSB0, totMis
 	real(8) :: Nlethal, Psurvive, mitosis_time
 	
 	! Jaiswal section (26/09/22)

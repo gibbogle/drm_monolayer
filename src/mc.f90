@@ -56,7 +56,7 @@ real(8) :: fidRate(NP)  = [0.98537, 1.0, 0.4393, 0.0]  ! by pathway  with HR sim
 !logical :: pathwayUsed(8,NP)
 real(8) :: apopRate = 0.01117   ! (McMahon: apoptoticRate) (NOT USED only baseRate is used)
 real(8) :: baseRate = 0.000739  ! (McMahon: baseRate)
-real(8) :: mitRate  = 0.0141    ! (McMahon: mitoticRate)
+real(8) :: mitRate(2)   !  = 0.0141    ! (McMahon: mitoticRate)
 real(8) :: Msurvival = 0.05
 real(8) :: Kaber = 1.0          ! now fixed, McMahon has 1.  
 real(8) :: Klethal = 0.4
@@ -174,7 +174,8 @@ read(nfin,*) iphase_hours
 write(*,*) 'iphase_hours: ',iphase_hours
 read(nfin,*) baseRate
 write(*,*) 'baseRate: ',baseRate
-read(nfin,*) mitRate
+read(nfin,*) mitRate(1)
+read(nfin,*) mitRate(2)
 read(nfin,*) Msurvival
 read(nfin,*) Klethal
 !read(nfin,*) nCPparams
@@ -454,13 +455,17 @@ end subroutine
 ! and preserving the total complex fraction.
 !
 ! Note: pHRs + pHRc must be <= 1
+! 
+! 30/05/2023
+! Add distinction between pre- and post-DNA relication DSBs.
+! pre = DSB(:,1), post = DSB(:,2)
 !--------------------------------------------------------------------------
 subroutine cellIrradiation(cp, dose, Cdrug)
 type(cell_type), pointer :: cp
 real(8) :: dose, Cdrug
 integer :: ityp, kpar = 0
 integer :: phase
-real(8) :: DSB0(NP)
+real(8) :: DSB0(NP,2)
 real(8) :: totDSB0, baseDSB, fin, T_S, f_S, NG1, NNHEJ, pHRs, pHRc, pHR, pNHEJ, NHRs, NHRc
 real(8) :: Pbase, Pdie, R
 real(8) :: DSB_Gy = 35
@@ -490,7 +495,7 @@ if (use_Jeggo) then
         
     End If
     totDSB0 = (1 + f_S) * NG1
-    DSB0(TMEJ) = 0
+    DSB0(TMEJ,:) = 0
     If (phase == G1_phase) Then
         Npre = totDSB0
     Else
@@ -511,9 +516,12 @@ if (use_Jeggo) then
     endif
     if (option == 1) then
         pNHEJ = 1 - pHR
-        DSB0(NHEJfast) = (1 - pComplex) * Npre + pJeggo * pNHEJ * Npost     ! fast
-        DSB0(NHEJslow) = pComplex * Npre + (1 - pJeggo) * pNHEJ * Npost     ! slow
-        DSB0(HR) = pHR * Npost
+        DSB0(NHEJfast,1) = (1 - pComplex) * Npre
+        DSB0(NHEJfast,2) = pJeggo * pNHEJ * Npost     ! fast
+        DSB0(NHEJslow,1) = pComplex * Npre
+        DSB0(NHEJslow,2) = (1 - pJeggo) * pNHEJ * Npost     ! slow
+        DSB0(HR,1) = 0
+        DSB0(HR,2) = pHR * Npost
         if (phase == G2_phase) then
             nslow_sum = nslow_sum + 1
             pHR_sum = pHR_sum + pHR
@@ -521,20 +529,24 @@ if (use_Jeggo) then
             fdecay_sum = fdecay_sum + fdecay(th)
         endif
     elseif (option == 2) then
-        DSB0(NHEJfast) = (1-pComplex)*Npre + (1-pComplex)*(1-pHRs)*Npost     ! fast
-        DSB0(NHEJslow) = pComplex*Npre + pComplex*(1-pHRc)*Npost     ! slow
-        DSB0(HR) = pHR*Npost
+        DSB0(NHEJfast,1) = (1-pComplex)*Npre
+        DSB0(NHEJfast,2) = (1-pComplex)*(1-pHRs)*Npost     ! fast
+        DSB0(NHEJslow,1) = pComplex*Npre
+        DSB0(NHEJslow,2) = pComplex*(1-pHRc)*Npost     ! slow
+        DSB0(HR,1) = 0
+        DSB0(HR,2) = pHR*Npost
         if (kcell_now == 1) then
             write(*,*) 'Npre, Npost: ',Npre,Npost
-            write(*,'(2(a,3f8.1))') 'DSB at IR: ',DSB0(1:3),'  NNHEJ: ',sum(DSB0(1:2))
+            write(*,'(2(a,3f8.1))') 'pre  DSB at IR: ',DSB0(1:3,1),'  NNHEJ: ',sum(DSB0(1:2,1))
+            write(*,'(2(a,3f8.1))') 'post DSB at IR: ',DSB0(1:3,2),'  NNHEJ: ',sum(DSB0(1:2,2))
         endif
     endif
 else
     if (phase == G1_phase) then
         f_S = 0.0
         totDSB0 = NG1
-        DSB0(NHEJslow) = Pcomplex*totDSB0
-        DSB0(NHEJfast) = (1 - Pcomplex)*totDSB0
+        DSB0(NHEJslow,1) = Pcomplex*totDSB0
+        DSB0(NHEJfast,1) = (1 - Pcomplex)*totDSB0
     elseif (phase == S_phase) then
         th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
         f_S = cp%progress
@@ -549,18 +561,18 @@ else
         Npost_c = Npost*pComplex
         NHRs = Npost_s*pHRs
         NHRc = Npost_c*pHRc
-        DSB0(HR) = NHRs + NHRc
-        DSB0(NHEJfast) = Npre_s + Npost_s - NHRs
-        DSB0(NHEJslow) = Npre_c + Npost_c - NHRc
+        DSB0(HR,1) = NHRs + NHRc
+        DSB0(NHEJfast,1) = Npre_s + Npost_s - NHRs  ! not correct
+        DSB0(NHEJslow,1) = Npre_c + Npost_c - NHRc
     elseif (phase >= G2_phase) then
         f_S = 1
         th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
         totDSB0 = 2*NG1
         Npost = totDSB0
         pHRs = pHRs_max*((1-rmin)*fdecay(th)+rmin)
-        DSB0(HR) = Npost*pHRs
-        DSB0(NHEJfast) = Npost*(1 - pHRs)
-        DSB0(NHEJslow) = 0
+        DSB0(HR,2) = Npost*pHRs
+        DSB0(NHEJfast,2) = Npost*(1 - pHRs)
+        DSB0(NHEJslow,2) = 0
     endif
 endif    
 
@@ -1017,7 +1029,7 @@ type(cell_type), pointer :: cp
 real(8) :: dth
 real(8) :: dt = 0.001
 real(8) :: D_ATR, D_ATM, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact, CC_act0
-real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, t_G2, Kkcc2a
+real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, t_G2, Kkcc2a, DSB(NP)
 integer :: iph, it, Nt
 type(cycle_parameters_type),pointer :: ccp
 logical :: dbug
@@ -1028,20 +1040,23 @@ if (iph > G2_phase) then
     return
 endif
 Nt = int(dth/dt + 0.5)
+do it = 1,NP
+    DSB(it) = sum(cp%DSB(it,:))
+enddo
 dbug = (iph == 2 .and. (kcell_now <= 0))
 if (iph == G1_phase) then
-    D_ATM = cp%DSB(NHEJslow)*norm_factor
+    D_ATM = DSB(NHEJslow)*norm_factor
     ATM_act = cp%ATM_act
 elseif (iph == S_phase) then
-    D_ATM = (cp%DSB(HR) + cp%DSB(NHEJslow))*norm_factor
+    D_ATM = (DSB(HR) + DSB(NHEJslow))*norm_factor
     ATM_act = cp%ATM_act
     if (use_ATR_S) then
-        D_ATR = cp%DSB(HR)*norm_factor
+        D_ATR = DSB(HR)*norm_factor
         ATR_act = cp%ATR_act
     endif
 elseif (iph == G2_phase) then
-    D_ATR = cp%DSB(HR)*norm_factor
-    D_ATM = (cp%DSB(HR) + cp%DSB(NHEJslow))*norm_factor
+    D_ATR = DSB(HR)*norm_factor
+    D_ATM = (DSB(HR) + DSB(NHEJslow))*norm_factor
     CC_act = cp%CC_act
     CC_act0 = CC_act
     ATR_act = cp%ATR_act
@@ -1163,13 +1178,13 @@ subroutine updateRepair(cp,dt)
 type(cell_type), pointer :: cp
 real(8) :: dt
 integer :: phase
-real(8) :: DSB(NP), dNlethal
-real(8) :: DSB0(NP)
+real(8) :: DSB(NP,2), dNlethal
+real(8) :: DSB0(NP,2)
 real(8) :: totDSB0, totDSB, Pmis, Nmis, dNmis(NP), totDSBinfid0, totDSBinfid, ATR_DSB, ATM_DSB, dth, binMisProb
 real(8) :: Cdrug, inhibrate, Nreassign
 real(8) :: f_S, eta_NHEJ, eta_TMEJ, tIR, eta
 logical :: pathUsed(NP)
-integer :: k, iph
+integer :: k, iph, jpp  ! jpp = 1 for pre, = 2 for post
 logical :: use_DSBinfid = .true.
 real(8) :: DSB_min = 1.0e-3
 logical :: use_totMis = .true.      ! was false!
@@ -1213,15 +1228,17 @@ repRateFactor(1:2) = exp(-0.693*Cdrug/Chalf)
 ! Reassignment to pathway 4 is (tentatively) constant
 ! Preass is an input parameter = prob of reassignment per hour
 if (Preass > 0) then
+    do jpp = 1,2
     do k = 1,2  ! only NHEJ pathways
-        Nreassign = DSB(k)*Preass*dth
-        DSB(k) = DSB(k) - Nreassign
+        Nreassign = DSB(k,jpp)*Preass*dth
+        DSB(k,jpp) = DSB(k,jpp) - Nreassign
 !        if (use_SSA) then
 !            DSB(TMEJ) = DSB(TMEJ) + Nreassign*(1 - SSAfrac)
 !            DSB(SSA) = DSB(SSA) + Nreassign*SSAfrac
 !        else
-            DSB(TMEJ) = DSB(TMEJ) + Nreassign
+            DSB(TMEJ,jpp) = DSB(TMEJ,jpp) + Nreassign
 !        endif
+    enddo
     enddo
 endif
 DSB0 = DSB     ! initial DSBs for this time step
@@ -1235,8 +1252,8 @@ totDSB0 = sum(DSB0)
 !endif
 !if (kcell_now == 1) write(*,'(a,2i6,3f8.2)') 'updateRepair: kcell, phase, DSB0: ',kcell_now,cp%phase,cp%DSB(1:3)
 
-ATM_DSB = DSB(NHEJslow) + DSB(HR)   ! complex DSB
-ATR_DSB = DSB(HR)
+ATM_DSB = sum(DSB(NHEJslow,:)) + sum(DSB(HR,:))   ! complex DSB
+ATR_DSB = sum(DSB(HR,:))
 !if (iph >= 7) iph = iph - 6     ! checkpoint phase numbers --> phase number, to continue pATM and pATR processes through checkpoints
 !if (iph <= G2_phase) then      ! not for 4 (M_phase) or 5 (dividing)
 !    if (iph == G2_phase .and. use_Jaiswal) then
@@ -1253,9 +1270,11 @@ endif
 
 DSB = 0
 do k = 1,NP
+do jpp = 1,2
 !   if (dbug .and. DSB0(k) > 0) write(*,*) 'pathwayRepair: k,DSB0(k): ',kcell_now,k,DSB0(k)
-    call pathwayRepair(k, dth, DSB0(k), DSB(k))
-    if (DSB(k) < DSB_min) DSB(k) = 0
+    call pathwayRepair(k, dth, DSB0(k,jpp), DSB(k,jpp))
+    if (DSB(k,jpp) < DSB_min) DSB(k,jpp) = 0
+enddo
 enddo
 ! DSB0(k) is the count before repair, DSB(k) is the count after repair
 
@@ -1331,8 +1350,8 @@ eta_TMEJ = eta_lookup(phase, TMEJ, f_S, tIR)
 
 Nmis = 0
 ! For NHEJ pathways
-totDSB0 = DSB0(NHEJfast) + DSB0(NHEJslow)
-totDSB = DSB(NHEJfast) + DSB(NHEJslow)
+totDSB0 = sum(DSB0(NHEJfast,:)) + sum(DSB0(NHEJslow,:))
+totDSB = sum(DSB(NHEJfast,:)) + sum(DSB(NHEJslow,:))
 Pmis = misrepairRate(totDSB0, totDSB, eta_NHEJ)
 Nmis = Nmis + Pmis*(totDSB0 - totDSB)
 misjoins(1) = misjoins(1) + Pmis*(totDSB0 - totDSB)
@@ -1346,10 +1365,10 @@ misjoins(1) = misjoins(1) + Pmis*(totDSB0 - totDSB)
 !        write(nflog,'(a,i4,2f8.4)') 'k, eta, Pmis: ',k,eta,Pmis
 !    enddo
 !endif
-if (DSB0(TMEJ) > 0) then
+if (sum(DSB0(TMEJ,:)) > 0) then
     ! For TMEJ pathway
-    Pmis = misrepairRate(DSB0(TMEJ), DSB(TMEJ), eta_TMEJ)
-    Nmis = Nmis + Pmis*(DSB0(TMEJ) - DSB(TMEJ))
+    Pmis = misrepairRate(sum(DSB0(TMEJ,:)), sum(DSB(TMEJ,:)), eta_TMEJ)
+    Nmis = Nmis + Pmis*(sum(DSB0(TMEJ,:)) - sum(DSB(TMEJ,:)))
     misjoins(2) = misjoins(2) + Pmis*(totDSB0 - totDSB)
 endif
 cp%DSB = DSB
@@ -1367,11 +1386,13 @@ end subroutine
 !------------------------------------------------------------------------
 subroutine survivalProbability(cp)
 type(cell_type), pointer :: cp
-real(8) :: DSB(NP), totDSB, Nlethal,Nmisjoins, Paber, Pbase, Papop, Pmit, Psurv
-integer :: k
+real(8) :: DSB(NP,2), totDSB(2), Nlethal,Nmisjoins, Paber, Pbase, Papop, Pmit, Psurv
+integer :: k, jpp
 
 DSB = cp%DSB
-totDSB = sum(DSB)
+do jpp = 1,2
+    totDSB(jpp) = sum(DSB(:,jpp))
+enddo
 Nlethal = cp%Nlethal
 if (klethal > 0) then
     Nmisjoins = Nlethal/Klethal
@@ -1379,20 +1400,23 @@ else
     Nmisjoins = 0
 endif
 if (kcell_now == -27) write(nflog,'(a,3i4,2e12.3)') 'kcell, phase0, phase, totDSB, Nlethal: ',kcell_now, cp%phase0, cp%phase, totDSB, Nlethal
+
+Pmit = exp(-(mitRate(1)*totDSB(1) + mitRate(2)*totDSB(2)))
+
 if (cp%phase0 < M_phase) then   ! G1, S, G2
     Paber = exp(-Nlethal)
-    Pmit = exp(-mitRate*totDSB)
+!    Pmit = exp(-mitRate*totDSB)
     cp%Psurvive = Pmit*Paber  
 !    if (kcell_now == 1) write(*,'(a,2f8.4,2e12.3)') 'totDSB,Nlethal,Pmit,Paber: ',totDSB,Nlethal,Pmit,Paber  
 else    ! M_phase or dividing
     Paber = 1
-    Pmit = exp(-mitRate*totDSB)
+!    Pmit = exp(-mitRate*totDSB)
     cp%Psurvive = Pmit*Msurvival
 !    write(nflog,'(a,i6,3f10.4)') 'IR in mitosis: ',kcell_now,totDSB,cp%totDSB0,Pmit
 endif
-if (kcell_now <= 100) then
+if (kcell_now <= 10) then
 !    write(*,*)
-!    write(*,'(a,i3)') 'Computed psurvive for cell: ',kcell_now
+    write(*,'(a,2i3,3f8.3)') 'cell,phase0,totDSB,psurvive: ',kcell_now,cp%phase0,totDSB,cp%Psurvive
 !    write(*,'(a,i3,2f8.2)') 'phase0,Nmisjoins,totDSB: ',cp%phase0,Nmisjoins,totDSB
 !    write(*,'(a,3e12.3)') 'Paber,Pmit,Psurvive: ',Paber,Pmit,cp%Psurvive
 !    write(*,*)
@@ -1407,7 +1431,7 @@ ATRsum = ATRsum + cp%pATR
 
 totPmit = totPmit + Pmit
 totPaber = totPaber + Paber
-tottotDSB = tottotDSB + totDSB
+tottotDSB = tottotDSB + sum(totDSB)
 totNlethal = totNlethal + Nlethal
 
 if (Nlethal > NMDIST*ddist_Nlethal) then
@@ -1416,10 +1440,10 @@ else
     k = Nlethal/ddist_Nlethal + 1
     count_Nlethal(k) = count_Nlethal(k) + 1
 endif
-if (totDSB > NMDIST*ddist_totDSB) then
+if (sum(totDSB) > NMDIST*ddist_totDSB) then
     count_totDSB(NMDIST) = count_totDSB(NMDIST) + 1
 else
-    k = totDSB/ddist_totDSB + 1
+    k = sum(totDSB)/ddist_totDSB + 1
     count_totDSB(k) = count_totDSB(k) + 1
 endif
 
@@ -1474,6 +1498,7 @@ atm_ave = atm_ave/cnt
 !write(*,'(a,3f8.3,e12.3)') 'DNA growth rate factor: ',DNA_rate,k3,k4,atm_ave
 end subroutine
 
+#if 0
 !------------------------------------------------------------------------
 ! Write average S-phase ATM_DSB, pATM, fATM
 !------------------------------------------------------------------------
@@ -1511,5 +1536,6 @@ pATM_ave = pATM_ave/cnt
 write(nflog,'(a,i6,f8.2,i6,3f8.3)') 'S stats: ',istep, hour,cnt, ATM_DSB_ave,pATM_ave
 
 end subroutine
+#endif
 
 end module
