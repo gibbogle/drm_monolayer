@@ -1227,7 +1227,7 @@ repRateFactor(1:2) = exp(-0.693*Cdrug/Chalf)
 !if (kcell_now == 1) write(nflog,'(a,4f10.4)') 'Cdrug IC,EC,Chalf,fRR: ',Cdrug,Caverage(MAX_CHEMO + DRUG_A),Chalf,repRateFactor(1)
 ! Reassignment to pathway 4 is (tentatively) constant
 ! Preass is an input parameter = prob of reassignment per hour
-if (Preass > 0) then
+if (Preass > 0 .and. phase >= S_phase) then
     do jpp = 1,2
     do k = 1,2  ! only NHEJ pathways
         Nreassign = DSB(k,jpp)*Preass*dth
