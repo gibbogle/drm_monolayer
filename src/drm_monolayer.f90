@@ -2518,6 +2518,13 @@ if (compute_cycle) then
                         write(nfres,'(20f8.5)') (normalised_phase_dist(i,4),i=1,nphase_hours)
                     endif
                 endif
+                if (expt_tag == "PDSN0G") then
+                    write(nfres,'(20f8.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
+                elseif (expt_tag == "PDSN2G") then
+                    write(nfres,'(20f8.5)') (normalised_phase_dist(i,4),i=1,nphase_hours)
+                elseif (expt_tag == "PDSN6G") then
+                    write(nfres,'(20f8.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
+                endif
                 write(nflog,'(20f10.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
                 write(nflog,'(20f10.5)') control_ave(1:4)
             else

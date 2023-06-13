@@ -283,7 +283,32 @@ phase_hour(:) = 0
 output_DNA_rate = .false.
 normalise = .false.
 M_only = .false.
-if (iphase_hours == 1) then
+if (iphase_hours == -1) then    ! PDSN dose = 0
+    expt_tag = "PDSN0G"
+    compute_cycle = .true.
+    normalise = .true.
+    use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
+    nphase_hours = 2
+    next_phase_hour = 1
+    phase_hour(1:2) = [5.0, 11.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+    ! Note: output G1, S, G2, M
+elseif (iphase_hours == -2) then    ! PDSN dose = 2
+    expt_tag = "PDSN2G"
+    compute_cycle = .true.
+    normalise = .true.
+    use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
+    nphase_hours = 6
+    next_phase_hour = 1
+    phase_hour(1:6) = [1.0, 2.0, 3.0, 5.0, 8.5, 11.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+elseif (iphase_hours == -3) then    ! PDSN dose = 6
+    expt_tag = "PDSN6G"
+    compute_cycle = .true.
+    normalise = .true.
+    use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
+    nphase_hours = 3
+    next_phase_hour = 1
+    phase_hour(1:3) = [5.0, 8.5, 11.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+elseif (iphase_hours == 1) then
     use_SF = .true.     ! in this case SFave only is recorded
     compute_cycle = .false.
 
