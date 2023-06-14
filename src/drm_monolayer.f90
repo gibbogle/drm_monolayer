@@ -2521,7 +2521,8 @@ if (compute_cycle) then
                 if (expt_tag == "PDSN0G") then
                     write(nfres,'(20f8.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
                 elseif (expt_tag == "PDSN2G") then
-                    write(nfres,'(20f8.5)') (normalised_phase_dist(i,4),i=1,nphase_hours)
+                    write(nfres,'(20f8.5)') (normalised_phase_dist(i,4),i=1,3)
+                    write(nfres,'(20f8.5)') (normalised_phase_dist(i,1:4),i=4,nphase_hours)
                 elseif (expt_tag == "PDSN6G") then
                     write(nfres,'(20f8.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
                 endif
