@@ -91,6 +91,7 @@ real(8) :: kmrp, kmrd               ! ATR production, decay
 real(8) :: kmccp, kmccrd, kmccmd    ! CC production, ATR-driven decay, ATM-driven decay
 real(8) :: CC_tot, ATR_tot, ATM_tot, CC_act0, CC_threshold, norm_factor
 real(8) :: km10_alfa, km10_beta     ! for G2 only
+real(8) :: G1_tdelay = 4            ! delay before ATM_act updated (hours)
 logical :: use_Jaiswal = .true.
 logical :: vary_km10 = .true.
 real(8) :: jaiswal_std = 0.6
@@ -231,6 +232,7 @@ read(nfin,*) ksig
 read(nfin,*) csig
 read(nfin,*) nIliakis
 read(nfin,*) kIliakis
+read(nfin,*) G1_tdelay
 read(nfin,*) Chalf
 read(nfin,*) Preass
 read(nfin,*) dsigma_dt
@@ -1197,7 +1199,6 @@ end function
 
 !------------------------------------------------------------------------
 ! To use parameters from mcradio, need to convert time from secs to hours
-! 
 !------------------------------------------------------------------------
 subroutine updateRepair(cp,dt)
 type(cell_type), pointer :: cp
@@ -1208,6 +1209,7 @@ real(8) :: DSB0(NP,2)
 real(8) :: totDSB0, totDSB, Pmis, Nmis, dNmis(NP), totDSBinfid0, totDSBinfid, ATR_DSB, ATM_DSB, dth, binMisProb
 real(8) :: Cdrug, inhibrate, Nreassign
 real(8) :: f_S, eta_NHEJ, eta_TMEJ, tIR, eta
+real(8) :: th_since_IR
 logical :: pathUsed(NP)
 integer :: k, iph, jpp  ! jpp = 1 for pre, = 2 for post
 logical :: use_DSBinfid = .true.
@@ -1288,7 +1290,14 @@ ATR_DSB = sum(DSB(HR,:))
 !        if (iph > G1_phase) call updateATR(iph,cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth (if use_Jaiswal, S only)
 !    endif
 !endif
-call Jaiswal_update(cp, dth)
+
+! We want to update Jaiswal for a cell in G1 only if G1_tdelay has elapsed since IR
+! Current time is tnow (sec).  IR time is t_irradiation
+! Time since IR is th_since_IR(hours)
+th_since_IR = (tnow - t_irradiation)/3600
+if (.not.(iph == G1_phase .and. th_since_IR < G1_tdelay)) then
+    call Jaiswal_update(cp, dth)
+endif
 if ((iph == 1 .and. use_G1_pATM) .or. (iph == 2 .and. use_S_pATM)) then 
     call updateATM(iph,cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth
 endif
