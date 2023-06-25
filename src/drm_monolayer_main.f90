@@ -110,7 +110,7 @@ else
 endif
 
 ! Synchronisation of cell IR
-use_synchronise = .false.
+use_synchronise = .true.
 nph = 1
 if (use_synchronise) then
     nph = 5

@@ -567,6 +567,10 @@ real(REAL_KIND) :: G2_katm3_factor=1.0, G2_katm4_factor=1.0, G2_katr3_factor=1.0
 integer :: maxhours = 99
 logical :: overstepped
 
+! Greens function section
+logical :: greens = .false.
+integer :: NgreenCells
+
 logical :: phase_log = .false.
 logical :: use_inhibiter = .false.
 logical :: use_fixed_CP = .false.

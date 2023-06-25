@@ -122,16 +122,11 @@ call PlaceCells(ok)
 !write(*,*) 'stopping after PlaceCells'
 !stop
 
-call CreateMastercell
-!call setTestCell(kcell_test)
-!call show_volume_data
-!call SetRadius(Nsites)
-!call getVolume(blob_volume,blob_area)
-!blob_radius = sqrt(blob_area/PI)
-!blob_centre = getCentre()
 write(logmsg,*) 'did PlaceCells: Ncells: ',Ncells
 call logger(logmsg)
 if (.not.ok) return
+
+call CreateMastercell
 
 istep = 0
 do ichemo = 1,NUTS
@@ -172,16 +167,16 @@ medium_change_step = .false.
 limit_stop = .false.
 kcell_dbug = 0
 allocate(nphase(0:ndays*24,8))
-write(logmsg,'(a,i6)') 'Startup procedures have been executed: initial T cell count: ',Ncells0
-call logger(logmsg)
-call averages
-call GenerateSFlookup(1)
+!write(logmsg,'(a,i6)') 'Startup procedures have been executed: initial T cell count: ',Ncells0
+!call logger(logmsg)
+!call averages
+!call GenerateSFlookup(1)
 use_permute = .true.
 rad_count = 0
 ! To compute average phase time
 phase_exit_time_sum = 0
 npet = 0
-call counter
+!call counter
 count_Nlethal = 0
 count_totDSB = 0
 end subroutine
@@ -405,6 +400,9 @@ read(nfcell,*) dll_run_version				! DLL run version number
 write(*,*) dll_run_version
 !read(nfcell,*) NX							! size of grid
 read(nfcell,*) initial_count				! initial number of tumour cells
+if (greens) then
+    initial_count = NgreenCells
+endif
 read(nfcell,*) iuse_lognormal
 use_exponential_cycletime = (iuse_lognormal /= 1)
 read(nfcell,*) divide_time_median(1)
@@ -1552,7 +1550,7 @@ elseif (t <= tswitch(3)) then
         if (single_cell) write(nflog,*) 'SetInitialCellCycleStatus: dth: ',dth
         call Jaiswal_update(cp,dth)
         if (single_cell) write(nflog,*) 'SetInitialCellCycleStatus: initial CC_act: ',cp%CC_act
-        if (cp%CC_act > CC_threshold) write(nflog,'(a,i6,f8.1,3f8.3)') 'SetInitialCellCycleStatus: dth,T_G2,progress,CC_act: ',kcell,dth,T_G2/3600,cp%progress,cp%CC_act
+!        if (cp%CC_act > CC_threshold) write(nflog,'(a,i6,f8.1,3f8.3)') 'SetInitialCellCycleStatus: dth,T_G2,progress,CC_act: ',kcell,dth,T_G2/3600,cp%progress,cp%CC_act
     endif
 else
 !    cp%fp = metab*f_CP/fg(M_phase)      ! not used
@@ -2313,7 +2311,7 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
                 else
                     newSFtot = newSFtot + cp%psurvive
                     Nnew = Nnew + 1
-                    if (cp%phase0 < 4 .and. cp%psurvive < 0.4) write(*,'(a,2i6,f8.3)') 'psurvive: ',kcell, cp%phase0,cp%psurvive
+!                    if (cp%phase0 < 4 .and. cp%psurvive < 0.4) write(*,'(a,2i6,f8.3)') 'psurvive: ',kcell, cp%phase0,cp%psurvive
                 endif
             endif
         enddo
@@ -2787,6 +2785,9 @@ character*(1) :: numstr
 logical :: ok, success, isopen
 integer :: i
 
+write(*,*) 'ncpu, inbuflen, outbuflen: ',ncpu, inbuflen, outbuflen
+res = 0
+use_TCP = .false.
 if (use_TCP) then
 	use_PEST = .false.
 endif
@@ -2805,6 +2806,8 @@ if (isopen) then
 endif
 i = index(infile,'.')
 logfile = infile(1:i)//'log'
+write(*,*) 'infile: ',infile
+write(*,*) 'logfile: ',logfile
 !open(nflog,file='drm_monolayer.log',status='replace')
 open(nflog,file=logfile,status='replace')
 
@@ -2875,7 +2878,7 @@ else
 	res = 1
 endif
 execute_t1 = wtime()
-call counter
+!call counter
 
 end subroutine
 

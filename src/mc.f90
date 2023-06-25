@@ -6,6 +6,8 @@ use chemokine   ! is this OK?
 use eta_module
 use km10_mod
 
+!use greens_mod
+
 implicit none
 
 ! There are 5 pathways:
@@ -566,6 +568,7 @@ if (use_Jeggo) then
             write(*,*) 'Npre, Npost: ',Npre,Npost
             write(*,'(2(a,3f8.1))') 'pre  DSB at IR: ',DSB0(1:3,1),'  NNHEJ: ',sum(DSB0(1:2,1))
             write(*,'(2(a,3f8.1))') 'post DSB at IR: ',DSB0(1:3,2),'  NNHEJ: ',sum(DSB0(1:2,2))
+            write(*,'(a,3f8.1)')    'total DSB at IR: ',sum(DSB0(NHEJfast,:)),sum(DSB0(NHEJslow,:)),sum(DSB0(HR,:))
         endif
     endif
 else
