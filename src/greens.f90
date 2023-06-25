@@ -17,6 +17,7 @@ else
     greens = .true.
     NgreenCells = Ngreen
 endif
+
 end subroutine
 
 end module
