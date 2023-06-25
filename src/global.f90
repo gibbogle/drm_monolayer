@@ -5,7 +5,7 @@ module global
 use omp_lib
 use real_kind_mod
 use par_zig_mod
-use winsock
+!use winsock
 use, intrinsic :: ISO_C_BINDING
 
 implicit none
@@ -472,8 +472,8 @@ character*(2048) :: logmsg
 character*(1024) :: header
 logical :: test_case(4)
 
-TYPE(winsockport) :: awp_0, awp_1
-logical :: use_TCP = .true.         ! turned off in para_main()
+!TYPE(winsockport) :: awp_0, awp_1
+logical :: use_TCP = .false.         ! turned off in para_main()
 logical :: use_CPORT1 = .false.
 logical :: stopped, clear_to_send
 logical :: simulation_start, par_zig_init, initialized
@@ -618,6 +618,7 @@ character*(1) :: LF = char(94)
 
 error = 0
 inquire(unit=nflog,OPENED=logfile_isopen)
+#if 0
 if (use_TCP) then
     if (awp_0%is_open) then
         call winsock_send(awp_0,trim(msg)//LF,len_trim(msg)+1,error)
@@ -629,6 +630,7 @@ if (use_TCP) then
 else
 	write(*,*) trim(msg)
 endif
+#endif
 if (logfile_isopen) then
 	write(nflog,'(a)') trim(msg)
 	if (error /= 0) then

@@ -12,7 +12,7 @@ use global
 use chemokine
 use ode_diffuse
 use cellstate
-use winsock  
+!use winsock  
 use colony
 use transfer
 use metabolism
@@ -2852,6 +2852,8 @@ write(logmsg,*) 'inputfile:  ', trim(infile)
 call logger(logmsg)
 write(logmsg,*) 'outputfile: ', trim(outfile)
 call logger(logmsg)
+
+#if 0
 if (use_TCP) then
 	call connecter(ok)
 	if (.not.ok) then
@@ -2859,6 +2861,7 @@ if (use_TCP) then
 		return
 	endif
 endif
+#endif
 
 DELTA_T = 600
 nsteps = 100
@@ -2891,6 +2894,7 @@ subroutine DisableTCP
 use_TCP = .false.   ! because this is called from monolayer_main()	
 end subroutine
 
+#if 0
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
 subroutine Connection(awp,port,error)
@@ -2963,6 +2967,7 @@ endif
 ! Allow time for completion of the connection
 call sleeper(2)
 end subroutine
+#endif 
 
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
@@ -2996,6 +3001,7 @@ call logger(logmsg)
 
 !close(nflog)
 
+#if 0
 if (use_TCP) then
 	if (stopped) then
 	    call winsock_close(awp_0)
@@ -3009,6 +3015,7 @@ if (use_TCP) then
 		endif
 	endif
 endif
+#endif
 end subroutine
 
 !-----------------------------------------------------------------------------------------
