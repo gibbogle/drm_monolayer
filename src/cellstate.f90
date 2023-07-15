@@ -688,7 +688,9 @@ do kcell = 1,nlist0
 	if (cp%state == DYING) then		! nothing affects a DYING cell (when does it die?)
 		cp%dVdt = 0
 		cycle
-	endif
+    endif
+    
+    ! start cell simulation----------------------------------------------------------
 	ityp = cp%celltype
 	ccp => cc_parameters(ityp)
 	divide = .false.
@@ -745,7 +747,9 @@ do kcell = 1,nlist0
 			    divide = .true.
 			endif
 		endif
-	endif
+    endif
+    ! end cell simulation---------------------------------------------------------------------
+    
 	if (divide) then
 		ndivide = ndivide + 1
 		if (ndivide > MAX_DIVIDE_LIST) then

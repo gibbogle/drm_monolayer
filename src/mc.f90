@@ -328,9 +328,9 @@ elseif (mod(iphase_hours,10) == 9) then    ! this is the compute_cycle case for 
     expt_tag = "CC-13"
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
-    nphase_hours = 8
+    nphase_hours = 6    !8
     next_phase_hour = 1
-    phase_hour(1:8) = [1, 2, 3, 5, 8, 12, 18, 24]   
+    phase_hour(1:6) = [1, 2, 3, 5, 8, 12]   !, 18, 24]   
     ! Note: output M
 elseif (mod(iphase_hours,10) == 5) then    ! this is the compute_cycle case for CC-11
     expt_tag = "CC-11"
@@ -1300,6 +1300,8 @@ ATR_DSB = sum(DSB(HR,:))
 th_since_IR = (tnow - t_irradiation)/3600
 if (.not.(iph == G1_phase .and. th_since_IR < G1_tdelay)) then
     call Jaiswal_update(cp, dth)
+else
+    if (G1_tdelay == 0) write(*,*) 'Error: no Jaiswal_update with G1_tdelay = 0'
 endif
 if ((iph == 1 .and. use_G1_pATM) .or. (iph == 2 .and. use_S_pATM)) then 
     call updateATM(iph,cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth

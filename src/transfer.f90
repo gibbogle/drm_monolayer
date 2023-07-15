@@ -1142,7 +1142,7 @@ use, intrinsic :: iso_c_binding
 type(c_ptr) :: bufptr
 character(c_char) :: buf(1024)
 integer :: buflen
-character*(1024), save :: string
+character*(1024), save, target :: string
 
 string = 'A test string'
 buflen = len(trim(string))

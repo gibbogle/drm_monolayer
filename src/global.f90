@@ -234,6 +234,9 @@ type cell_type
 	
 	! Jaiswal section (26/09/22)
 	real(REAL_KIND) :: CC_act, ATR_act, ATM_act, dCC_act_dt, kt2cc, ke2cc, kcc2a
+    
+    ! Greens section (01/07/2023)
+    real(8) :: gconc(3)		! oxygen, glucose, drug
 
 end type
 
@@ -618,8 +621,8 @@ character*(1) :: LF = char(94)
 
 error = 0
 inquire(unit=nflog,OPENED=logfile_isopen)
-#if 0
 if (use_TCP) then
+#if 0
     if (awp_0%is_open) then
         call winsock_send(awp_0,trim(msg)//LF,len_trim(msg)+1,error)
     elseif (logfile_isopen) then
@@ -627,10 +630,10 @@ if (use_TCP) then
     else
         write(99,*) trim(msg)
     endif
+#endif
 else
 	write(*,*) trim(msg)
 endif
-#endif
 if (logfile_isopen) then
 	write(nflog,'(a)') trim(msg)
 	if (error /= 0) then

@@ -2060,6 +2060,7 @@ do idiv = 0,ndiv-1
         call CheckDrugConcs
         call CheckDrugPresence
     endif
+    
     if (dbug) write(nflog,*) 'GrowCells'
     call GrowCells(DELTA_T,t_simulation,ok)
     if (dbug) write(nflog,*) 'did GrowCells'
@@ -2238,6 +2239,7 @@ if (dbug .or. mod(istep,nthour) == 0) then
         total = total + cp%totDSB0
     enddo    
 endif
+
 ! write(nflog,'(a,f8.3)') 'did simulate_step: time: ',wtime()-start_wtime
 !kcell = 5388
 !cp => cell_list(kcell)
