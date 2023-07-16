@@ -328,9 +328,9 @@ elseif (mod(iphase_hours,10) == 9) then    ! this is the compute_cycle case for 
     expt_tag = "CC-13"
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
-    nphase_hours = 6    !8
+    nphase_hours = 8
     next_phase_hour = 1
-    phase_hour(1:6) = [1, 2, 3, 5, 8, 12]   !, 18, 24]   
+    phase_hour(1:nphase_hours) = [1, 2, 3, 5, 8, 12, 18, 24]   
     ! Note: output M
 elseif (mod(iphase_hours,10) == 5) then    ! this is the compute_cycle case for CC-11
     expt_tag = "CC-11"
