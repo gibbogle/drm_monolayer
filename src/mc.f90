@@ -320,9 +320,9 @@ elseif (mod(iphase_hours,10) == 2) then    ! this is the compute_cycle case for 
     expt_tag = "CA-135"
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
-    nphase_hours = 3
+    nphase_hours = 5
     next_phase_hour = 1
-    phase_hour(1:3) = [5.0, 8.5, 11.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+    phase_hour(1:5) = [5.0, 8.5, 11.5, 18.5, 24.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
     ! Note: output G1, S, G2, M
 elseif (mod(iphase_hours,10) == 9) then    ! this is the compute_cycle case for CC-13
     expt_tag = "CC-13"
