@@ -516,6 +516,7 @@ read(nfcell,*) O2cutoff(1)
 read(nfcell,*) O2cutoff(2)
 read(nfcell,*) O2cutoff(3)
 read(nfcell,*) hypoxia_threshold
+write(nflog,*) 'hypoxia_threshold: ',hypoxia_threshold
 read(nfcell,*) growthcutoff(1)
 read(nfcell,*) growthcutoff(2)
 read(nfcell,*) growthcutoff(3)
@@ -1982,7 +1983,7 @@ mp => master_cell%metab
 
 t_simulation = istep*DELTA_T	! seconds
 
-write(*,*) 'start simulate_step: t_simulation: ',istep,t_simulation !,cell_list(1)%progress
+!write(*,*) 'start simulate_step: t_simulation: ',istep,t_simulation !,cell_list(1)%progress
 !call testmetab2
 dbug = (istep < 0)
 !Nmetabolisingcells = Ncells - (Ndying(1) + Ndying(2))

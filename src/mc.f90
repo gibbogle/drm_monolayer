@@ -239,6 +239,7 @@ read(nfin,*) Chalf
 read(nfin,*) Preass
 read(nfin,*) dsigma_dt
 read(nfin,*) sigma_NHEJ
+write(nflog,*) 'sigma_NHEJ: ',sigma_NHEJ
 
 if (use_Jaiswal) then
     read(nfin,*) Kcc2a
@@ -261,6 +262,7 @@ if (use_Jaiswal) then
     read(nfin,*) CC_act0
     read(nfin,*) CC_threshold
     read(nfin,*) norm_factor
+    write(nflog,*) 'norm_factor: ',norm_factor
     if (CC_threshold < 0.1) then
         use_slope_threshold = .true.
         slope_threshold = CC_threshold
