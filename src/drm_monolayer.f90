@@ -20,6 +20,8 @@ use metabolism
 
 IMPLICIT NONE
 
+real(REAL_KIND) :: phdist0(NP)
+
 contains 
 
 !-----------------------------------------------------------------------------------------
@@ -403,6 +405,7 @@ read(nfcell,*) initial_count				! initial number of tumour cells
 if (greens) then
     initial_count = NgreenCells
 endif
+write(*,*) 'initial_count: ',initial_count
 read(nfcell,*) iuse_lognormal
 use_exponential_cycletime = (iuse_lognormal /= 1)
 read(nfcell,*) divide_time_median(1)
@@ -1227,6 +1230,7 @@ write(*,'(a,5f8.3)') 'Initial phase %ages: ',100.0*real(counts)/sum(counts)
 write(*,*)
 write(nflog,'(a,5i6)') 'Initial phase counts: ',counts
 write(nflog,'(a,5f7.2)') 'Initial phase %ages: ',100.0*real(counts)/sum(counts)
+phdist0 = 100.0*real(counts)/sum(counts)
 write(nflog,*) 'Ncells_Mphase: ',Ncells_Mphase
 !write(*,*) 'stopping...'
 !stop
@@ -1978,7 +1982,7 @@ mp => master_cell%metab
 
 t_simulation = istep*DELTA_T	! seconds
 
-!write(*,*) 'start simulate_step: t_simulation: ',istep,t_simulation,cell_list(1)%progress
+write(*,*) 'start simulate_step: t_simulation: ',istep,t_simulation !,cell_list(1)%progress
 !call testmetab2
 dbug = (istep < 0)
 !Nmetabolisingcells = Ncells - (Ndying(1) + Ndying(2))
@@ -2458,6 +2462,7 @@ if (compute_cycle) then
     else
         tadjust = event(1)%time/3600
     endif
+    recorded_phase_dist(1,1:NP) = phdist0
     do i = 1,nphase_hours
         write(nflog,'(f6.1,4x,4f8.3)') phase_hour(i)-tadjust,recorded_phase_dist(i,1:4)
         write(*,'(f6.1,4x,4f8.3)') phase_hour(i)-tadjust,recorded_phase_dist(i,1:4)
@@ -2808,8 +2813,8 @@ if (isopen) then
 endif
 i = index(infile,'.')
 logfile = infile(1:i)//'log'
-write(*,*) 'infile: ',infile
-write(*,*) 'logfile: ',logfile
+write(*,*) 'infile: ',trim(infile)
+write(*,*) 'logfile: ',trim(logfile)
 !open(nflog,file='drm_monolayer.log',status='replace')
 open(nflog,file=logfile,status='replace')
 

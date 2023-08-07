@@ -238,6 +238,7 @@ read(nfin,*) G1_tdelay
 read(nfin,*) Chalf
 read(nfin,*) Preass
 read(nfin,*) dsigma_dt
+read(nfin,*) sigma_NHEJ
 
 if (use_Jaiswal) then
     read(nfin,*) Kcc2a

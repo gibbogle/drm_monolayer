@@ -847,6 +847,7 @@ cp%fg = fg
 end subroutine	
 
 !--------------------------------------------------------------------------------------
+! This is actually cycle time
 !--------------------------------------------------------------------------------------
 real(REAL_KIND) function DivideTime(ityp)
 integer :: ityp
