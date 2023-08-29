@@ -2282,7 +2282,8 @@ endif
 if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
     ! getSFlive computes the average psurvive for all cells that reach mitosis,
     ! which number NPsurvive = Nirradiated - Napop.
-    SFlive = getSFlive()
+!    SFlive = getSFlive()
+    call getSFlive(SFlive)
     SFtot = SFlive*(Nirradiated - Napop)
     write(*,*)
     write(*,'(a,3i6,e12.3)') 'NPsurvive,Nirradiated,Napop,SFtot: ',NPsurvive,Nirradiated,Napop,SFtot
@@ -2392,7 +2393,8 @@ end subroutine
 
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
-function getSFlive result(SF)
+!function getSFlive result(SF)
+subroutine getSFlive(SF)
 real(REAL_KIND) :: SF
 real(REAL_KIND) :: sfsum, totDSB, total, total0
 integer :: kcell, n
@@ -2427,7 +2429,8 @@ enddo
 SF = sfsum/n
 write(nflog,'(a,2f10.1)') 'getSFlive: initial,final DSB totals: ',total0,total
 write(*,'(a,i6,4e12.3)') 'n,Ave totDSB,Pmit,Nlethal,Paber: ',n,totDSB/n, totPmit/n, totNlethal/n, totPaber/n
-end function
+!end function
+end subroutine
 
 !-----------------------------------------------------------------------------------------
 ! The selection of outputs needs to be made an input parameter.
