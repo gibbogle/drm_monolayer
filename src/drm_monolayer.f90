@@ -1054,6 +1054,7 @@ do itime = 1,ntimes
 		    phase_hour(1:nphase_hours) = t + phase_hour(1:nphase_hours)
 		endif
 		write(nflog,'(a,i3,a,f6.1,a,f6.2)') 'Radiation event: ', kevent,'  dose: ',dose,' hour: ',t
+        IR_time = t
 	endif
 enddo
 Nevents = kevent
@@ -2099,7 +2100,7 @@ if (radiation_dose > 0) then
 	if (.not.ok) then
 		res = 3
 		return
-	endif
+    endif
 endif
 
 res = 0
@@ -2158,8 +2159,8 @@ endif
 if (compute_cycle .or. output_DNA_rate) then
     if (next_phase_hour > 0) then  ! check if this is a phase_hour
         if (real(istep)/nthour >= phase_hour(next_phase_hour)) then   ! record phase_dist
+            write(*,*) 'Reached phase hour: ',next_phase_hour,phase_hour(next_phase_hour)
             if (next_phase_hour == 1) then
-                write(*,*) 'Reached phase hour: ',next_phase_hour,phase_hour(next_phase_hour)
                 write(*,'(a,4i8)') 'count: ',phase_count(1:4)
                 write(nflog,*) 'Reached phase hour: ',next_phase_hour,phase_hour(next_phase_hour)
                 write(nflog,'(a,4i8)') 'count: ',phase_count(1:4)
@@ -2175,6 +2176,7 @@ if (compute_cycle .or. output_DNA_rate) then
 	        if (output_DNA_rate) then
 	            call get_DNA_synthesis_rate(DNA_rate)
 	            recorded_DNA_rate(next_phase_hour) = DNA_rate
+                write(*,*) 'in simulate_step: DNA_rate: ',DNA_rate
 	        endif
             next_phase_hour = next_phase_hour + 1
             if (next_phase_hour > nphase_hours) next_phase_hour = 0
@@ -2556,12 +2558,7 @@ endif
 if (output_DNA_rate) then
     write(nflog,*) 'Completed'
     write(*,*) 'Completed'
-    if (use_synchronise) then
-        tadjust = 0
-    else
-        tadjust = 6
-    endif
-    tadjust = 0
+    tadjust = IR_time
     if (nphase_hours > 0) then
         write(*,*) 'write DNA_rate'
         write(nfres,'(20e15.6)') (recorded_DNA_rate(i),i=1,nphase_hours)
@@ -2625,6 +2622,7 @@ write(nflog,'(a,4f12.3)') 'totPmit, totPaber, tottotDSB, totNlethal: ',totPmit, 
 write(*,'(a,i6,4f11.1)') 'Nmitosis, totPmit, totPaber, tottotDSB: ',int(Nmitosis),totPmit, totPaber, tottotDSB
 write(*,'(a,4f11.1)') 'totPaber, totNlethal, totMis: ',totPaber, totNlethal, totNlethal/klethal
 
+write(nflog,'(a,3f6.1,3f6.3)') 'Ave NDSB(pre, post), Nmisjoins, SF factors: ',totNDSB/nmitosis,totNmisjoins/nmitosis,totSFfactor/nmitosis
 !write(logmsg,'(a,8f8.3)') 'phase_dist:      ',phase_dist(0:3)
 !call logger(logmsg)
 !write(*,'(a,f8.3)') 'Final average pATM: ',ATMsum/nirradiated

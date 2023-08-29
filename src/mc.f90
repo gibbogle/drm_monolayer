@@ -104,6 +104,7 @@ integer :: NSth, NG2th
 real(8) :: repRateFactor(NP)
 
 real(8) :: totPmit, totPaber, tottotDSB, totNlethal
+real(8) :: totNDSB(2), totNmisjoins, totSFfactor(3)
 
 real(8) :: tCPdelay, tATMdelay, tATRdelay
 logical :: use_addATMATRtimes = .false.
@@ -344,7 +345,7 @@ elseif (mod(iphase_hours,10) == 5) then    ! this is the compute_cycle case for 
     phase_hour(1:5) = [1.0, 1.5, 2.5, 3.5, 4.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
     ! Note: output G1, S, G2
 
-elseif (iphase_hours == 6) then    ! this is the output_DNA_rate case
+elseif (iphase_hours == 6) then    ! this is the output_DNA_rate case (EDU)
     compute_cycle = .false.
     output_DNA_rate = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
@@ -352,8 +353,12 @@ elseif (iphase_hours == 6) then    ! this is the output_DNA_rate case
 !    nphase_hours = 10  ! To generate DNA synthesis factor from S ATM parameters
 !    phase_hour(1:10) = [0.05,0.1,0.16666,0.33333,0.5,0.75,1.25,2.25,3.25,4.25]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 ! EDU fitting
-    nphase_hours = 5    ! To fit S ATM parameters to EDU data
-    phase_hour(1:5) = [0.75,1.25,2.25,3.25,4.25]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+!    nphase_hours = 5    ! To fit S ATM parameters to EDU data
+!    phase_hour(1:5) = [0.75,1.25,2.25,3.25,4.25]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+    nphase_hours = 18
+    do j = 1,nphase_hours
+        phase_hour(j) = j*0.25
+    enddo
     next_phase_hour = 1
 elseif (iphase_hours == 3) then
     use_SF = .true.     ! in this case SFave is recorded and there are multiple phase distribution recording times
@@ -651,6 +656,10 @@ totPaber = 0
 tottotDSB = 0
 totNlethal = 0
 
+totNDSB = 0
+totNmisjoins = 0
+totSFfactor = 0
+
 end subroutine
 
 !--------------------------------------------------------------------------
@@ -945,12 +954,16 @@ if (use_DSB_CP) then
     return
 endif
 if (iph == G1_phase) then
+!    atm = 0
+!    if (kcell_now == 1) write(*,*) '**** G1 atm = 0 in get_slowdown_factors ****'
     if (use_G1_pATM ) then
         atm = cp%pATM
     else
         atm = cp%ATM_act
     endif
 elseif (iph == S_phase) then
+!    atm = 0
+!    if (kcell_now == 1) write(*,*) '**** S atm = 0 in get_slowdown_factors ****'
     if (use_G1_pATM ) then
         atm = cp%pATM
     else
@@ -1100,6 +1113,9 @@ elseif (iph == G2_phase) then
     elseif (t_G2 > 30) then
         ATR_act = ATR_act*(t_G2 - 30)/(40 - 30)
     endif
+!    if (kcell_now == 1) write(*,*) '**** G2 D_ATM = D_ATR = 0 in jaiswal_update ****'
+!    D_ATR = 0
+!    D_ATM = 0
 else
     return
 endif
@@ -1434,6 +1450,7 @@ integer :: k, jpp
 DSB = cp%DSB
 do jpp = 1,2
     totDSB(jpp) = sum(DSB(:,jpp))
+    totNDSB(jpp) = totNDSB(jpp) + totDSB(jpp)
 enddo
 Nlethal = cp%Nlethal
 if (klethal > 0) then
@@ -1441,10 +1458,12 @@ if (klethal > 0) then
 else
     Nmisjoins = 0
 endif
-if (kcell_now == -27) write(nflog,'(a,3i4,2e12.3)') 'kcell, phase0, phase, totDSB, Nlethal: ',kcell_now, cp%phase0, cp%phase, totDSB, Nlethal
+totNmisjoins = totNmisjoins + Nmisjoins
 
 Pmit = exp(-(mitRate(1)*totDSB(1) + mitRate(2)*totDSB(2)))
-
+do k = 1,2
+    totSFfactor(k) = totSFfactor(k) + exp(-(mitRate(k)*totDSB(k)))
+enddo
 if (cp%phase0 < M_phase) then   ! G1, S, G2
     Paber = exp(-Nlethal)
 !    Pmit = exp(-mitRate*totDSB)
@@ -1456,6 +1475,7 @@ else    ! M_phase or dividing
     cp%Psurvive = Pmit*Msurvival
 !    write(nflog,'(a,i6,3f10.4)') 'IR in mitosis: ',kcell_now,totDSB,cp%totDSB0,Pmit
 endif
+totSFfactor(3) = totSFfactor(3) + Paber
 if (kcell_now <= 10) then
 !    write(*,*)
     write(*,'(a,2i3,3f8.3)') 'cell,phase0,totDSB,psurvive: ',kcell_now,cp%phase0,totDSB,cp%Psurvive

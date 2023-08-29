@@ -424,6 +424,7 @@ real(REAL_KIND) :: spcrad_value
 real(REAL_KIND) :: total_dMdt
 !real(REAL_KIND) :: total_flux_prev, medium_Cbnd_prev
 real(REAL_KIND) :: start_wtime
+real(REAL_KIND) :: IR_time
 
 ! Metabolism parameters
 real(REAL_KIND) :: f_GL     ! ratio of lactate production to glucose consumption (not used in simple metab)
@@ -567,7 +568,7 @@ real(REAL_KIND) :: S_phase_RR_progress
 real(REAL_KIND) :: G1_delay, S_delay, G2_delay  ! test values are specified in drm_monolayer_main
 real(REAL_KIND) :: totNmis = 0
 real(REAL_KIND) :: G2_katm3_factor=1.0, G2_katm4_factor=1.0, G2_katr3_factor=1.0, G2_katr4_factor=1.0
-integer :: maxhours = 99
+integer :: maxhours = 199
 logical :: overstepped
 
 ! Greens function section

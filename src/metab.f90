@@ -28,7 +28,7 @@ end module
 module metabolism
 use real_kind_mod
 use global
-#if .not. EXCEL
+#ifndef EXCEL
 use chemokine
 #endif
 implicit none

@@ -113,7 +113,7 @@ endif
 use_synchronise = .false.
 nph = 1
 if (use_synchronise) then
-    nph = 5
+    nph = 10
     do i = 1,nph
         progress(i) = (i-1)*1.0/nph
     enddo
@@ -123,7 +123,7 @@ if (use_synchronise) then
 !        write(nflog,'(2i6,f6.3)') i-1, phase(i), progress(i)
 !    enddo
 endif
-synch_phase = S_phase   !G1 is 1 - 6, S is 7 - 15, G2 is 16 - 19
+synch_phase = G2_phase   !G1 is 1 - 6, S is 7 - 15, G2 is 16 - 19
 synch_fraction = 0.0
 G2_katm3_factor = 1.0
 G2_katm4_factor = 1.0
