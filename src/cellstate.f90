@@ -92,13 +92,6 @@ pHR_sum = 0
 pNHEJslow_sum = 0
 fdecay_sum = 0
 
-
-if (use_Iliakis) then
-    fIliakis = kIliakis**nIliakis/(kIliakis**nIliakis + dose**nIliakis)
-else
-    fIliakis = 1.0
-endif
-
 if (use_G1_CP_factor) then
     G1_CP_time = G1_CP_factor*dose*3600
 endif
@@ -176,6 +169,17 @@ counts = 0
         ! Not using LQ formalism
         SER = C_O2/(C_O2 + LQ(ityp)%K_ms)
         Cdrug = 0
+		if (use_Iliakis) then
+			if (cp%phase == G2_phase) then
+				fIliakis = kIliakis**nIliakis/(kIliakis**nIliakis + dose**nIliakis)
+			elseif (cp%phase == S_phase) then
+				fIliakis = 1
+			else
+				fIliakis = 0
+			endif
+		else
+			fIliakis = 1.0
+		endif
         SER = 1 ! turn off SER - Bill confirmed
         call cellIrradiation(cp,dose,Cdrug)
 !        call radiation_damage(cp, ccp, dose, SER, tmin)
