@@ -740,7 +740,8 @@ do kcell = 1,nlist0
             if (kcell <= 10) write(nflog,'(a,2i6,f8.3)') 'grower: divide cell, time: ',istep,kcell,cp%G2_time/3600
 !            write(nflog,'(a,i6,f6.3)') 'Exit M_phase: kcell, time: ',kcell_now,t_simulation/3600
 ! if use_SF (i.e. we are computing SF_ave) then only cells not satisfying (is_radiation .and. cp%Psurvive < 0) need to divide
-			if (use_SF) then
+!			write(*,'(a,2L4,f8.3)') 'use_SF, is_radiation, cp%Psurvive: ',use_SF, is_radiation, cp%Psurvive
+            if (use_SF) then
 			    if (is_radiation .and. cp%Psurvive < 0) then
 			        ! compute survival probability (ala McMahon, mcradio)
 			        call survivalProbability(cp)
@@ -862,6 +863,7 @@ if (.not.is_radiation .and. f_CP < 1.0) then
     stop
 endif
 !write(*,'(a,i6,3e12.3)') 'growcell: ',kcell_now,metab,f_CP,cp%fg(cp%phase)
+if (single_cell) write(nflog,*) 'f_CP: ',f_CP
 cp%fp = metab*f_CP/cp%fg(cp%phase)
 cp%dVdt = cp%fp*max_growthrate(ityp)
 Cdrug(:) = cp%Cin(DRUG_A:DRUG_A+1)

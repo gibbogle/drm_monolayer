@@ -1262,6 +1262,7 @@ cp => cell_list(kcell)
 cp%ID = kcell
 cp%state = ALIVE
 cp%generation = 1
+cp%birthtime = 0
 cp%rad_state = 0
 cp%celltype = random_choice(celltype_fraction,Ncelltypes,kpar)
 ityp = cp%celltype
@@ -1699,9 +1700,9 @@ type(event_type) :: E
 logical :: full
 logical :: is_event
 
-!write(logmsg,*) 'ProcessEvent'
+!write(logmsg,*) 'ProcessEvent:'
 !call logger(logmsg)
-radiation_dose = 0
+radiation_dose = -1
 is_event = .false.
 do kevent = 1,Nevents
 	E = event(kevent)
@@ -1711,7 +1712,8 @@ do kevent = 1,Nevents
 			radiation_dose = E%dose
 			write(logmsg,'(a,i3,f8.0,f8.3)') 'RADIATION_EVENT: kevent, time, dose: ',kevent,t_simulation,E%dose
 			call logger(logmsg)
-            is_radiation = (radiation_dose > 0) !.true. to cover the case of dose = 0 (control)
+!            is_radiation = (radiation_dose > 0) !.true. to cover the case of dose = 0 (control)
+            is_radiation = .true.
             is_event = .true.
 		elseif (E%etype == MEDIUM_EVENT) then
 			write(logmsg,'(a,f8.0,f8.3,2f8.4)') 'MEDIUM_EVENT: time, volume, O2medium: ',t_simulation,E%volume,E%O2medium
@@ -1971,7 +1973,7 @@ integer :: phase_count(0:4), nG2
 real(REAL_KIND) :: total, tadjust
 real(REAL_KIND) :: fATM, fATR, fCP, dtCPdelay, dtATMdelay, dtATRdelay, ATM_DSB, DNA_rate
 real(REAL_KIND) :: pATM_sum, pATR_sum, DSB_sum
-real(REAL_KIND) :: SFtot, Pp, Pd, newSFtot
+real(REAL_KIND) :: SFtot, Pp, Pd, newSFtot, total_mitosis_time
 logical :: PEST_OK
 logical :: ok = .true.
 logical :: dbug
@@ -2093,7 +2095,7 @@ endif
 if (use_events) then
 	call ProcessEvent(radiation_dose)
 endif
-if (radiation_dose > 0) then
+if (radiation_dose >= 0) then
 	write(logmsg,'(a,f6.1)') 'Radiation dose: ',radiation_dose
 	call logger(logmsg)
 	call Irradiation(radiation_dose, ok)
@@ -2279,6 +2281,7 @@ if (use_PEST) then  ! check that all phase distributions have been estimated
     PEST_OK = (next_phase_hour == 0)
 endif
     
+!write(*,'(a,3i8)') 'NPsurvive, Nirradiated,Napop: ',NPsurvive, Nirradiated,Napop
 if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
     ! getSFlive computes the average psurvive for all cells that reach mitosis,
     ! which number NPsurvive = Nirradiated - Napop.
@@ -2297,8 +2300,10 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
         Nnew = 0
         NpreCA = 0
         Nd = 0
+        total_mitosis_time = 0
         do kcell = 1,nlist
             cp => cell_list(kcell)
+            total_mitosis_time = total_mitosis_time + cp%mitosis_time
             if (cp%psurvive > 1.0e-8) then
                 if (cp%mitosis_time < CA_time) then
                     NpreCA = NpreCA + 1
@@ -2327,6 +2332,7 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
         enddo
         write(*,'(a,3i6,2f10.3)') 'NpreCA, Nd, Nnew, newSFtot, newSFave: ',NpreCA,Nd,Nnew,newSFtot,newSFtot/Nnew
         write(*,'(a,3i6,f8.4)') 'nlist,Nirradiated,NPsurvive, new SFave: ',nlist,Nirradiated,NPsurvive,newSFtot/nlist
+        write(*,'(a,i8,f8.2)') 'Average mitosis_time: ',nlist,total_mitosis_time/(3600*nlist)
     endif
     
     if (NPsurvive > 0) then
@@ -2521,6 +2527,7 @@ if (compute_cycle) then
                         write(nfres,'(20f8.5)') (normalised_phase_dist(i,4),i=1,nphase_hours)
                     endif
                 else
+                    write(*,'(a,a,i6)') 'expt_tag,nphase_hours: ',expt_tag,nphase_hours
                     if (expt_tag == "CA-135") then
                         write(nfres,'(20f8.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
                     elseif (expt_tag == "CC-11 ") then

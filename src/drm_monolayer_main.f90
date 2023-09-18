@@ -49,6 +49,7 @@ real(8) :: PE, colony_days, dist(40), ddist = 50
 
 real(8) :: progress(30)
 integer :: phase(30), Nph
+logical :: use_single
 
 call disableTCP
 
@@ -111,20 +112,26 @@ endif
 
 ! Synchronisation of cell IR
 use_synchronise = .false.
+use_single = .false. ! this is to simulate a single cell at specified phase and progress
+synch_phase = G1_phase   !G1 is 1 - 6, S is 7 - 15, G2 is 16 - 19
+synch_fraction = 0.6
 nph = 1
 if (use_synchronise) then
-    nph = 10
-    do i = 1,nph
-        progress(i) = (i-1)*1.0/nph
-    enddo
+    if (use_single) then
+        nph = 1
+        progress(1) = synch_fraction
+    else
+        nph = 10
+        do i = 1,nph
+            progress(i) = (i-1)*1.0/nph
+        enddo
+    endif
 !    call syncher(Nph, phase, progress)
 !    do i = 1,Nph
 !        write(*,'(2i6,f6.3)') i-1, phase(i), progress(i)
 !        write(nflog,'(2i6,f6.3)') i-1, phase(i), progress(i)
 !    enddo
 endif
-synch_phase = G2_phase   !G1 is 1 - 6, S is 7 - 15, G2 is 16 - 19
-synch_fraction = 0.0
 G2_katm3_factor = 1.0
 G2_katm4_factor = 1.0
 G2_katr3_factor = 1.0
@@ -135,8 +142,8 @@ compute_cycle = .true.
 i_hypoxia_cutoff = 3
 i_growth_cutoff = 1
 do irun = 1,nph   ! 1,1
-    synch_fraction = progress(irun)    !(irun-1)*0.2
     if (use_synchronise) then
+        synch_fraction = progress(irun)    !(irun-1)*0.2
         write(*,*)
     	write(*,'(a,2i4,f6.3)') 'irun, synch_phase, synch_fraction: ',irun,synch_phase,synch_fraction
     	write(nflog,*)

@@ -51,6 +51,10 @@ logical :: switch
 !if (kcell_now <= 10) write(nflog,'(a,2i4,f6.3)') 'kcell_now, phase, progress: ',kcell_now,cp%phase,cp%progress
 10 continue
 if (cp%phase == G1_phase) then
+    if (single_cell) then
+        write(*,'(a,5e12.3)') 'G1: progress,fp,dt,T_G1, inc: ',cp%progress,cp%fp,dt,ccp%T_G1,cp%fp*dt/ccp%T_G1
+        write(nflog,'(a,5e12.3)') 'G1: progress,fp,dt,T_G1, inc: ',cp%progress,cp%fp,dt,ccp%T_G1,cp%fp*dt/ccp%T_G1
+    endif
     cp%progress = cp%progress + cp%fp*dt/ccp%T_G1
     if (cp%progress >= 1) then
         if (use_G1_stop) then
@@ -65,6 +69,10 @@ if (cp%phase == G1_phase) then
         cp%phase = S_phase
         cp%progress = 0
         cp%t_S_phase = tnow
+        if (single_cell) then
+            write(*,'(a,2f6.2)') 'S entry: tnow, N_DSB: ',tnow/3600,sum(cp%DSB(1:3,:))
+            write(nflog,'(a,2f6.2)') 'S entry: tnow, N_DSB: ',tnow/3600,sum(cp%DSB(1:3,:))
+        endif
 !        goto 10    ! could continue in next phase with the remainder of the time step
     endif
 elseif (cp%phase == S_phase) then
@@ -82,8 +90,8 @@ elseif (cp%phase == S_phase) then
         cp%t_start_G2 = istep*DELTA_T
         nSdelay = nSdelay + 1   ! only S doesn't use stops
         if (single_cell) then
-            write(*,*) 'G2 entry: N_DSB: ',sum(cp%DSB(1:3,:))
-            write(nflog,*) 'G2 entry: N_DSB: ',sum(cp%DSB(1:3,:))
+            write(*,'(a,2f6.2)') 'G2 entry: tnow, N_DSB: ',tnow/3600,sum(cp%DSB(1:3,:))
+            write(nflog,'(a,2f6.2)') 'G2 entry: tnow, N_DSB: ',tnow/3600,sum(cp%DSB(1:3,:))
         endif
     endif
 elseif (cp%phase == G2_phase) then

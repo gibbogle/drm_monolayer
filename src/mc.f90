@@ -964,7 +964,7 @@ if (iph == G1_phase) then
 elseif (iph == S_phase) then
 !    atm = 0
 !    if (kcell_now == 1) write(*,*) '**** S atm = 0 in get_slowdown_factors ****'
-    if (use_G1_pATM ) then
+    if (use_S_pATM ) then
         atm = cp%pATM
     else
         atm = cp%ATM_act
@@ -973,7 +973,11 @@ elseif (iph == S_phase) then
 endif
 k3 = K_ATM(iph,3)
 k4 = K_ATM(iph,4)
-if (kcell_now == -3) write(*,'(a,i6,3e12.4)') 'get_slowdown_factors: kcell,k3,k4,atm: ',kcell_now,k3,k4,atm
+if (single_cell) then
+    write(*,'(a,3e12.3)') 'k3,k4,ATM_act: ',k3,k4,cp%ATM_act
+    write(nflog,'(a,3e12.3)') 'k3,k4,ATM_act: ',k3,k4,cp%ATM_act
+endif
+!if (single_cell) write(nflog,'(a,i6,3e12.4)') 'get_slowdown_factors: kcell,k3,k4,atm: ',kcell_now,k3,k4,atm
 if (use_exp_slowdown) then
     fATM = exp(-k4*atm)
 else
@@ -1033,6 +1037,7 @@ else
             fslow = max(0.0,fATM + fATR - 1)
         else
             fslow = fATM*fATR
+            if (single_cell) write(nflog,'(a,3f8.3)') 'fATM, fATR, fslow: ',fATM, fATR, fslow
             if (kcell_now == -3) then
                 write(*,'(a,i6,i4,3f6.3)') 'fslow: ',kcell_now,iph,fATM,fATR,fslow
                 write(nflog,'(a,i6,i4,3f6.3)') 'fslow: ',kcell_now,iph,fATM,fATR,fslow
@@ -1239,6 +1244,8 @@ real(8) :: DSB_min = 1.0e-3
 logical :: use_totMis = .true.      ! was false!
 logical :: use_ATM != .false.
 logical :: dbug
+logical :: use_G1_tdelay = .false.
+logical :: do_G1_Jaiswal
 
 dth = dt/3600   ! hours
 use_ATM = .not.use_fixed_CP
@@ -1303,6 +1310,7 @@ totDSB0 = sum(DSB0)
 
 ATM_DSB = sum(DSB(NHEJslow,:)) + sum(DSB(HR,:))   ! complex DSB
 ATR_DSB = sum(DSB(HR,:))
+
 !if (iph >= 7) iph = iph - 6     ! checkpoint phase numbers --> phase number, to continue pATM and pATR processes through checkpoints
 !if (iph <= G2_phase) then      ! not for 4 (M_phase) or 5 (dividing)
 !    if (iph == G2_phase .and. use_Jaiswal) then
@@ -1312,16 +1320,33 @@ ATR_DSB = sum(DSB(HR,:))
 !        if (iph > G1_phase) call updateATR(iph,cp%pATR,ATR_DSB,dth)     ! updates the pATR mass through time step = dth (if use_Jaiswal, S only)
 !    endif
 !endif
+!if (use_G1_TDELAY) then
+!    ! We want to update Jaiswal for a cell in G1 only if G1_tdelay has elapsed since IR
+!    ! Current time is tnow (sec).  IR time is t_irradiation
+!    ! Time since IR is th_since_IR(hours)
+!    th_since_IR = (tnow - t_irradiation)/3600
+!if (.not.(iph == G1_phase .and. th_since_IR < G1_tdelay)) then
+!    call Jaiswal_update(cp, dth)
+!else
+!    if (G1_tdelay == 0) write(*,*) 'Error: no Jaiswal_update with G1_tdelay = 0'
+!endif
 
-! We want to update Jaiswal for a cell in G1 only if G1_tdelay has elapsed since IR
-! Current time is tnow (sec).  IR time is t_irradiation
-! Time since IR is th_since_IR(hours)
-th_since_IR = (tnow - t_irradiation)/3600
-if (.not.(iph == G1_phase .and. th_since_IR < G1_tdelay)) then
-    call Jaiswal_update(cp, dth)
-else
-    if (G1_tdelay == 0) write(*,*) 'Error: no Jaiswal_update with G1_tdelay = 0'
+if (iph == G1_phase) then
+    if (use_G1_tdelay) then
+        ! We want to update Jaiswal for a cell in G1 only if G1_tdelay has elapsed since IR
+        ! Current time is tnow (sec).  IR time is t_irradiation
+        ! Time since IR is th_since_IR(hours)
+        th_since_IR = (tnow - t_irradiation)/3600
+        do_G1_Jaiswal = (th_since_IR > G1_tdelay).and.(G1_tdelay > 0)
+    else
+        ! We want to update Jaiswal for a cell in G1 only if the cell has undergone mitosis post-IR
+        do_G1_Jaiswal = (cp%birthtime > t_irradiation)      ! (cp%generation > 1)
+    endif
 endif
+if (((iph == G1_phase).and.do_G1_Jaiswal).or.(iph == S_phase)) then
+    call Jaiswal_update(cp,dth)
+endif
+
 if ((iph == 1 .and. use_G1_pATM) .or. (iph == 2 .and. use_S_pATM)) then 
     call updateATM(iph,cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth
 endif
