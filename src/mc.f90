@@ -148,7 +148,7 @@ integer :: nslow_sum
 real(8) :: pHR_sum, pNHEJslow_sum, fdecay_sum
 
 ! Iliakis
-integer :: nIliakis
+real(8) :: nIliakis
 real(8) :: kIliakis     ! if kIliakis = 0, fIliakis = 1
 real(8) :: fIliakis
 logical :: use_Iliakis 
