@@ -1068,8 +1068,13 @@ cp1%ATR_act = 0
 cp1%ATM_act = 0
 cp1%Kcc2a = get_Kcc2a(kmccp,CC_tot,cp1%fg(G2_phase)*ccp%T_G2/3600)
 !write(nflog,'(a,i6,f8.3)') 'divider kcell1, Kcc2a: ',kcell1,cp1%kcc2a
-cp1%irradiated = .false.
+!cp1%irradiated = .false.
+cp1%irradiated = (tnow > t_irradiation)
 if (is_radiation .and. use_SF) return   ! in this case there is no need to actually have the cell divide
+cp1%DSB(NHEJslow,:) = cp1%DSB(NHEJslow,:)/2
+cp1%DSB(NHEJfast,:) = 0
+cp1%DSB(HR,:) = 0
+cp1%DSB(TMEJ,:) = 0
 
 ! Second cell
 if (ngaps > 0) then
@@ -1092,6 +1097,7 @@ endif
 !write(nflog,'(a,2i6,2f8.2,f8.1)') &
 !'Cell division: ',kcell1,kcell2,cp1%divide_time/3600,(tnow-cp1%t_divide_last)/3600,cp1%divide_time-(tnow-cp1%t_divide_last)
     
+!write(*,*) 'divider: ',kcell1, kcell2
 ncells = ncells + 1
 ityp = cp1%celltype
 ccp => cc_parameters(ityp)
@@ -1139,8 +1145,8 @@ cp2%CFSE = cfse2
 if (cp2%radiation_tag) then
 	Nradiation_tag(ityp) = Nradiation_tag(ityp) + 1
 endif
-cp2%DSB = 0
-cp2%totDSB0 = 0
+!cp2%DSB = 0
+!cp2%totDSB0 = 0
 cp2%Kcc2a = get_Kcc2a(kmccp,CC_tot,cp2%fg(G2_phase)*ccp%T_G2/3600)
 !write(nflog,'(a,i6,f8.3)') 'divider kcell2, Kcc2a: ',kcell2,cp2%kcc2a
 !cp2%Psurvive = 0

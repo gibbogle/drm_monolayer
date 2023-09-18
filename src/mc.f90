@@ -27,7 +27,7 @@ integer, parameter :: NHEJfast = 1
 integer, parameter :: NHEJslow = 2
 integer, parameter :: HR = 3
 integer, parameter :: TMEJ = 4   ! this is really alt-EJ (was MDR)
-integer, parameter :: SSA = 5
+!integer, parameter :: SSA = 5
 !integer, parameter :: HRc = 3
 !integer, parameter :: HRs = 4
 !integer, parameter :: TMEJ = 5
@@ -613,6 +613,7 @@ else
         DSB0(NHEJslow,2) = 0
     endif
 endif    
+!write(*,'(a,2i4,6f8.1)') 'cellIrradiation: ',kcell_now,phase,DSB0(1:3,1),DSB0(1:3,2)
 
 cp%pATM = 0
 cp%pATR = 0
@@ -915,7 +916,7 @@ end function
 ! This means for cells that were present at IR.  In other words:
 ! Initially, every cell has cp%irradiated = false
 ! At IR, every cell has cp%irradiated = true
-! At cell division, each daughter cell should have cp%irradiated = false
+! At cell division, each daughter cell should have cp%irradiated = false ?????
 ! Fixed: 30/03/2023
 !------------------------------------------------------------------------
 subroutine get_slowdown_factors(cp,fATM,fATR)
@@ -987,6 +988,7 @@ else
         fATM = 1.0
     endif
 endif
+!if (iph == G1_phase) write(*,'(a,i6,4e12.3)') 'G1 slowdown: ',kcell_now,k3,k4,atm,fATM
 if (iph == S_phase .and. use_ATR_S) then
     k3 = K_ATR(iph,3)   !*G2_katr3_factor
     k4 = K_ATR(iph,4)   !*G2_katr4_factor
@@ -1038,7 +1040,7 @@ else
         else
             fslow = fATM*fATR
             if (single_cell) write(nflog,'(a,3f8.3)') 'fATM, fATR, fslow: ',fATM, fATR, fslow
-            if (kcell_now == -3) then
+            if (kcell_now <= -10) then
                 write(*,'(a,i6,i4,3f6.3)') 'fslow: ',kcell_now,iph,fATM,fATR,fslow
                 write(nflog,'(a,i6,i4,3f6.3)') 'fslow: ',kcell_now,iph,fATM,fATR,fslow
             endif
@@ -1092,12 +1094,13 @@ if (iph > G2_phase) then
 endif
 Nt = int(dth/dt + 0.5)
 do it = 1,NP
-    DSB(it) = sum(cp%DSB(it,:))
+    DSB(it) = sum(cp%DSB(it,:))     ! add pre and post
 enddo
 dbug = (iph == 2 .and. (kcell_now <= 0))
 if (iph == G1_phase) then
     D_ATM = DSB(NHEJslow)*norm_factor
     ATM_act = cp%ATM_act
+!    write(*,'(a,i6,2e12.3)') 'Jaiswal_update: D_ATM,ATM_act: ',kcell_now,D_ATM,ATM_act
 elseif (iph == S_phase) then
     D_ATM = (DSB(HR) + DSB(NHEJslow))*norm_factor
     ATM_act = cp%ATM_act
@@ -1257,6 +1260,7 @@ phase = cp%phase
 iph = phase
 DSB = cp%DSB
 !write(*,'(a,i4,4f8.1)') 'phase,DSB: ',phase,DSB(1:4)
+!if (iph == G1_phase) write(*,*) 'updateRepair: G1 cell: ',kcell_now
 repRateFactor = 1.0
 ! DNA-PK inhibition, DSB reassignment
 if (use_constant_drug_conc) then
@@ -1345,6 +1349,7 @@ if (iph == G1_phase) then
 endif
 if (((iph == G1_phase).and.do_G1_Jaiswal).or.(iph >= S_phase)) then
     call Jaiswal_update(cp,dth)
+!    if (iph == G1_phase) write(*,'(a,2i6,e12.3)') 'did Jaiswal: ',kcell_now, cp%generation, cp%ATM_act
 endif
 
 if ((iph == 1 .and. use_G1_pATM) .or. (iph == 2 .and. use_S_pATM)) then 
