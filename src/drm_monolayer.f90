@@ -2474,7 +2474,7 @@ if (compute_cycle) then
     else
         tadjust = event(1)%time/3600
     endif
-    recorded_phase_dist(1,1:NP) = phdist0
+!    recorded_phase_dist(1,1:NP) = phdist0      ! ?????????????
     do i = 1,nphase_hours
         write(nflog,'(f6.1,4x,4f8.3)') phase_hour(i)-tadjust,recorded_phase_dist(i,1:4)
         write(*,'(f6.1,4x,4f8.3)') phase_hour(i)-tadjust,recorded_phase_dist(i,1:4)
@@ -2515,7 +2515,7 @@ if (compute_cycle) then
                     do j = 1,4
                         normalised_phase_dist(i,j) = recorded_phase_dist(i,j)/control_ave(j)
                     enddo
-                    write(nflog,'(f6.1,4f8.3)') (i-1)*dt,normalised_phase_dist(i,1:4)
+                    write(nflog,'(f6.1,4f8.3)') phase_hour(i)-tadjust,normalised_phase_dist(i,1:4)
                 enddo
                 write(*,*) 'write PEST output'
                 if (G2M_only) then
