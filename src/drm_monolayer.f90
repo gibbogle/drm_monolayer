@@ -2162,7 +2162,7 @@ if (compute_cycle .or. output_DNA_rate) then
     if (next_phase_hour > 0) then  ! check if this is a phase_hour
         if (real(istep)/nthour >= phase_hour(next_phase_hour)) then   ! record phase_dist
             write(*,*) 'Reached phase hour: ',next_phase_hour,phase_hour(next_phase_hour)
-            if (next_phase_hour == 1) then
+            if (next_phase_hour <= 5) then
                 write(*,'(a,4i8)') 'count: ',phase_count(1:4)
                 write(nflog,*) 'Reached phase hour: ',next_phase_hour,phase_hour(next_phase_hour)
                 write(nflog,'(a,4i8)') 'count: ',phase_count(1:4)

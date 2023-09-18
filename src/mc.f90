@@ -1343,7 +1343,7 @@ if (iph == G1_phase) then
         do_G1_Jaiswal = (cp%birthtime > t_irradiation)      ! (cp%generation > 1)
     endif
 endif
-if (((iph == G1_phase).and.do_G1_Jaiswal).or.(iph == S_phase)) then
+if (((iph == G1_phase).and.do_G1_Jaiswal).or.(iph >= S_phase)) then
     call Jaiswal_update(cp,dth)
 endif
 
