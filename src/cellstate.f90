@@ -154,7 +154,8 @@ counts = 0
 !	    else
 !	        cp%rad_state = 3
 !	    endif
-	    ityp = cp%celltype
+		cp%rad_state = cp%phase		! cell phase at IR
+        ityp = cp%celltype
 	    ccp => cc_parameters(ityp)
 	    call getO2conc(cp,C_O2)
         ! Compute sensitisation SER
@@ -1064,8 +1065,8 @@ cp1%t_divide_last = tnow
 
 ! Jaiswal
 cp1%CC_act = CC_act0
-cp1%ATR_act = 0
-cp1%ATM_act = 0
+!cp1%ATR_act = 0	! let daughter cells inherit parent's ATM, ATR
+!cp1%ATM_act = 0
 cp1%Kcc2a = get_Kcc2a(kmccp,CC_tot,cp1%fg(G2_phase)*ccp%T_G2/3600)
 !write(nflog,'(a,i6,f8.3)') 'divider kcell1, Kcc2a: ',kcell1,cp1%kcc2a
 !cp1%irradiated = .false.
@@ -1151,6 +1152,11 @@ cp2%Kcc2a = get_Kcc2a(kmccp,CC_tot,cp2%fg(G2_phase)*ccp%T_G2/3600)
 !write(nflog,'(a,i6,f8.3)') 'divider kcell2, Kcc2a: ',kcell2,cp2%kcc2a
 !cp2%Psurvive = 0
 !if (colony_simulation) write(*,'(a,i6,2e12.3)') 'new cell: ',kcell2,cp2%V,cp2%divide_volume
+if (cp1%rad_state == G1_phase) then
+    ng11 = ng11 + 2
+else
+    ng12 = ng12 + 2
+endif
 end subroutine
 
 !----------------------------------------------------------------------------------

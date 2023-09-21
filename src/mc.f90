@@ -64,6 +64,7 @@ real(8) :: Kaber = 1.0          ! now fixed, McMahon has 1.
 real(8) :: Klethal = 0.4
 real(8) :: K_ATM(3,4) ! = [0.076, 0.3, 1.0, 1.0]    ! (1) and (2) are the parameters of kinase kinetics, (3) and (4) are CP slowdown parameters
 real(8) :: K_ATR(3,4) ! = [0.005, 0.3, 1.0, 1.0]
+real(8) :: KATM3G1M, KATM4G1M   ! KATM parameters for post-mitosis G1 CP slowdown
 real(8) :: Ztime = 0    ! hours
 
 real(8) :: sigma_NHEJ = 0.04187
@@ -159,6 +160,8 @@ integer :: count_Nlethal(NMDIST), count_totDSB(NMDIST)
 real(8), parameter :: ddist_Nlethal = 20.0/NMDIST
 real(8), parameter :: ddist_totDSB = 200.0/NMDIST
 
+integer :: ng11, ng12   ! to record post-mitosis G1
+
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
@@ -217,10 +220,17 @@ read(nfin,*) Klethal
             write(nflog,*) j,iph,K_ATR(iph,j)
         enddo
     enddo
-    
+ 
+read(nfin,*) KATM3G1M
+read(nfin,*) KATM4G1M
+
 k3 = K_ATM(S_phase,3)
 k4 = K_ATM(S_phase,4)
 write(nflog,'(a,2f8.3)') 'k3, k4: ',k3,k4
+
+! temporary - these need to be input parameters
+!KATM3G1M = K_ATM(G1_phase,3)
+!KATM4G1M = K_ATM(G1_phase,4)
 
 read(nfin,*) repRate(NHEJfast)
 read(nfin,*) repRate(NHEJslow)
@@ -280,6 +290,8 @@ ATRsum = 0  ! to investigate ATR dependence on parameters
 NSth = 0
 G2thsum = 0
 NG2th = 0
+ng11 = 0    ! counting cells reaching G1 post-mitosis
+ng12 = 0
 
 use_Iliakis = (kIliakis > 0)
 
@@ -974,6 +986,19 @@ elseif (iph == S_phase) then
 endif
 k3 = K_ATM(iph,3)
 k4 = K_ATM(iph,4)
+
+if (iph == G1_phase) then
+    if (cp%birthtime > t_irradiation) then      ! post-mitosis
+        if (cp%rad_state == G1_phase) then      ! this cell was irradiated in G1
+            fATM = 1
+            return
+        else
+            k3 = KATM3G1M
+            k4 = KATM4G1M
+        endif
+    endif
+endif
+    
 if (single_cell) then
     write(*,'(a,3e12.3)') 'k3,k4,ATM_act: ',k3,k4,cp%ATM_act
     write(nflog,'(a,3e12.3)') 'k3,k4,ATM_act: ',k3,k4,cp%ATM_act
@@ -1347,6 +1372,7 @@ if (iph == G1_phase) then
         do_G1_Jaiswal = (cp%birthtime > t_irradiation)      ! (cp%generation > 1)
     endif
 endif
+do_G1_Jaiswal = .true.      ! Now do Jaiswal for G1 whether pre- or post-mitosis.  Use special katm parameters for G1 post-mitosis
 if (((iph == G1_phase).and.do_G1_Jaiswal).or.(iph >= S_phase)) then
     call Jaiswal_update(cp,dth)
 !    if (iph == G1_phase) write(*,'(a,2i6,e12.3)') 'did Jaiswal: ',kcell_now, cp%generation, cp%ATM_act

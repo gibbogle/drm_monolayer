@@ -2484,6 +2484,7 @@ if (compute_cycle) then
     enddo
     write(*,*) 'wrote recorded_phase_dist'
     write(nflog,*) 'wrote recorded_phase_dist'
+    write(*,*) 'post-mitosis G1 counts: ng11, ng12: ',ng11,ng12
     if (PDS4) then 
         write(nflog,'(a)') '    hour    expt   model   error'
         write(*,'(a)') '    hour    expt   model   error'
