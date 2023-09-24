@@ -336,7 +336,7 @@ elseif (mod(iphase_hours,10) == 2) then    ! this is the compute_cycle case for 
     expt_tag = "CA-135"
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
-    nphase_hours = 5
+    nphase_hours = 3    !5
     next_phase_hour = 1
     phase_hour(1:5) = [5.0, 8.5, 11.5, 18.5, 24.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
     ! Note: output G1, S, G2, M
@@ -344,9 +344,9 @@ elseif (mod(iphase_hours,10) == 9) then    ! this is the compute_cycle case for 
     expt_tag = "CC-13"
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
-    nphase_hours = 8
+    nphase_hours = 6    !8
     next_phase_hour = 1
-    phase_hour(1:nphase_hours) = [1, 2, 3, 5, 8, 12, 18, 24]   
+    phase_hour(1:8) = [1, 2, 3, 5, 8, 12, 18, 24]   
     ! Note: output M
 elseif (mod(iphase_hours,10) == 5) then    ! this is the compute_cycle case for CC-11
     expt_tag = "CC-11"
@@ -1106,7 +1106,7 @@ subroutine Jaiswal_update(cp, dth)
 type(cell_type), pointer :: cp
 real(8) :: dth
 real(8) :: dt = 0.001
-real(8) :: D_ATR, D_ATM, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact, CC_act0
+real(8) :: D_ATR, D_ATM, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact
 real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, t_G2, Kkcc2a, DSB(NP)
 integer :: iph, it, Nt
 type(cycle_parameters_type),pointer :: ccp
@@ -1137,7 +1137,7 @@ elseif (iph == G2_phase) then
     D_ATR = DSB(HR)*norm_factor
     D_ATM = (DSB(HR) + DSB(NHEJslow))*norm_factor
     CC_act = cp%CC_act
-    CC_act0 = CC_act
+!    CC_act0 = CC_act
     ATR_act = cp%ATR_act
     ATM_act = cp%ATM_act
     t_G2 = (tnow - cp%t_start_G2)/3600

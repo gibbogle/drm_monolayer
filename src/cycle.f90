@@ -96,7 +96,6 @@ elseif (cp%phase == S_phase) then
     endif
 elseif (cp%phase == G2_phase) then
     if (use_Jaiswal) then
-        !cp%progress = (cp%CC_act - CC_act0)/(CC_threshold - CC_act0)    ! not really needed, and not correct
         if (is_radiation) then      ! post-IR
             Nwrite = 0.1*3600/DELTA_T
             if (single_cell .and. istep <= Nwrite) write(nflog,'(f6.3,2f9.6)') istep*DELTA_T/3600.0,cp%CC_act,cp%dCC_act_dt

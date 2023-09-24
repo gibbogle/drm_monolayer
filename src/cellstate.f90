@@ -1064,7 +1064,7 @@ doubling_time_sum = doubling_time_sum + tnow - cp1%t_divide_last
 cp1%t_divide_last = tnow
 
 ! Jaiswal
-cp1%CC_act = CC_act0
+cp1%CC_act = 0	! CC_act0
 !cp1%ATR_act = 0	! let daughter cells inherit parent's ATM, ATR
 !cp1%ATM_act = 0
 cp1%Kcc2a = get_Kcc2a(kmccp,CC_tot,cp1%fg(G2_phase)*ccp%T_G2/3600)
