@@ -92,7 +92,7 @@ real(8) :: Km1, Km10, Km10t
 real(8) :: kmmp, kmmd               ! ATM production, decay
 real(8) :: kmrp, kmrd               ! ATR production, decay
 real(8) :: kmccp, kmccrd, kmccmd    ! CC production, ATR-driven decay, ATM-driven decay
-real(8) :: CC_tot, ATR_tot, ATM_tot, CC_act0, CC_threshold, norm_factor
+real(8) :: CC_tot, ATR_tot, ATM_tot, CC_act0, CC_threshold, CC_threshold_factor, norm_factor
 real(8) :: km10_alfa, km10_beta     ! for G2 only
 real(8) :: G1_tdelay = 4            ! delay before ATM_act updated (hours)
 logical :: use_Jaiswal = .true.
@@ -118,7 +118,7 @@ logical :: negligent_G2_CP = .false.
 logical :: use_DSB_CP = .false.
 logical :: use_D_model = .false.
 
-logical :: use_km10_kcc2a_dependence = .true.
+logical :: use_cell_kcc2a_dependence = .true.
 real(8) :: kcc2a_ave
 logical :: use_exp_slowdown = .false.
 logical :: use_G1_stop = .false.    ! These flags control use of either CP delay (true) or slowdown (false)
@@ -271,15 +271,15 @@ if (use_Jaiswal) then
     read(nfin,*) ATR_tot
     read(nfin,*) ATM_tot
     read(nfin,*) CC_act0
-    read(nfin,*) CC_threshold
+    read(nfin,*) CC_threshold_factor
     read(nfin,*) norm_factor
     write(nflog,*) 'norm_factor: ',norm_factor
-    if (CC_threshold < 0.1) then
+    if (CC_threshold_factor < 0.1) then
         use_slope_threshold = .true.
-        slope_threshold = CC_threshold
+        slope_threshold = CC_threshold_factor
     else
         use_slope_threshold = .false.
-        CC_threshold = CC_threshold*CC_tot
+        CC_threshold = CC_threshold_factor*CC_tot
     endif
 endif
 call make_eta_table(sigma_NHEJ, sigma_TMEJ, fsmin)
@@ -1107,7 +1107,7 @@ type(cell_type), pointer :: cp
 real(8) :: dth
 real(8) :: dt = 0.001
 real(8) :: D_ATR, D_ATM, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact
-real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, t_G2, Kkcc2a, DSB(NP)
+real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, t_G2, Kkcc2a, DSB(NP), CC_act0
 integer :: iph, it, Nt
 type(cycle_parameters_type),pointer :: ccp
 logical :: dbug
@@ -1137,7 +1137,7 @@ elseif (iph == G2_phase) then
     D_ATR = DSB(HR)*norm_factor
     D_ATM = (DSB(HR) + DSB(NHEJslow))*norm_factor
     CC_act = cp%CC_act
-!    CC_act0 = CC_act
+    CC_act0 = CC_act
     ATR_act = cp%ATR_act
     ATM_act = cp%ATM_act
     t_G2 = (tnow - cp%t_start_G2)/3600
@@ -1153,7 +1153,7 @@ else
     return
 endif
 if (single_cell) write(nflog,*) 'CC_act: ',CC_act
-if (use_km10_kcc2a_dependence) then
+if (use_cell_kcc2a_dependence) then
     Kkcc2a = cp%Kcc2a
 else
     Kkcc2a = Kcc2a
@@ -1190,6 +1190,7 @@ if (iph == G2_phase) then
     cp%CC_act = CC_act
     cp%ATR_act = ATR_act
     cp%dCC_act_dt = dCC_act_dt
+!    write(nflog,'(a,i8,2e12.3)') 'Jaiswal_update: ',kcell_now,CC_act0,CC_act
 elseif (iph == S_phase .and. use_ATR_S) then
     cp%ATR_act = ATR_act
 endif

@@ -543,12 +543,9 @@ call logger('Finished reading input data')
 !call checkPD
 !stop
 
-! Try making this for each cell
-Kcc2a = get_Kcc2a(kmccp,CC_tot,cc_parameters(1)%T_G2/3600)
-!write(*,*) 'kmccp, kcc2a: ',kmccp, kcc2a
-!write(nflog,*) 'kmccp, kcc2a: ',kmccp, kcc2a
+! Try setting this for each cell unless use_cell_kcc2a_dependence
+Kcc2a = get_Kcc2a(kmccp,CC_tot,CC_threshold_factor,cc_parameters(1)%T_G2/3600)
 
-!single_cell = (use_synchronise .and. initial_count==1)
 single_cell = (initial_count==1)
 write(nflog,*) 'single_cell: ',single_cell
 
@@ -1203,9 +1200,9 @@ write(*,*) '!!!!!!!!!!!!!!!!! use_synchronise: ',use_synchronise
 rsite = [0.,0.,0.]
 kt2cc_min = 9999
 kt2cc_max = 0
-if (use_km10_kcc2a_dependence) then
-     Kcc2a_ave = get_Kcc2a(kmccp,CC_tot,ccp%T_G2/3600)
-endif
+!if (use_cell_kcc2a_dependence) then
+!     Kcc2a_ave = get_Kcc2a(kmccp,CC_tot,CC_threshold_factor,ccp%T_G2/3600)
+!endif
 kcc2a_sum = 0
 do kcell = 1,initial_count
 !    write(*,*) 'PlaceCells: kcell: ',kcell,initial_count
@@ -1324,15 +1321,15 @@ cp%G2_time = 0
 !    cp%N_Ch2 = 0
 !    cp%irrepairable = .false.
     ! Need to assign phase, volume to complete phase, current volume
-    if (use_km10_kcc2a_dependence) then
-!        cp%Kcc2a = get_Kcc2a(kmccp,CC_tot,cp%fg(3)*ccp%T_G2/3600)
-        R = par_rnor(kpar)
+!    if (use_cell_kcc2a_dependence) then
+!        cp%Kcc2a = get_Kcc2a(kmccp,CC_tot,CC_threshold_factor,cp%fg(3)*ccp%T_G2/3600)
+!        R = par_rnor(kpar)
 !        if (abs(R) > 2) R = R/2
-        kfactor = max(0.5,1 + R*kcc2a_std)
-        kfactor = 0.9*kfactor
-        cp%Kcc2a = kfactor*Kcc2a_ave
+!        kfactor = max(0.5,1 + R*kcc2a_std)
+!        kfactor = 0.9*kfactor
+!        cp%Kcc2a = kfactor*Kcc2a_ave
 !        if (kcell <= 100) write(nflog,'(a,5f10.4)') 'Kcc2a R: ',R,kfactor,cp%kcc2a
-    endif
+!    endif
     call SetInitialCellCycleStatus(kcell,cp)
     if (cp%phase == M_phase) then
         write(*,'(a,i8,f6.3)') 'M_phase, mitosis_duration: ',kcell,cp%mitosis_duration/3600
@@ -1480,7 +1477,7 @@ T_G1 = ccp%T_G1/fp(1)
 T_S = ccp%T_S/fp(2)
 T_G2 = ccp%T_G2/fp(3)
 !T_M = ccp%T_M/fp(4)
-T_M = cp%mitosis_duration
+if (use_cell_kcc2a_dependence) cp%Kcc2a = get_Kcc2a(kmccp,CC_tot,CC_threshold_factor,T_G2/3600)
 
 !if (kcell <= 10) then
 !    write(*,'(a,i4,8f6.3)') 'kcell,fg,T_G1-M: ',kcell,fg(:),T_G1/3600,T_S/3600,T_G2/3600,T_M/3600
@@ -1565,10 +1562,12 @@ else
     cp%V = 2*V0
     R = par_uni(kpar)
 !    cp%t_start_mitosis = -R*ccp%T_M
-    cp%t_start_mitosis = -R*cp%mitosis_duration
+!    cp%t_start_mitosis = -R*cp%mitosis_duration
+! Try this
+    cp%t_start_mitosis = -(t - tswitch(3))
 	ncells_mphase = ncells_mphase + 1
     cp%phase = dividing
- !   write(nflog,'(a,i6,f8.1)') 'Cell dividing: t_start_mitosis: ',kcell,cp%t_start_mitosis
+!    write(nflog,'(a,i6,2f8.1)') 'Cell dividing: t_start_mitosis: ',kcell,cp%t_start_mitosis,cp%mitosis_duration
 !    cp%progress = 1.0
 !    if (kcell <= 10) write(*,'(a,2i6,2f6.3)') 'SetInitialCellCycleStatus: phase, mitosis_duration, t_start: ',kcell,cp%phase,cp%mitosis_duration/3600,cp%t_start_mitosis/3600
 endif

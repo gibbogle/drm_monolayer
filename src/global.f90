@@ -829,7 +829,7 @@ T_G2 = Tgrowth*ccp%T_G2/(ccp%T_G1 + ccp%T_S + ccp%T_G2)
 fg(G1_phase) = T_G1/ccp%T_G1
 fg(S_phase) = T_S/ccp%T_S
 fg(G2_phase) = T_G2/ccp%T_G2
-if (kcell_now == 2674) write(nflog,'(a,i6,2x,5f6.3)') 'set_divide_volume: Tdiv,T_M,Tgrowth,T_G2,fg(3): ',kcell_now,Tdiv/3600,T_M/3600,Tgrowth/3600,T_G2/3600,fg(3)
+!if (kcell_now == 2674) write(nflog,'(a,i6,2x,5f6.3)') 'set_divide_volume: Tdiv,T_M,Tgrowth,T_G2,fg(3): ',kcell_now,Tdiv/3600,T_M/3600,Tgrowth/3600,T_G2/3600,fg(3)
 V = V0 + rVmax*(T_G1/fg(G1_phase) + T_S/fg(S_phase) + T_G2/fg(G2_phase))
 cp%divide_volume = V
 cp%divide_time = Tdiv   ! cycle time, varies with cell

@@ -107,6 +107,7 @@ elseif (cp%phase == G2_phase) then
         endif
 
         if (switch) then
+!            write(nflog,*) 'cell enters M: kcell, CC_act: ',kcell_now, cp%CC_act
             cp%phase = M_phase
             cp%progress = 0
             cp%V = cp%divide_volume     ! set volume here, to maintain correct cell volume at cell division

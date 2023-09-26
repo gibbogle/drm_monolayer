@@ -85,7 +85,11 @@ call logger(logmsg)
 call get_phase_distribution(phase_count)
 total = sum(phase_count)
 ph_dist = 100*phase_count/total
-write(nflog,'(a,5f8.1)') 'phase distribution: ',ph_dist
+write(nflog,'(a,5f8.2)') 'phase distribution: ',ph_dist
+
+!write(*,*) 'stopping ...'
+!write(nflog,*) 'stopping ...'
+!stop
 
 nslow_sum = 0
 pHR_sum = 0
@@ -734,7 +738,7 @@ do kcell = 1,nlist0
 		enddo
 		if (drugkilled) cycle
 		cp%mitosis = (tnow - cp%t_start_mitosis)/mitosis_duration
-!        if (istep == 0) write(nflog,'(a,i6,3f8.1,f8.3)') 'grower: kcell, mitosis: ',kcell,tnow, cp%t_start_mitosis,mitosis_duration,cp%mitosis
+!        write(nflog,'(a,i6,3f8.1,f8.3)') 'grower: kcell, mitosis: ',kcell, tnow, cp%t_start_mitosis,mitosis_duration,cp%mitosis
 		
         if (cp%mitosis >= 1) then
 			cp%G2_time = tnow - cp%t_start_G2
@@ -1067,7 +1071,7 @@ cp1%t_divide_last = tnow
 cp1%CC_act = 0	! CC_act0
 !cp1%ATR_act = 0	! let daughter cells inherit parent's ATM, ATR
 !cp1%ATM_act = 0
-cp1%Kcc2a = get_Kcc2a(kmccp,CC_tot,cp1%fg(G2_phase)*ccp%T_G2/3600)
+if (use_cell_kcc2a_dependence) cp1%Kcc2a = get_Kcc2a(kmccp,CC_tot,CC_threshold_factor,cp1%fg(G2_phase)*ccp%T_G2/3600)
 !write(nflog,'(a,i6,f8.3)') 'divider kcell1, Kcc2a: ',kcell1,cp1%kcc2a
 !cp1%irradiated = .false.
 cp1%irradiated = (tnow > t_irradiation)
@@ -1148,7 +1152,7 @@ if (cp2%radiation_tag) then
 endif
 !cp2%DSB = 0
 !cp2%totDSB0 = 0
-cp2%Kcc2a = get_Kcc2a(kmccp,CC_tot,cp2%fg(G2_phase)*ccp%T_G2/3600)
+if (use_cell_kcc2a_dependence) cp2%Kcc2a = get_Kcc2a(kmccp,CC_tot,CC_threshold_factor,cp2%fg(G2_phase)*ccp%T_G2/3600)
 !write(nflog,'(a,i6,f8.3)') 'divider kcell2, Kcc2a: ',kcell2,cp2%kcc2a
 !cp2%Psurvive = 0
 !if (colony_simulation) write(*,'(a,i6,2e12.3)') 'new cell: ',kcell2,cp2%V,cp2%divide_volume
