@@ -87,6 +87,10 @@ total = sum(phase_count)
 ph_dist = 100*phase_count/total
 write(nflog,'(a,5f8.2)') 'phase distribution: ',ph_dist
 
+if (no_S_Iliakis) then
+	write(*,*) '*** Iliakis is suppressed in S-phase ***'
+	write(nflog,*) '*** Iliakis is suppressed in S-phase ***'
+endif
 !write(*,*) 'stopping ...'
 !write(nflog,*) 'stopping ...'
 !stop
@@ -175,13 +179,14 @@ counts = 0
         SER = C_O2/(C_O2 + LQ(ityp)%K_ms)
         Cdrug = 0
 		if (use_Iliakis) then
-			if (cp%phase == G2_phase) then
-				fIliakis = kIliakis**nIliakis/(kIliakis**nIliakis + dose**nIliakis)
-			elseif (cp%phase == S_phase) then
-				fIliakis = 1
+			if (cp%phase >= S_phase) then
+				fIliakis = kIliakis**nIliakis/(kIliakis**nIliakis + dose**nIliakis)		
 			else
-				fIliakis = 0
+				fIliakis = 1
 			endif
+			if (cp%phase == S_phase .and. no_S_Iliakis) then 
+                fIliakis = 1
+            endif
 		else
 			fIliakis = 1.0
 		endif

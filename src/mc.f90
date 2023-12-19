@@ -563,6 +563,12 @@ if (use_Jeggo) then
         write(*,'(a,2f8.3)') 'th, fdecay(th): ',th, fdecay(th)
         write(*,'(a,3f8.3)') 'fIliakis,pHRs,pHRc: ',fIliakis,pHRs,pHRc
     endif
+    if (kcell_now <= 10) then
+        if (phase == S_phase) then
+            write(*,'(a,2i4,3f8.3)') 'kcell,phase,fIliakis,pHRs,pHRc: ',kcell_now,phase,fIliakis,pHRs,pHRc
+            write(nflog,'(a,2i4,3f8.3)') 'kcell,phase,fIliakis,pHRs,pHRc: ',kcell_now,phase,fIliakis,pHRs,pHRc
+        endif
+    endif
     if (option == 1) then
         pNHEJ = 1 - pHR
         DSB0(NHEJfast,1) = (1 - pComplex) * Npre
@@ -577,7 +583,7 @@ if (use_Jeggo) then
             pNHEJslow_sum = pNHEJslow_sum + (1 - pJeggo) * pNHEJ
             fdecay_sum = fdecay_sum + fdecay(th)
         endif
-    elseif (option == 2) then
+    elseif (option == 2) then   ! USING THIS
         DSB0(NHEJfast,1) = (1-pComplex)*Npre
         DSB0(NHEJfast,2) = (1-pComplex)*(1-pHRs)*Npost     ! fast
         DSB0(NHEJslow,1) = pComplex*Npre
