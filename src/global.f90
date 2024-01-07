@@ -572,6 +572,7 @@ integer :: maxhours = 199
 logical :: overstepped
 
 logical, parameter :: no_S_Iliakis = .false.	! This suppresses Iliakis effect in S-phase
+logical, parameter :: constant_S_pHR = .true.
 
 ! Greens function section
 logical :: greens = .false.

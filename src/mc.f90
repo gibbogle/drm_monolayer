@@ -530,18 +530,25 @@ cp%phase0 = min(phase, M_phase)
 NG1 = DSB_Gy*dose
 DSB0 = 0
 
-if (use_Jeggo) then
+if (use_Jeggo) then     ! using this
     If (phase == G1_phase) Then
         f_S = 0
     ElseIf (phase == S_phase) Then
         f_S = cp%progress
 !        th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
-         th = cp%progress*ccp%T_S/3600
+        if (constant_S_pHR) then
+            th = 0
+        else
+            th = cp%progress*ccp%T_S/3600
+        endif
     ElseIf (phase >= G2_phase) Then
         f_S = 1
 !        th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
-         th = (ccp%T_S + cp%progress*ccp%T_G2)/3600
-        
+        if (constant_S_pHR) then
+            th = (cp%progress*ccp%T_G2)/3600       
+        else
+            th = (ccp%T_S + cp%progress*ccp%T_G2)/3600
+        endif    
     End If
     totDSB0 = (1 + f_S) * NG1
     DSB0(TMEJ,:) = 0
@@ -597,7 +604,7 @@ if (use_Jeggo) then
             write(*,'(a,3f8.1)')    'total DSB at IR: ',sum(DSB0(NHEJfast,:)),sum(DSB0(NHEJslow,:)),sum(DSB0(HR,:))
         endif
     endif
-else
+else    ! not using this
     if (phase == G1_phase) then
         f_S = 0.0
         totDSB0 = NG1
