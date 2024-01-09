@@ -571,8 +571,9 @@ real(REAL_KIND) :: G2_katm3_factor=1.0, G2_katm4_factor=1.0, G2_katr3_factor=1.0
 integer :: maxhours = 199
 logical :: overstepped
 
-logical, parameter :: no_S_Iliakis = .false.	! This suppresses Iliakis effect in S-phase
+logical, parameter :: no_S_Iliakis = .false.	! If true this suppresses Iliakis effect in S-phase
 logical, parameter :: constant_S_pHR = .true.
+real(REAL_KIND), parameter :: dose_threshold = 1
 
 ! Greens function section
 logical :: greens = .false.

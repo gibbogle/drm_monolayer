@@ -180,7 +180,7 @@ counts = 0
         Cdrug = 0
 		if (use_Iliakis) then
 			if (cp%phase >= S_phase) then
-				fIliakis = kIliakis**nIliakis/(kIliakis**nIliakis + dose**nIliakis)		
+				fIliakis = kIliakis**nIliakis/(kIliakis**nIliakis + (dose-dose_threshold)**nIliakis)		
 			else
 				fIliakis = 1
 			endif
