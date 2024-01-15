@@ -573,7 +573,7 @@ logical :: overstepped
 
 logical, parameter :: no_S_Iliakis = .false.	! If true this suppresses Iliakis effect in S-phase
 logical, parameter :: constant_S_pHR = .true.
-real(REAL_KIND), parameter :: dose_threshold = 2
+real(REAL_KIND), parameter :: dose_threshold = 1
 
 ! Greens function section
 logical :: greens = .false.

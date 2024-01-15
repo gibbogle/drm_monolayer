@@ -602,6 +602,10 @@ if (use_Jeggo) then     ! using this
             write(*,'(2(a,3f8.1))') 'pre  DSB at IR: ',DSB0(1:3,1),'  NNHEJ: ',sum(DSB0(1:2,1))
             write(*,'(2(a,3f8.1))') 'post DSB at IR: ',DSB0(1:3,2),'  NNHEJ: ',sum(DSB0(1:2,2))
             write(*,'(a,3f8.1)')    'total DSB at IR: ',sum(DSB0(NHEJfast,:)),sum(DSB0(NHEJslow,:)),sum(DSB0(HR,:))
+            write(nfout,*) 'Npre, Npost: ',Npre,Npost
+            write(nfout,'(2(a,3f8.1))') 'pre  DSB at IR: ',DSB0(1:3,1),'  NNHEJ: ',sum(DSB0(1:2,1))
+            write(nfout,'(2(a,3f8.1))') 'post DSB at IR: ',DSB0(1:3,2),'  NNHEJ: ',sum(DSB0(1:2,2))
+            write(nfout,'(a,3f8.1)')    'total DSB at IR: ',sum(DSB0(NHEJfast,:)),sum(DSB0(NHEJslow,:)),sum(DSB0(HR,:))
         endif
     endif
 else    ! not using this
@@ -1171,6 +1175,8 @@ if (use_cell_kcc2a_dependence) then
 else
     Kkcc2a = Kcc2a
 endif
+if (single_cell) &
+write(*,'(a,4e12.3)') 'CC_act,CC_inact,ATM_act,ATR_act: ',CC_act,CC_inact,ATM_act,ATR_act
 do it = 1,Nt
     ATM_inact = ATM_tot - ATM_act
     ATR_inact = ATR_tot - ATR_act
@@ -1179,10 +1185,20 @@ do it = 1,Nt
         ATR_inact = ATR_tot - ATR_act
         dCC_act_dt = (Kkcc2a + CC_act) * CC_inact / (Kmccp + CC_inact) - cp%Kt2cc * ATM_act * CC_act / (Kmccmd + CC_act) - cp%Ke2cc * ATR_act * CC_act / (Kmccrd + CC_act)
         dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Kmrp + ATR_inact) - Kcc2e * ATR_act * CC_act / (Kmrd + CC_act)
+! Try this
+        dCC_act_dt = max(dCC_act_dt,0.0)
         CC_act = CC_act + dt * dCC_act_dt
         CC_act = max(CC_act, 0.0)
         ATR_act = ATR_act + dt * dATR_act_dt
         ATR_act = min(ATR_act, ATR_tot)
+        if (single_cell .and. it == Nt) then
+            write(*,'(a,4e12.3)')  'terms:  ',(Kkcc2a + CC_act) * CC_inact / (Kmccp + CC_inact), &
+                     - cp%Kt2cc * ATM_act * CC_act / (Kmccmd + CC_act), &
+                     - cp%Ke2cc * ATR_act * CC_act / (Kmccrd + CC_act), &
+                    dCC_act_dt
+
+            write(*,'(3i6,e12.3)') istep,Nt,it,dCC_act_dt
+        endif
     elseif (use_ATR_S) then
         dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Kmrp + ATR_inact) - Kcc2e * ATR_act * CC_act / (Kmrd + CC_act)
         ATR_act = ATR_act + dt * dATR_act_dt

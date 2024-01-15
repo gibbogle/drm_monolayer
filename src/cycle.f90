@@ -92,13 +92,17 @@ elseif (cp%phase == S_phase) then
         if (single_cell) then
             write(*,'(a,2f6.2)') 'G2 entry: tnow, N_DSB: ',tnow/3600,sum(cp%DSB(1:3,:))
             write(nflog,'(a,2f6.2)') 'G2 entry: tnow, N_DSB: ',tnow/3600,sum(cp%DSB(1:3,:))
+! Try this
+!            cp%ATM_act = 0
+!            cp%ATR_act = 0
         endif
     endif
 elseif (cp%phase == G2_phase) then
     if (use_Jaiswal) then
         if (is_radiation) then      ! post-IR
             Nwrite = 0.1*3600/DELTA_T
-            if (single_cell .and. istep <= Nwrite) write(nflog,'(f6.3,2f9.6)') istep*DELTA_T/3600.0,cp%CC_act,cp%dCC_act_dt
+            if (single_cell) write(nflog,'(f6.3,2f9.6)') istep*DELTA_T/3600.0,cp%CC_act,cp%dCC_act_dt
+ !           if (single_cell .and. istep <= Nwrite) write(nflog,'(f6.3,2f9.6)') istep*DELTA_T/3600.0,cp%CC_act,cp%dCC_act_dt
  !           if (single_cell .and. mod(istep,Nwrite) == 0) write(nflog,'(a,7f8.4)') 'G2_phase: ',istep*DELTA_T/3600.0,cp%CC_act,cp%ATR_act,cp%ATM_act,cp%DSB(2:3),cp%dCC_act_dt
             tIR = (t_simulation - t_irradiation)/3600   ! time since IR, in hours
             switch = (cp%CC_act >= CC_threshold)

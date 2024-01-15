@@ -113,8 +113,8 @@ endif
 ! Synchronisation of cell IR
 use_synchronise = .false.
 use_single = .false. ! this is to simulate a cell (or cells) at specified phase and progress
-synch_phase = G2_phase   !G1 is 1 - 6, S is 7 - 15, G2 is 16 - 19
-synch_fraction = 0.6
+synch_phase = S_phase   !G1 is 1 - 6, S is 7 - 15, G2 is 16 - 19
+synch_fraction = 0.0
 nph = 1
 if (use_synchronise) then
     if (use_single) then
@@ -146,8 +146,8 @@ do irun = 1,nph   ! 1,1
         synch_fraction = progress(irun)    !(irun-1)*0.2
         write(*,*)
     	write(*,'(a,2i4,f6.3)') 'irun, synch_phase, synch_fraction: ',irun,synch_phase,synch_fraction
-    	write(nflog,*)
-    	write(nflog,'(a,2i4,f6.3)') 'irun, synch_phase, synch_fraction: ',irun,synch_phase,synch_fraction
+!    	write(nflog,*)
+!    	write(nflog,'(a,2i4,f6.3)') 'irun, synch_phase, synch_fraction: ',irun,synch_phase,synch_fraction
     endif
 	inbuflen = len(infile)
 	outbuflen = len(outfile)

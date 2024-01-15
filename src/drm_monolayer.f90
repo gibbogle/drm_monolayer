@@ -1290,9 +1290,9 @@ R = par_rnor(kpar)
 if (abs(R) > 2) R = R/2
 kfactor = max(0.0,1 + R*jaiswal_std)
 !kfactor = rv_lognormal(0.0d0,1.001d0,kpar)
-!kfactor = 1
+if (single_cell) kfactor = 1
 cp%kt2cc = kt2cc*kfactor
-!cp%ke2cc = ke2cc*kfactor
+cp%ke2cc = ke2cc*kfactor
 !if (kcell <= 100) write(nflog,'(a,5f10.4)') 'Jaiswal R: ',R,kfactor,cp%kt2cc
 cp%CC_act = 0   ! CC_act0
 !R = par_uni(kpar)
@@ -1977,6 +1977,10 @@ logical :: PEST_OK
 logical :: ok = .true.
 logical :: dbug
 
+!	real(8) :: pATM, pATR, DSB(NP,2), totDSB0, totMis
+
+cp => cell_list(1)
+write(nfout,'(i4,12f10.3)') istep,cp%progress,cp%DSB(1:3,1:2),sum(cp%DSB(1:3,1:2)),cp%Nlethal/klethal
 !call test_Jaiswal
 !res = 1
 !return

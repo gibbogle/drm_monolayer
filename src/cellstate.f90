@@ -873,7 +873,6 @@ if (.not.is_radiation .and. f_CP < 1.0) then
     stop
 endif
 !write(*,'(a,i6,3e12.3)') 'growcell: ',kcell_now,metab,f_CP,cp%fg(cp%phase)
-if (single_cell) write(nflog,*) 'f_CP: ',f_CP
 cp%fp = metab*f_CP/cp%fg(cp%phase)
 cp%dVdt = cp%fp*max_growthrate(ityp)
 Cdrug(:) = cp%Cin(DRUG_A:DRUG_A+1)
