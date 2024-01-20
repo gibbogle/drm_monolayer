@@ -598,10 +598,14 @@ if (use_Jeggo) then     ! using this
         DSB0(HR,1) = 0
         DSB0(HR,2) = pHR*Npost
         if (kcell_now == 1) then
+            write(*,'(a,5f8.4)') 'fIliakis, decay, pHRs, pHRc, pHR: ', &
+                    fIliakis, ((1 - rmin) * fdecay(th) + rmin), pHRs,pHRc,pHR
             write(*,*) 'Npre, Npost: ',Npre,Npost
             write(*,'(2(a,3f8.1))') 'pre  DSB at IR: ',DSB0(1:3,1),'  NNHEJ: ',sum(DSB0(1:2,1))
             write(*,'(2(a,3f8.1))') 'post DSB at IR: ',DSB0(1:3,2),'  NNHEJ: ',sum(DSB0(1:2,2))
             write(*,'(a,3f8.1)')    'total DSB at IR: ',sum(DSB0(NHEJfast,:)),sum(DSB0(NHEJslow,:)),sum(DSB0(HR,:))
+            write(nfout,'(a,5f8.4)') 'fIliakis, decay, pHRs, pHRc, pHR: ', &
+                    fIliakis, ((1 - rmin) * fdecay(th) + rmin), pHRs,pHRc,pHR
             write(nfout,*) 'Npre, Npost: ',Npre,Npost
             write(nfout,'(2(a,3f8.1))') 'pre  DSB at IR: ',DSB0(1:3,1),'  NNHEJ: ',sum(DSB0(1:2,1))
             write(nfout,'(2(a,3f8.1))') 'post DSB at IR: ',DSB0(1:3,2),'  NNHEJ: ',sum(DSB0(1:2,2))
@@ -1499,6 +1503,8 @@ totDSB = sum(DSB(NHEJfast,:)) + sum(DSB(NHEJslow,:))
 Pmis = misrepairRate(totDSB0, totDSB, eta_NHEJ)
 Nmis = Nmis + Pmis*(totDSB0 - totDSB)
 misjoins(1) = misjoins(1) + Pmis*(totDSB0 - totDSB)
+!if (single_cell) &
+!write(nfout,'(a,5f8.4)') 'f_S, tIR, totDSB0, eta_NHEJ, Nmis: ',f_S, tIR, totDSB0, eta_NHEJ, Nmis
 !write(nflog,'(a,4f10.4)') 'totDSB0, totDSB, eta_NHEJ, Pmis: ',totDSB0, totDSB, eta_NHEJ, Pmis
 !if (tIR == 2.0) then
 !    write(nflog,*) 'tIR: ',tIR

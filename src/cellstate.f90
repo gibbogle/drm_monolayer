@@ -91,6 +91,7 @@ if (no_S_Iliakis) then
 	write(*,*) '*** Iliakis is suppressed in S-phase ***'
 	write(nflog,*) '*** Iliakis is suppressed in S-phase ***'
 endif
+write(nflog,*) 'dose_threshold: ',dose_threshold
 !write(*,*) 'stopping ...'
 !write(nflog,*) 'stopping ...'
 !stop
@@ -180,7 +181,7 @@ counts = 0
         Cdrug = 0
 		if (use_Iliakis) then
 			if (cp%phase >= S_phase) then
-				fIliakis = kIliakis**nIliakis/(kIliakis**nIliakis + (dose-dose_threshold)**nIliakis)		
+				fIliakis = kIliakis**nIliakis/(kIliakis**nIliakis + (dose-dose_threshold)**nIliakis)
 			else
 				fIliakis = 1
 			endif
