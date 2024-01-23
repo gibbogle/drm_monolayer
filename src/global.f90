@@ -155,6 +155,7 @@ type cell_type
 	integer :: state
 	logical :: Iphase
 	logical :: irradiated
+	real(REAL_KIND) :: frep
 !    integer :: nspheres             ! =1 for Iphase, =2 for Mphase
 !	real(REAL_KIND) :: radius(2)	! sphere radii (um) -> cm
 !	real(REAL_KIND) :: centre(3,2)  ! sphere centre positions
