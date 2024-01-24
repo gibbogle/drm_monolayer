@@ -1502,8 +1502,8 @@ Nmis = 0
 totDSB0 = sum(DSB0(NHEJfast,:)) + sum(DSB0(NHEJslow,:))
 totDSB = sum(DSB(NHEJfast,:)) + sum(DSB(NHEJslow,:))
 Pmis = misrepairRate(totDSB0, totDSB, eta_NHEJ)
-Nmis = Nmis + Pmis*(totDSB0 - totDSB)   !*(1 + cp%frep)
-misjoins(1) = misjoins(1) + Pmis*(totDSB0 - totDSB)
+Nmis = Nmis + Pmis*(totDSB0 - totDSB)*(1 + f_S)
+misjoins(1) = misjoins(1) + Pmis*(totDSB0 - totDSB)*(1 + f_S)
 !if (single_cell) &
 !write(nfout,'(a,5f8.4)') 'f_S, tIR, totDSB0, eta_NHEJ, Nmis: ',f_S, tIR, totDSB0, eta_NHEJ, Nmis
 !write(nflog,'(a,4f10.4)') 'totDSB0, totDSB, eta_NHEJ, Pmis: ',totDSB0, totDSB, eta_NHEJ, Pmis
