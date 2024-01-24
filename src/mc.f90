@@ -1296,7 +1296,7 @@ real(8) :: dt
 integer :: phase
 real(8) :: DSB(NP,2), dNlethal
 real(8) :: DSB0(NP,2)
-real(8) :: totDSB0, totDSB, Pmis, Nmis, dNmis(NP), totDSBinfid0, totDSBinfid, ATR_DSB, ATM_DSB, dth, binMisProb
+real(8) :: totDSB0, totDSB, Pmis, Nmis, dmis, dNmis(NP), totDSBinfid0, totDSBinfid, ATR_DSB, ATM_DSB, dth, binMisProb
 real(8) :: Cdrug, inhibrate, Nreassign
 real(8) :: f_S, eta_NHEJ, eta_TMEJ, tIR, eta
 real(8) :: th_since_IR
@@ -1502,8 +1502,9 @@ Nmis = 0
 totDSB0 = sum(DSB0(NHEJfast,:)) + sum(DSB0(NHEJslow,:))
 totDSB = sum(DSB(NHEJfast,:)) + sum(DSB(NHEJslow,:))
 Pmis = misrepairRate(totDSB0, totDSB, eta_NHEJ)
-Nmis = Nmis + Pmis*(totDSB0 - totDSB)*(1 + f_S)
-misjoins(1) = misjoins(1) + Pmis*(totDSB0 - totDSB)*(1 + f_S)
+dmis = Pmis*(totDSB0 - totDSB)*(2 - f_S)
+Nmis = Nmis + dmis
+misjoins(1) = misjoins(1) + dmis
 !if (single_cell) &
 !write(nfout,'(a,5f8.4)') 'f_S, tIR, totDSB0, eta_NHEJ, Nmis: ',f_S, tIR, totDSB0, eta_NHEJ, Nmis
 !write(nflog,'(a,4f10.4)') 'totDSB0, totDSB, eta_NHEJ, Pmis: ',totDSB0, totDSB, eta_NHEJ, Pmis
@@ -1519,8 +1520,9 @@ misjoins(1) = misjoins(1) + Pmis*(totDSB0 - totDSB)*(1 + f_S)
 if (sum(DSB0(TMEJ,:)) > 0) then
     ! For TMEJ pathway
     Pmis = misrepairRate(sum(DSB0(TMEJ,:)), sum(DSB(TMEJ,:)), eta_TMEJ)
-    Nmis = Nmis + Pmis*(sum(DSB0(TMEJ,:)) - sum(DSB(TMEJ,:)))
-    misjoins(2) = misjoins(2) + Pmis*(totDSB0 - totDSB)
+    dmis = Pmis*(sum(DSB0(TMEJ,:)) - sum(DSB(TMEJ,:)))*(2 - f_S)
+    Nmis = Nmis + dmis
+    misjoins(2) = misjoins(2) + dmis
 endif
 cp%DSB = DSB
 !dNlethal = Klethal*misrepRate(phase)*Nmis   ! (was 0.5)  1.65 needs to be another parameter -> Klethal
