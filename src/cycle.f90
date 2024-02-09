@@ -51,10 +51,10 @@ logical :: switch
 !if (kcell_now <= 10) write(nflog,'(a,2i4,f6.3)') 'kcell_now, phase, progress: ',kcell_now,cp%phase,cp%progress
 10 continue
 if (cp%phase == G1_phase) then
-    if (single_cell) then
-        write(*,'(a,5e12.3)') 'G1: progress,fp,dt,T_G1, inc: ',cp%progress,cp%fp,dt,ccp%T_G1,cp%fp*dt/ccp%T_G1
-        write(nflog,'(a,5e12.3)') 'G1: progress,fp,dt,T_G1, inc: ',cp%progress,cp%fp,dt,ccp%T_G1,cp%fp*dt/ccp%T_G1
-    endif
+!    if (single_cell) then
+!        write(*,'(a,5e12.3)') 'G1: progress,fp,dt,T_G1, inc: ',cp%progress,cp%fp,dt,ccp%T_G1,cp%fp*dt/ccp%T_G1
+!        write(nflog,'(a,5e12.3)') 'G1: progress,fp,dt,T_G1, inc: ',cp%progress,cp%fp,dt,ccp%T_G1,cp%fp*dt/ccp%T_G1
+!    endif
     cp%progress = cp%progress + cp%fp*dt/ccp%T_G1
     if (cp%progress >= 1) then
         if (use_G1_stop) then
@@ -116,8 +116,9 @@ elseif (cp%phase == G2_phase) then
             cp%progress = 0
             cp%V = cp%divide_volume     ! set volume here, to maintain correct cell volume at cell division
             if (single_cell) then
-                write(*,*) 'Reached mitosis at: ',t_simulation/3600
-                write(nflog,*) 'Reached mitosis at: ',t_simulation/3600
+                t_mitosis = t_simulation/3600
+                write(*,*) 'Reached mitosis at: ',t_mitosis
+                write(nflog,*) 'Reached mitosis at: ',t_mitosis
                 write(nflog,*) 'CC_act: ',cp%CC_act
             endif
 !            if (istep == 0) write(nflog,'(a,i4,3f8.3)') 'Exit G2: CC_act, threshold, t: ',kcell_now,cp%CC_act,CC_threshold,t_simulation/3600

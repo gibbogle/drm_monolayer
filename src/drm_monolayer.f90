@@ -1980,7 +1980,6 @@ logical :: dbug
 !	real(8) :: pATM, pATR, DSB(NP,2), totDSB0, totMis
 
 cp => cell_list(1)
-write(nfout,'(i4,12f10.3)') istep,cp%progress,cp%DSB(1:3,1:2),sum(cp%DSB(1:3,1:2)),cp%Nlethal/klethal
 !call test_Jaiswal
 !res = 1
 !return
@@ -1988,6 +1987,9 @@ if (istep < 2) call counter
 mp => master_cell%metab
 
 t_simulation = istep*DELTA_T	! seconds
+write(nfout,'(2i4,12f10.3)') istep,cp%phase,cp%progress,t_simulation/3600,cp%DSB(1:3,1),cp%Nmis
+
+if (single_cell) write(nflog,*) 'Ncells_type: ',Ncells_type
 
 !write(*,*) 'start simulate_step: t_simulation: ',istep,t_simulation !,cell_list(1)%progress
 !call testmetab2
@@ -2352,6 +2354,8 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
     write(*,*)
     write(logmsg,'(a,e12.4,f8.3)') 'SFave,log10(SFave): ',SFave,log10(SFave)
     call logger(logmsg)
+
+    
     call completed
 !    write(nflog,'(a)') 'nphase:'
 !    do hour = 0,istep/nthour
@@ -2436,8 +2440,8 @@ enddo
 !write(nflog,*) 'getSFlive: n, Nirradiated: ',n, Nirradiated
 ! n = Nirradiated - Napop
 SF = sfsum/n
-write(nflog,'(a,2f10.1)') 'getSFlive: initial,final DSB totals: ',total0,total
-write(*,'(a,i6,4e12.3)') 'n,Ave totDSB,Pmit,Nlethal,Paber: ',n,totDSB/n, totPmit/n, totNlethal/n, totPaber/n
+!write(nflog,'(a,2f10.1)') 'getSFlive: initial,final DSB totals: ',total0,total
+!write(*,'(a,i6,4e12.3)') 'n,Ave totDSB,Pmit,Nlethal,Paber: ',n,totDSB/n, totPmit/n, totNlethal/n, totPaber/n
 !end function
 end subroutine
 
@@ -2632,11 +2636,12 @@ write(*,'(a,4f10.6)') 'Average SF by phase: ',sftot/nir
 if (use_synchronise) then
     if (phase_log) write(nfphase,'(a,4f8.4)') 'Average SF by phase: ',sftot/nir
 endif
-write(nflog,'(a,4f12.3)') 'totPmit, totPaber, tottotDSB, totNlethal: ',totPmit, totPaber, tottotDSB, totNlethal
-write(*,'(a,i6,4f11.1)') 'Nmitosis, totPmit, totPaber, tottotDSB: ',int(Nmitosis),totPmit, totPaber, tottotDSB
-write(*,'(a,4f11.1)') 'totPaber, totNlethal, totMis: ',totPaber, totNlethal, totNlethal/klethal
+write(nflog,'(a,6f12.3)') 'totPmit, totPaber, tottotDSB: ',totPmit, totPaber, tottotDSB
+write(*,'(a,i6,5f11.1)') 'Nmitosis, totPmit, totPaber, tottotDSB: ',int(Nmitosis),totPmit, totPaber, tottotDSB
+write(*,'(a,6e12.3)') 'totPaber: ',totPaber
 
-write(nflog,'(a,3f6.1,3f6.3)') 'Ave NDSB(pre, post), Nmisjoins, SF factors: ',totNDSB/nmitosis,totNmisjoins/nmitosis,totSFfactor/nmitosis
+write(nflog,'(a,7f8.3)') 'Ave NDSB(pre, post), Nmisjoins, SF factors: ', &
+            totNDSB/nmitosis,totNmisjoins/nmitosis,totSFfactor/nmitosis
 !write(logmsg,'(a,8f8.3)') 'phase_dist:      ',phase_dist(0:3)
 !call logger(logmsg)
 !write(*,'(a,f8.3)') 'Final average pATM: ',ATMsum/nirradiated
@@ -2658,6 +2663,7 @@ if (use_PEST) then
 !        write(nfres,'(20e15.6)') (recorded_phase_dist(i,1:4),i=1,nphase_hours)
 !    endif
 endif
+
 end subroutine
 
 !-----------------------------------------------------------------------------------------

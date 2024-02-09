@@ -155,7 +155,7 @@ type cell_type
 	integer :: state
 	logical :: Iphase
 	logical :: irradiated
-	real(REAL_KIND) :: frep
+	real(REAL_KIND) :: f_S_at_IR
 !    integer :: nspheres             ! =1 for Iphase, =2 for Mphase
 !	real(REAL_KIND) :: radius(2)	! sphere radii (um) -> cm
 !	real(REAL_KIND) :: centre(3,2)  ! sphere centre positions
@@ -230,8 +230,9 @@ type cell_type
 	
 	! DRM section
 	integer :: phase0
-	real(8) :: pATM, pATR, DSB(NP,2), totDSB0, totMis
-	real(8) :: Nlethal, Psurvive, mitosis_time
+	real(8) :: pATM, pATR, DSB(NP,2), DSB0(NP,2),totDSB0, totMis
+	real(8) :: Psurvive, psurvive_nodouble, mitosis_time
+	real(8) :: Nmis(2)		!, Nlethal(2)
 	
 	! Jaiswal section (26/09/22)
 	real(REAL_KIND) :: CC_act, ATR_act, ATM_act, dCC_act_dt, kt2cc, ke2cc, kcc2a
@@ -553,7 +554,7 @@ real(REAL_KIND), allocatable :: Psurvive(:)
 real(REAL_KIND) :: CA_time = 18*60*60   ! seconds
 logical :: include_daughters = .true.
 !logical, parameter :: phase_dist = .true.
-real(REAL_KIND) :: t_irradiation, SFave
+real(REAL_KIND) :: t_irradiation, SFave, t_mitosis
 logical :: use_SF = .true.
 real(REAL_KIND) :: phase_hour(60)
 integer :: nphase_hours, next_phase_hour
@@ -572,7 +573,7 @@ real(REAL_KIND) :: G2_katm3_factor=1.0, G2_katm4_factor=1.0, G2_katr3_factor=1.0
 integer :: maxhours = 199
 logical :: overstepped
 
-logical, parameter :: no_S_Iliakis = .true.	! If true this suppresses Iliakis effect in S-phase
+logical, parameter :: no_S_Iliakis = .false.	! If true this suppresses Iliakis effect in S-phase
 logical, parameter :: constant_S_pHR = .true.
 real(REAL_KIND), parameter :: dose_threshold = 1
 

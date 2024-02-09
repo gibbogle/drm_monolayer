@@ -104,8 +104,8 @@ real(8) :: ATMsum, ATRsum, Sthsum, G2thsum(2)
 integer :: NSth, NG2th
 real(8) :: repRateFactor(NP)
 
-real(8) :: totPmit, totPaber, tottotDSB, totNlethal
-real(8) :: totNDSB(2), totNmisjoins, totSFfactor(3)
+real(8) :: totNmisjoins(2), totPaber(2), totPmit(2)  ! 1 = pre-rep, 2 = post-rep
+real(8) :: tottotDSB, totNDSB(2), totSFfactor(3)
 
 real(8) :: tCPdelay, tATMdelay, tATRdelay
 logical :: use_addATMATRtimes = .false.
@@ -162,6 +162,8 @@ real(8), parameter :: ddist_totDSB = 200.0/NMDIST
 
 integer :: ng11, ng12   ! to record post-mitosis G1
 
+integer :: istep_signal         ! time step index for signalling()
+real(8) :: signalling(4,1000)    ! 1 = time since IR, 2 = ATM_act, 3 = ATR_act, 4 = CC_act
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
@@ -506,7 +508,7 @@ end subroutine
 ! Note: pHRs + pHRc must be <= 1
 ! 
 ! 30/05/2023
-! Add distinction between pre- and post-DNA relication DSBs.
+! Add distinction between pre- and post-DNA replication DSBs.
 ! pre = DSB(:,1), post = DSB(:,2)
 !--------------------------------------------------------------------------
 subroutine cellIrradiation(cp, dose, Cdrug)
@@ -529,6 +531,8 @@ phase = cp%phase
 cp%phase0 = min(phase, M_phase)
 NG1 = DSB_Gy*dose
 DSB0 = 0
+istep_signal = 1
+signalling(:,1) = 0
 
 if (use_Jeggo) then     ! using this
     If (phase == G1_phase) Then
@@ -550,7 +554,7 @@ if (use_Jeggo) then     ! using this
             th = (ccp%T_S + cp%progress*ccp%T_G2)/3600
         endif    
     End If
-    cp%frep = 1 - f_S
+    cp%f_S_at_IR = f_S
     totDSB0 = (1 + f_S) * NG1
     DSB0(TMEJ,:) = 0
     If (phase == G1_phase) Then
@@ -682,14 +686,16 @@ elseif (phase == G2_phase) then
 endif
 
 cp%DSB = DSB0
+cp%DSB0 = DSB0
 cp%totDSB0 = totDSB0
-cp%Nlethal = 0
+!cp%Nlethal = 0
+cp%Nmis = 0
 !if (kcell_now <= 10) write(*,'(a,2i6,8f8.2)') 'IR: kcell, phase,DSB,f_S: ',kcell_now,phase,cp%DSB(1:4),f_S
 
 totPmit = 0
 totPaber = 0
 tottotDSB = 0
-totNlethal = 0
+!totNlethal = 0
 
 totNDSB = 0
 totNmisjoins = 0
@@ -1021,10 +1027,10 @@ if (iph == G1_phase) then
     endif
 endif
     
-if (single_cell) then
-    write(*,'(a,3e12.3)') 'k3,k4,ATM_act: ',k3,k4,cp%ATM_act
-    write(nflog,'(a,3e12.3)') 'k3,k4,ATM_act: ',k3,k4,cp%ATM_act
-endif
+!if (single_cell) then
+!    write(*,'(a,3e12.3)') 'k3,k4,ATM_act: ',k3,k4,cp%ATM_act
+!    write(nflog,'(a,3e12.3)') 'k3,k4,ATM_act: ',k3,k4,cp%ATM_act
+!endif
 !if (single_cell) write(nflog,'(a,i6,3e12.4)') 'get_slowdown_factors: kcell,k3,k4,atm: ',kcell_now,k3,k4,atm
 if (use_exp_slowdown) then
     fATM = exp(-k4*atm)
@@ -1180,8 +1186,8 @@ if (use_cell_kcc2a_dependence) then
 else
     Kkcc2a = Kcc2a
 endif
-if (single_cell) &
-write(*,'(a,4e12.3)') 'CC_act,CC_inact,ATM_act,ATR_act: ',CC_act,CC_inact,ATM_act,ATR_act
+!if (single_cell) &
+!write(*,'(a,4e12.3)') 'CC_act,CC_inact,ATM_act,ATR_act: ',CC_act,CC_inact,ATM_act,ATR_act
 do it = 1,Nt
     ATM_inact = ATM_tot - ATM_act
     ATR_inact = ATR_tot - ATR_act
@@ -1196,14 +1202,14 @@ do it = 1,Nt
         CC_act = max(CC_act, 0.0)
         ATR_act = ATR_act + dt * dATR_act_dt
         ATR_act = min(ATR_act, ATR_tot)
-        if (single_cell .and. it == Nt) then
-            write(*,'(a,4e12.3)')  'terms:  ',(Kkcc2a + CC_act) * CC_inact / (Kmccp + CC_inact), &
-                     - cp%Kt2cc * ATM_act * CC_act / (Kmccmd + CC_act), &
-                     - cp%Ke2cc * ATR_act * CC_act / (Kmccrd + CC_act), &
-                    dCC_act_dt
-
-            write(*,'(3i6,e12.3)') istep,Nt,it,dCC_act_dt
-        endif
+!        if (single_cell .and. it == Nt) then
+!            write(*,'(a,4e12.3)')  'terms:  ',(Kkcc2a + CC_act) * CC_inact / (Kmccp + CC_inact), &
+!                     - cp%Kt2cc * ATM_act * CC_act / (Kmccmd + CC_act), &
+!                     - cp%Ke2cc * ATR_act * CC_act / (Kmccrd + CC_act), &
+!                    dCC_act_dt!
+!
+!            write(*,'(3i6,e12.3)') istep,Nt,it,dCC_act_dt
+!        endif
     elseif (use_ATR_S) then
         dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Kmrp + ATR_inact) - Kcc2e * ATR_act * CC_act / (Kmrd + CC_act)
         ATR_act = ATR_act + dt * dATR_act_dt
@@ -1289,14 +1295,17 @@ end function
 
 !------------------------------------------------------------------------
 ! To use parameters from mcradio, need to convert time from secs to hours
+! To keep track of pre- and post-rep contributions to misjoins (to cp%Nlethal))
+! need: 
+! Nmis(2), cp%Nmis(2)
 !------------------------------------------------------------------------
 subroutine updateRepair(cp,dt)
 type(cell_type), pointer :: cp
 real(8) :: dt
 integer :: phase
-real(8) :: DSB(NP,2), dNlethal
+real(8) :: DSB(NP,2)
 real(8) :: DSB0(NP,2)
-real(8) :: totDSB0, totDSB, Pmis, Nmis, dmis, dNmis(NP), totDSBinfid0, totDSBinfid, ATR_DSB, ATM_DSB, dth, binMisProb
+real(8) :: totDSB0, totDSB, Pmis, Nmis(2), dmis, dNmis(NP), totDSBinfid0, totDSBinfid, ATR_DSB, ATM_DSB, dth, binMisProb
 real(8) :: Cdrug, inhibrate, Nreassign
 real(8) :: f_S, eta_NHEJ, eta_TMEJ, tIR, eta
 real(8) :: th_since_IR
@@ -1499,12 +1508,16 @@ eta_TMEJ = eta_lookup(phase, TMEJ, f_S, tIR)
 
 Nmis = 0
 ! For NHEJ pathways
+! pre-rep fraction = (1 - f_S)
+! post-rep fraction = f_S
+! total with doubling = 2(1 - f_S) + f_S = 2 - f_S
 totDSB0 = sum(DSB0(NHEJfast,:)) + sum(DSB0(NHEJslow,:))
 totDSB = sum(DSB(NHEJfast,:)) + sum(DSB(NHEJslow,:))
 Pmis = misrepairRate(totDSB0, totDSB, eta_NHEJ)
-dmis = Pmis*(totDSB0 - totDSB)*(2 - f_S)
-Nmis = Nmis + dmis
-misjoins(1) = misjoins(1) + dmis
+dmis = Pmis*(totDSB0 - totDSB)
+Nmis(1) = Nmis(1) + dmis*(1 - f_S)  ! doubled at mitosis
+Nmis(2) = Nmis(2) + dmis*f_S
+misjoins(1) = misjoins(1) + Nmis(1) + Nmis(2)
 !if (single_cell) &
 !write(nfout,'(a,5f8.4)') 'f_S, tIR, totDSB0, eta_NHEJ, Nmis: ',f_S, tIR, totDSB0, eta_NHEJ, Nmis
 !write(nflog,'(a,4f10.4)') 'totDSB0, totDSB, eta_NHEJ, Pmis: ',totDSB0, totDSB, eta_NHEJ, Pmis
@@ -1517,17 +1530,23 @@ misjoins(1) = misjoins(1) + dmis
 !        write(nflog,'(a,i4,2f8.4)') 'k, eta, Pmis: ',k,eta,Pmis
 !    enddo
 !endif
-if (sum(DSB0(TMEJ,:)) > 0) then
+if (sum(DSB0(TMEJ,:)) > 0) then ! not used currently
     ! For TMEJ pathway
     Pmis = misrepairRate(sum(DSB0(TMEJ,:)), sum(DSB(TMEJ,:)), eta_TMEJ)
-    dmis = Pmis*(sum(DSB0(TMEJ,:)) - sum(DSB(TMEJ,:)))*(2 - f_S)
-    Nmis = Nmis + dmis
-    misjoins(2) = misjoins(2) + dmis
+    dmis = Pmis*(sum(DSB0(TMEJ,:)) - sum(DSB(TMEJ,:)))
+    Nmis(1) = Nmis(1) + dmis*(1 - f_S)
+    Nmis(2) = Nmis(2) + dmis*f_S
+    misjoins(2) = misjoins(2) + Nmis(1) + Nmis(2)
 endif
 cp%DSB = DSB
-!dNlethal = Klethal*misrepRate(phase)*Nmis   ! (was 0.5)  1.65 needs to be another parameter -> Klethal
-dNlethal = Klethal*Nmis   ! Here Klethal ~ 2.1*0.19 = 0.4, i.e. using a single average misreprate
-cp%Nlethal = cp%Nlethal + dNlethal
+cp%Nmis = cp%Nmis + Nmis
+
+! record signalling
+istep_signal = istep_signal + 1
+signalling(1,istep_signal) = tIR
+signalling(2,istep_signal) = cp%ATM_act
+signalling(3,istep_signal) = cp%ATR_act
+signalling(4,istep_signal) = cp%CC_act
 
 end subroutine
 
@@ -1536,10 +1555,12 @@ end subroutine
 ! cp%phase0 is the cell's phase at IR
 ! Note that this assumes that cells died of apoptosis in G1 at baseRate
 ! (see cellIrradiation())
+! Now pre-rep and post-rep Nlethal, Nmisjoins, Paber
 !------------------------------------------------------------------------
 subroutine survivalProbability(cp)
 type(cell_type), pointer :: cp
-real(8) :: DSB(NP,2), totDSB(2), Nlethal,Nmisjoins, Paber, Pbase, Papop, Pmit, Psurv
+real(8) :: DSB(NP,2), totDSB(2), Nmis(2), Nlethal(2), Paber(2), Pbase, Papop, Pmit(2), Psurv
+real(8) :: Nlethal_sum, Paber1_nodouble
 integer :: k, jpp
 
 DSB = cp%DSB
@@ -1547,31 +1568,33 @@ do jpp = 1,2
     totDSB(jpp) = sum(DSB(:,jpp))
     totNDSB(jpp) = totNDSB(jpp) + totDSB(jpp)
 enddo
-Nlethal = cp%Nlethal
-if (klethal > 0) then
-    Nmisjoins = Nlethal/Klethal
-else
-    Nmisjoins = 0
-endif
-totNmisjoins = totNmisjoins + Nmisjoins
+Nmis = cp%Nmis
+!if (klethal > 0) then
+!    Nmisjoins = Nlethal/Klethal
+!else
+!    Nmisjoins = 0
+!endif
+totNmisjoins = totNmisjoins + Nmis
 
-Pmit = exp(-(mitRate(1)*totDSB(1) + mitRate(2)*totDSB(2)))
 do k = 1,2
-    totSFfactor(k) = totSFfactor(k) + exp(-(mitRate(k)*totDSB(k)))
+    Pmit(k) = exp(-mitRate(k)*totDSB(k))
+    totSFfactor(k) = totSFfactor(k) + Pmit(k)
 enddo
 if (cp%phase0 < M_phase) then   ! G1, S, G2
-    Paber = exp(-Nlethal)
-!    Pmit = exp(-mitRate*totDSB)
-    cp%Psurvive = Pmit*Paber  
-!    if (kcell_now == 1) write(*,'(a,2f8.4,2e12.3)') 'totDSB,Nlethal,Pmit,Paber: ',totDSB,Nlethal,Pmit,Paber  
+    Paber(1) = exp(-2*Klethal*Nmis(1))
+    Paber1_nodouble = exp(-Klethal*Nmis(1))
+    Paber(2) = exp(-Klethal*Nmis(2))
+    cp%Psurvive = Pmit(1)*Pmit(2)*Paber(1)*Paber(2)  
+    cp%Psurvive_nodouble = Pmit(1)*Pmit(2)*Paber1_nodouble*Paber(2)  
+    if (kcell_now == 1) write(*,'(a,2f8.3,6e12.3)') 'totDSB,Pmit,Nmis,Paber: ',&
+                        totDSB,Pmit,Nmis,Paber  
 else    ! M_phase or dividing
     Paber = 1
-!    Pmit = exp(-mitRate*totDSB)
-    cp%Psurvive = Pmit*Msurvival
+    cp%Psurvive = Pmit(1)*Pmit(2)*Msurvival
 !    write(nflog,'(a,i6,3f10.4)') 'IR in mitosis: ',kcell_now,totDSB,cp%totDSB0,Pmit
 endif
-totSFfactor(3) = totSFfactor(3) + Paber
-if (kcell_now <= 10) then
+totSFfactor(3) = totSFfactor(3) + Paber(1)*Paber(2)
+if (kcell_now <= -10) then
 !    write(*,*)
     write(*,'(a,2i3,3f8.3)') 'cell,phase0,totDSB,psurvive: ',kcell_now,cp%phase0,totDSB,cp%Psurvive
 !    write(*,'(a,i3,2f8.2)') 'phase0,Nmisjoins,totDSB: ',cp%phase0,Nmisjoins,totDSB
@@ -1589,12 +1612,13 @@ ATRsum = ATRsum + cp%pATR
 totPmit = totPmit + Pmit
 totPaber = totPaber + Paber
 tottotDSB = tottotDSB + sum(totDSB)
-totNlethal = totNlethal + Nlethal
+!totNlethal = totNlethal + Nlethal
 
-if (Nlethal > NMDIST*ddist_Nlethal) then
+Nlethal_sum = Klethal*(2*Nmis(1) + Nmis(2))
+if (Nlethal_sum > NMDIST*ddist_Nlethal) then
     count_Nlethal(NMDIST) = count_Nlethal(NMDIST) + 1
 else
-    k = Nlethal/ddist_Nlethal + 1
+    k = Nlethal_sum/ddist_Nlethal + 1
     count_Nlethal(k) = count_Nlethal(k) + 1
 endif
 if (sum(totDSB) > NMDIST*ddist_totDSB) then
@@ -1604,6 +1628,14 @@ else
     count_totDSB(k) = count_totDSB(k) + 1
 endif
 
+write(*,'(a,i1,7f6.1,7f8.3,4f8.4)') 'AAA ',synch_phase,synch_fraction,cp%DSB0(1:3,1),cp%DSB0(1:3,2),t_mitosis, &
+            totDSB,Pmit,Nmis,Paber,cp%psurvive,cp%psurvive_nodouble
+! write out signalling results
+open(nfpar, file='signal.out', status = 'replace')
+do k = 1,istep_signal
+    write(nfpar,'(4f10.6)') signalling(:,k)
+enddo
+close(nfpar)
 end subroutine
 
 !------------------------------------------------------------------------
