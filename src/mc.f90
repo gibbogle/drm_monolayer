@@ -1350,6 +1350,7 @@ endif
 ! fRR = 0.5 when C = Chalf, 0.5 = exp(-k), k = -log(0.5) = 0.693
 if (Chalf == 0) then
     write(nflog,*) 'ERROR: Chalf = 0'
+    write(*,*) 'ERROR: Chalf = 0'
     stop
 endif
 repRateFactor(1:2) = exp(-0.693*Cdrug/Chalf) 
@@ -1542,12 +1543,13 @@ cp%DSB = DSB
 cp%Nmis = cp%Nmis + Nmis
 
 ! record signalling
-istep_signal = istep_signal + 1
-signalling(1,istep_signal) = tIR
-signalling(2,istep_signal) = cp%ATM_act
-signalling(3,istep_signal) = cp%ATR_act
-signalling(4,istep_signal) = cp%CC_act
-
+if (single_cell) then
+    istep_signal = istep_signal + 1
+    signalling(1,istep_signal) = tIR
+    signalling(2,istep_signal) = cp%ATM_act
+    signalling(3,istep_signal) = cp%ATR_act
+    signalling(4,istep_signal) = cp%CC_act
+endif
 end subroutine
 
 !------------------------------------------------------------------------
@@ -1628,6 +1630,7 @@ else
     count_totDSB(k) = count_totDSB(k) + 1
 endif
 
+if (single_cell) then
 write(*,'(a,i1,7f6.1,7f8.3,4f8.4)') 'AAA ',synch_phase,synch_fraction,cp%DSB0(1:3,1),cp%DSB0(1:3,2),t_mitosis, &
             totDSB,Pmit,Nmis,Paber,cp%psurvive,cp%psurvive_nodouble
 ! write out signalling results
@@ -1636,6 +1639,7 @@ do k = 1,istep_signal
     write(nfpar,'(4f10.6)') signalling(:,k)
 enddo
 close(nfpar)
+endif
 end subroutine
 
 !------------------------------------------------------------------------

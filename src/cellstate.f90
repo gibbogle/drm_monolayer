@@ -714,7 +714,7 @@ do kcell = 1,nlist0
     prev_phase = cp%phase
 	if (cp%phase < M_phase) then
 	    call growcell(cp,dt,f_CP)
-	    if (cp%irradiated) then
+		if (kcell == 1) then
 	        nslow(cp%phase) = nslow(cp%phase) + 1
 	        fslow(cp%phase) = fslow(cp%phase) + f_CP
 	    endif

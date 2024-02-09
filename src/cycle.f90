@@ -44,6 +44,7 @@ real(REAL_KIND) :: tIR
 integer :: Nwrite
 logical :: switch
 
+
 !if (cp%dVdt == 0) then
 !	write(nflog,*) 'dVdt=0, kcell: ',kcell_now,cp%phase
 !	stop
