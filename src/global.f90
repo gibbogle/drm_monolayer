@@ -576,6 +576,7 @@ logical :: overstepped
 logical, parameter :: no_S_Iliakis = .false.	! If true this suppresses Iliakis effect in S-phase
 logical, parameter :: constant_S_pHR = .true.
 real(REAL_KIND), parameter :: dose_threshold = 1
+integer :: ATR_in_S = 0		! 0 = no ATR signalling in S, 1 = signalling, no CP effect, 2 = signalling and CP effect
 
 ! Greens function section
 logical :: greens = .false.
@@ -819,6 +820,7 @@ if (use_exponential_cycletime) then
     fg = 1
 else
 #endif
+
 fg(M_phase) = 1.0
 T_S = ccp%T_S
 !T_M = ccp%T_M
@@ -835,6 +837,7 @@ T_G2 = Tgrowth*ccp%T_G2/(ccp%T_G1 + ccp%T_S + ccp%T_G2)
 fg(G1_phase) = T_G1/ccp%T_G1
 fg(S_phase) = T_S/ccp%T_S
 fg(G2_phase) = T_G2/ccp%T_G2
+if (single_cell) fg = 1.0
 !if (kcell_now == 2674) write(nflog,'(a,i6,2x,5f6.3)') 'set_divide_volume: Tdiv,T_M,Tgrowth,T_G2,fg(3): ',kcell_now,Tdiv/3600,T_M/3600,Tgrowth/3600,T_G2/3600,fg(3)
 V = V0 + rVmax*(T_G1/fg(G1_phase) + T_S/fg(S_phase) + T_G2/fg(G2_phase))
 cp%divide_volume = V
@@ -851,6 +854,9 @@ cp%fg = fg
 !    write(*,'(a,5e14.5)') 'set_divide_volume: rVmax,Vdivide0,cp%divide_volume: ',rVmax,Vdivide0,cp%divide_volume
 !!    write(*,'(a,2e14.5)') 'growth at average growth rate: ',Vdivide0/2,(divide_time_mean(1) - ccp%T_M)*rVmax
 !endif
+if (single_cell) then
+	write(*,'(a,4f8.3)') 'single_cell fg: ',fg
+endif
 end subroutine	
 
 !--------------------------------------------------------------------------------------

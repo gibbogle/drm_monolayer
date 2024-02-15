@@ -49,6 +49,7 @@ real(8) :: V, R, S, eta, fsigma
 integer :: k, it
 
 write(nflog,*) 'make_eta_table: ',S_NHEJ, S_TMEJ
+write(nflog,*) 'Neta, NtIR: ',Neta,NtIR
 fsigma = 1
 do k = 1,Neta
 fsigma = 1 -(1 - fsmin)*(k-1)/(Neta - 1.0)
@@ -59,19 +60,27 @@ do it = 1,NtIR
 	S = fsigma*S
 	eta = etafun(R,S)
 	eta_table(k,it,1:2) = eta
+    write(nflog,'(2i4,f8.4)') k,it,eta
 	eta = etafun(R,S_TMEJ)
 	eta_table(k,it,3:NP) = eta
 !	write(nflog,'(a,2i4,3f8.4)') 'k, it, R, S, eta_NHEJ: ', k, it, R, S, eta_table(k,it,1)
 enddo
 enddo
+!call test_eta
+!close(nflog)
+!stop
 end subroutine
 
 !--------------------------------------------------------------------------
 ! f_S = fractional progress through S-phase. =0 in G1, =1 in G2
+! tIR = time since IR, in hours.  Since NtIR = 15, it is assumed 
 ! Two sigma values have been defined: sigma_NHEJ and sigma_TMEJ
 ! For each pathway, lookup tables for eta as a function of f_S, tIR have been 
 ! precomputed, requiring only interpolation.
-! The number of table entries is Neta*NtIR (= 11*9)
+! The number of table entries is Neta*NtIR (= 11*15)
+! In eta_table(k, it,..) k is the f_S index, it is the tIR index
+! k = f_S*Neta
+! it = min(tIR,NtIR)
 !--------------------------------------------------------------------------
 function eta_lookup(phase,path,f_S,tIR) result(eta)
 integer :: phase, path
@@ -100,7 +109,8 @@ if (tIR >= NtIR - 1) then
 else
     it1 = tIR + 1   ! rounded down
     it2 = it1 + 1
-    fi = tIR - real(it1-1)/(NtIR-1)
+!    fi = tIR - real(it1-1)/(NtIR-1)
+    fi = tIR - it1 + 1
 endif
 if (phase == G1_phase) then
     k1 = 1
@@ -114,16 +124,39 @@ else
     k1 = f_S*(Neta-1) + 1
     if (k1 < Neta) then
         k2 = k1+1
-        fk = f_S - real(k1-1)/(Neta-1)
+!        fk = f_S - real(k1-1)/(Neta-1)
+        fk = f_S*(Neta - 1) + 1 - k1
     else
         k1 = Neta - 1
         k2 = Neta
         fk = 1.0 
     endif
 endif
+! fk is the fractional weight of k2, 1-fk is the fractional weight of k1
+! fi is the fractional weight of it2, 1-fi is the fractional weight of it1
+write(nflog,'(a,2i3,f8.3,4x,2i3,f8.3)') 'it1,it2,fi,k1,k2,fk: ',it1,it2,fi,k1,k2,fk
 eta = (1-fk)*(1-fi)*eta_table(k1,it1,path) + fk*(1-fi)*eta_table(k2,it1,path) &
     + (1-fk)*fi*eta_table(k1,it2,path) + fk*fi*eta_table(k2,it2,path)
 !write(*,'(a,2f7.3,4i3,e12.3)') 'eta_lookup: f_S,tIR,k1,k2,it1,it2,eta: ',f_S,tIR,k1,k2,it1,it2,eta
 end function
+
+subroutine test_eta
+
+real(8) :: f_S, tIR, dt, eta
+real(8), parameter :: T_S = 9.0
+integer :: phase, nt, it, NHEJfast
+
+phase = 2
+NHEJfast = 1
+dt = 0.1
+nt = T_S/dt
+do it = 1,nt
+    tIR = 9.5 + (it-1)*dt
+    f_S = (it-1)*dt/T_S
+    eta = eta_lookup(phase, NHEJfast, f_S, tIR) 
+    write(nflog,'(a,3f8.3)') 'f_S, tIR, eta: ',f_S, tIR, eta
+enddo
+
+end subroutine
 
 end module

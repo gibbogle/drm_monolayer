@@ -98,7 +98,7 @@ real(8) :: G1_tdelay = 4            ! delay before ATM_act updated (hours)
 logical :: use_Jaiswal = .true.
 logical :: vary_km10 = .true.
 real(8) :: jaiswal_std = 0.6
-logical :: use_ATR_S = .false.
+logical :: use_ATR_S    ! = .false.
 
 real(8) :: ATMsum, ATRsum, Sthsum, G2thsum(2)
 integer :: NSth, NG2th
@@ -566,6 +566,9 @@ if (use_Jeggo) then     ! using this
     If (f_S > 0) Then
         pHRs = fIliakis*pHRs_max * ((1 - rmin) * fdecay(th) + rmin)
         pHRc = fIliakis*pHRc_max * ((1 - rmin) * fdecay(th) + rmin)
+    if (single_cell) &
+        write(*,'(a,i2,5f10.3)') 'phase, cp%progress, th, fdecay(th), pHRs, pHRc: ', &
+                                  phase, cp%progress, th, fdecay(th), pHRs, pHRc
     else
         pHRs = 0
         pHRc = 0
@@ -675,7 +678,7 @@ elseif (phase == G2_phase) then
     if (use_Jaiswal) then
         ! nothing needed to be done here
         !if (cp%CC_act > 0) write(*,*) 'Cell in G2 at IR, CC_act: ',kcell_now, cp%CC_act
-    elseif (use_D_model) then
+    elseif (use_D_model) then   ! currently false
         cp%pATM = K_ATM(3,1)*totDSB0/(K_ATM(3,2) + totDSB0)
         cp%pATR = K_ATR(3,1)*totDSB0/(K_ATR(3,2) + totDSB0)
         if (cp%pATR > 0) then
@@ -785,6 +788,8 @@ end subroutine
 ! Note: parameters from mcradio assume time is hours, therefore the time
 ! step passed to the subroutine, dth, has been converted to hours.
 ! 11/02/22 changed K_ATR(2) & (3) to (1) & (2)
+! NOT USED
+! Jaiswal is used to compute ATR_act
 !--------------------------------------------------------------------------
 subroutine updateATR(iph,pATR,ATR_DSB,dth)
 integer :: iph
@@ -857,13 +862,16 @@ end function
 ! Time computed in hours, returned in secs
 ! CP delay is the sum of delays created by ATM_act and by ATR_act
 ! Effect of ATR_act is currently turned off.
+! NOT USED
+! since use_S_stop = false.  Uing slowdown factors
 !------------------------------------------------------------------------
 function S_checkpoint_time(cp) result(t)
 type(cell_type), pointer :: cp
-real(REAL_KIND) :: t, th, th_ATM, th_ATR, atm
+real(REAL_KIND) :: t, th, th_ATM, th_ATR, atm, atr
 integer :: iph = 2
-logical :: use_ATR = .false.
+logical :: use_ATR
 
+use_ATR = (ATR_in_S == 2)
 if (.not.use_S_stop) then
     write(*,*) 'Error: S_checkpoint_time: should not get here with use_S_stop = ',use_S_stop
     stop
@@ -873,21 +881,23 @@ if (use_S_pATM) then
 else
     atm = cp%ATM_act
 endif
+atr = cp%ATR_act
 !th_ATM = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*cp%pATM))
-th = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*atm))
+th_ATM = K_ATM(iph,3)*(1 - exp(-K_ATM(iph,4)*atm))  ! this was erroneously th = ...
 if (use_ATR) then
-    th_ATR = K_ATR(iph,3)*(1 - exp(-K_ATR(iph,4)*cp%pATR))
+    th_ATR = K_ATR(iph,3)*(1 - exp(-K_ATR(iph,4)*atr))
 else
     th_ATR = 0
 endif
-th = th_ATM + th_ATR
-if (kcell_now <= 10) then
+th = th_ATM + th_ATR    ! this was an error, since th_ATM was not defined
+if (kcell_now <= 1) then
     write(nfphase,*)
     write(nfphase,'(a,i6,3f6.2)') 'S_checkpoint_time: ',kcell_now,th_ATM,th_ATR,th
 !    write(nfphase,'(a,4f8.3)') 'pATM,katm3g2,katm4g2,1-exp(-katm4g2*pATM): ',cp%pATM,K_ATM(iph,3),K_ATM(iph,4),1-exp(-K_ATM(iph,4)*cp%pATM)
 !    write(nfphase,'(a,4f8.3)') 'pATR,katr3g2,katr4g2,1-exp(-katr4g2*pATR): ',cp%pATR,K_ATR(iph,3),K_ATR(iph,4),1-exp(-K_ATR(iph,4)*cp%pATR)
 endif
 t = 3600*th
+write(*,'(a,i6,4f6.2)') 'S_checkpoint_time: ',kcell_now,th_ATM,th_ATR,th,t
 end function
 
 !------------------------------------------------------------------------
@@ -905,12 +915,12 @@ if (use_Jaiswal) then
     write(*,*) 'ERROR: G2_checkpoint_time not used with Jaiswal'
     stop
 endif
-if (use_D_model) then
+if (use_D_model) then   ! currently false
     th_ATM = cp%pATM
 !    th_ATR = cp%pATR
     th_ATR = 0  ! if effect of pATR is disabled
 else
-    if (use_DSB_CP) then
+    if (use_DSB_CP) then    ! currently false
         N_DSB = sum(cp%DSB)
         k3 = K_ATR(iph,3)
         k4 = K_ATR(iph,4)
@@ -964,8 +974,10 @@ type(cell_type), pointer :: cp
 integer :: iph
 real(REAL_KIND) :: fATM, fATR
 real(REAL_KIND) :: pATM, pATR, k3, k4, N_DSB, atm, atr
+logical :: use_ATR
 logical :: OK
 
+use_ATR = (ATR_in_S == 2)
 if (.not.cp%irradiated) then
     fATM = 1
     fATR = 1
@@ -986,7 +998,7 @@ endif
 
 atr = 0
 fATR = 1
-if (use_DSB_CP) then
+if (use_DSB_CP) then    ! currently false
     N_DSB = sum(cp%DSB)
     k3 = K_ATM(iph,3)
     k4 = K_ATM(iph,4)
@@ -1009,7 +1021,7 @@ elseif (iph == S_phase) then
         atm = cp%pATM
     else
         atm = cp%ATM_act
-        if (use_ATR_S) atr = cp%ATR_act
+        if (use_ATR) atr = cp%ATR_act
     endif
 endif
 k3 = K_ATM(iph,3)
@@ -1042,7 +1054,7 @@ else
     endif
 endif
 !if (iph == G1_phase) write(*,'(a,i6,4e12.3)') 'G1 slowdown: ',kcell_now,k3,k4,atm,fATM
-if (iph == S_phase .and. use_ATR_S) then
+if (iph == S_phase .and. use_ATR) then
     k3 = K_ATR(iph,3)   !*G2_katr3_factor
     k4 = K_ATR(iph,4)   !*G2_katr4_factor
     fATR = max(0.01,1 - k3*atr/(k4 + atr))
@@ -1111,6 +1123,7 @@ end function
 subroutine get_CP_delay(cp)
 type(cell_type), pointer :: cp
 
+write(*,*) 'get_CP_delay: phase: ',cp%phase
 if (cp%phase == G1_phase) then
     cp%CP_delay = G1_checkpoint_time(cp)
 !    if (kcell_now <= 100) write(*,'(a,i6,f8.3)') 'G1 CP_delay: ',kcell_now,cp%CP_delay/3600
@@ -1138,6 +1151,7 @@ real(8) :: D_ATR, D_ATM, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inac
 real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, t_G2, Kkcc2a, DSB(NP), CC_act0
 integer :: iph, it, Nt
 type(cycle_parameters_type),pointer :: ccp
+logical :: use_ATR  ! ATR is used in G2, and computed in S if ATR_in_S >= 1
 logical :: dbug
 
 iph = cp%phase
@@ -1145,6 +1159,7 @@ if (iph >= 7) iph = iph - 6     ! checkpoint phase numbers --> phase number, to 
 if (iph > G2_phase) then
     return
 endif
+use_ATR = (iph == 3) .or. ((iph == 2) .and. (ATR_in_S >= 1))
 Nt = int(dth/dt + 0.5)
 do it = 1,NP
     DSB(it) = sum(cp%DSB(it,:))     ! add pre and post
@@ -1157,7 +1172,7 @@ if (iph == G1_phase) then
 elseif (iph == S_phase) then
     D_ATM = (DSB(HR) + DSB(NHEJslow))*norm_factor
     ATM_act = cp%ATM_act
-    if (use_ATR_S) then
+    if (use_ATR) then
         D_ATR = DSB(HR)*norm_factor
         ATR_act = cp%ATR_act
     endif
@@ -1169,7 +1184,7 @@ elseif (iph == G2_phase) then
     ATR_act = cp%ATR_act
     ATM_act = cp%ATM_act
     t_G2 = (tnow - cp%t_start_G2)/3600
-    if (t_G2 > 40) then
+    if (t_G2 > 40) then     ! force ATR_act to taper to 0 after 30h in G2
         ATR_act = 0
     elseif (t_G2 > 30) then
         ATR_act = ATR_act*(t_G2 - 30)/(40 - 30)
@@ -1210,8 +1225,8 @@ do it = 1,Nt
 !
 !            write(*,'(3i6,e12.3)') istep,Nt,it,dCC_act_dt
 !        endif
-    elseif (use_ATR_S) then
-        dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Kmrp + ATR_inact) - Kcc2e * ATR_act * CC_act / (Kmrd + CC_act)
+    elseif (use_ATR) then
+        dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Kmrp + ATR_inact) ! - Kcc2e * ATR_act * CC_act / (Kmrd + CC_act)
         ATR_act = ATR_act + dt * dATR_act_dt
         ATR_act = min(ATR_act, ATR_tot)
     endif
@@ -1231,7 +1246,7 @@ if (iph == G2_phase) then
     cp%ATR_act = ATR_act
     cp%dCC_act_dt = dCC_act_dt
 !    write(nflog,'(a,i8,2e12.3)') 'Jaiswal_update: ',kcell_now,CC_act0,CC_act
-elseif (iph == S_phase .and. use_ATR_S) then
+elseif (iph == S_phase .and. use_ATR) then
     cp%ATR_act = ATR_act
 endif
 t = t_simulation/3600.
@@ -1372,7 +1387,7 @@ if (Preass > 0 .and. phase >= S_phase) then
     enddo
 endif
 DSB0 = DSB     ! initial DSBs for this time step
-
+!if (single_cell) write(*,'(a,8f6.1)') 'DSB0: ',DSB0
 ! Revised approach with no fidelity, just misrejoining
 
 totDSB0 = sum(DSB0)
@@ -1505,6 +1520,7 @@ endif
 tIR = (t_simulation - t_irradiation)/3600   ! time since IR, in hours
 tIR = max(tIR,0.0)
 eta_NHEJ = eta_lookup(phase, NHEJfast, f_S, tIR) 
+!write(*,'(a,i2,3f10.4)') 'phase, f_S, tIR: eta_NHEJ: ',phase, f_S, tIR, eta_NHEJ
 eta_TMEJ = eta_lookup(phase, TMEJ, f_S, tIR) 
 
 Nmis = 0
@@ -1516,6 +1532,8 @@ totDSB0 = sum(DSB0(NHEJfast,:)) + sum(DSB0(NHEJslow,:))
 totDSB = sum(DSB(NHEJfast,:)) + sum(DSB(NHEJslow,:))
 Pmis = misrepairRate(totDSB0, totDSB, eta_NHEJ)
 dmis = Pmis*(totDSB0 - totDSB)
+if (single_cell) write(*,'(a,2f6.1,e12.3,2f8.3)') 'totDSB0, totDSB, eta_NHEJ, Pmis, dmis: ', &
+                                totDSB0, totDSB, eta_NHEJ, Pmis, dmis
 Nmis(1) = Nmis(1) + dmis*(1 - f_S)  ! doubled at mitosis
 Nmis(2) = Nmis(2) + dmis*f_S
 misjoins(1) = misjoins(1) + Nmis(1) + Nmis(2)
@@ -1542,7 +1560,7 @@ endif
 cp%DSB = DSB
 cp%Nmis = cp%Nmis + Nmis
 
-! record signalling
+! record signalling for single-cell
 if (single_cell) then
     istep_signal = istep_signal + 1
     signalling(1,istep_signal) = tIR
