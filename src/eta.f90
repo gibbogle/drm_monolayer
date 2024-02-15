@@ -134,7 +134,7 @@ else
 endif
 ! fk is the fractional weight of k2, 1-fk is the fractional weight of k1
 ! fi is the fractional weight of it2, 1-fi is the fractional weight of it1
-write(nflog,'(a,2i3,f8.3,4x,2i3,f8.3)') 'it1,it2,fi,k1,k2,fk: ',it1,it2,fi,k1,k2,fk
+!write(nflog,'(a,2i3,f8.3,4x,2i3,f8.3)') 'it1,it2,fi,k1,k2,fk: ',it1,it2,fi,k1,k2,fk
 eta = (1-fk)*(1-fi)*eta_table(k1,it1,path) + fk*(1-fi)*eta_table(k2,it1,path) &
     + (1-fk)*fi*eta_table(k1,it2,path) + fk*fi*eta_table(k2,it2,path)
 !write(*,'(a,2f7.3,4i3,e12.3)') 'eta_lookup: f_S,tIR,k1,k2,it1,it2,eta: ',f_S,tIR,k1,k2,it1,it2,eta
