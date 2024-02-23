@@ -92,7 +92,8 @@ elseif (cp%phase == S_phase) then
         nSdelay = nSdelay + 1   ! only S doesn't use stops
         if (single_cell) then
             write(*,'(a,2f6.2)') 'G2 entry: tnow, N_DSB: ',tnow/3600,sum(cp%DSB(1:3,:))
-            write(nflog,'(a,2f6.2)') 'G2 entry: tnow, N_DSB: ',tnow/3600,sum(cp%DSB(1:3,:))
+            write(nflog,'(a,3f6.3)') 'G2 entry: tnow, N_DSB, ATR: ', &
+                                tnow/3600,sum(cp%DSB(1:3,:)),cp%ATR_act
 ! Try this
 !            cp%ATM_act = 0
 !            cp%ATR_act = 0

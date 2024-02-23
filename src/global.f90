@@ -576,7 +576,7 @@ logical :: overstepped
 logical, parameter :: no_S_Iliakis = .false.	! If true this suppresses Iliakis effect in S-phase
 logical, parameter :: constant_S_pHR = .true.
 real(REAL_KIND), parameter :: dose_threshold = 1
-integer :: ATR_in_S = 0		! 0 = no ATR signalling in S, 1 = signalling, no CP effect, 2 = signalling and CP effect
+integer :: ATR_in_S = 1		! 0 = no ATR signalling in S, 1 = signalling, no CP effect, 2 = signalling and CP effect
 
 ! Greens function section
 logical :: greens = .false.

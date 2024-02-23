@@ -66,7 +66,7 @@ do it = 1,NtIR
 !	write(nflog,'(a,2i4,3f8.4)') 'k, it, R, S, eta_NHEJ: ', k, it, R, S, eta_table(k,it,1)
 enddo
 enddo
-!call test_eta
+!call test_eta(S_NHEJ, fsmin)
 !close(nflog)
 !stop
 end subroutine
@@ -140,11 +140,74 @@ eta = (1-fk)*(1-fi)*eta_table(k1,it1,path) + fk*(1-fi)*eta_table(k2,it1,path) &
 !write(*,'(a,2f7.3,4i3,e12.3)') 'eta_lookup: f_S,tIR,k1,k2,it1,it2,eta: ',f_S,tIR,k1,k2,it1,it2,eta
 end function
 
-subroutine test_eta
+subroutine test_eta(S_NHEJ, fsmin)
+real(8) :: S_NHEJ, fsmin
+real(8) :: f_S, tIR, dt, t, fsigma, V, eta, S, R
+real(8) :: St(2,100), Rt(2,100), etat(2,100)
+real(8), parameter :: T_G1 = 6.35, T_S = 9.0, T_G2 = 3.2
+integer :: phase, nt, it, k, NHEJfast
 
-real(8) :: f_S, tIR, dt, eta
-real(8), parameter :: T_S = 9.0
-integer :: phase, nt, it, NHEJfast
+! Compare R, S, eta vs tIR for two cases: IR at start of G1, IR at start of S
+dt = 0.2
+etat = 0
+! G1 case
+phase = 1
+do it = 1,100
+    t = (it-1)*dt
+    if (phase == 1 .and. t > T_G1) phase = 2
+    if (phase == 2 .and. t > (T_G1 + T_S)) phase = 3
+    if (phase == 3 .and. t > (T_G1 + T_S + T_G2)) exit
+    if (phase == 1) then
+        fsigma = 1
+        V = 1
+    elseif (phase == 2) then
+        fsigma = 1 - (1 - fsmin)*(t - T_G1)/T_S
+        V = 1 + (t - T_G1)/T_S
+    else
+        fsigma = fsmin
+        V = 2
+    endif
+	S = S_NHEJ + dsigma_dt*t
+	S = fsigma*S
+	R = V**(1./3.)
+    eta = etafun(R,S)
+    St(1,it) = S
+    Rt(1,it) = R
+    etat(1,it) = eta
+!    write(nflog,'(i4,3f8.3,e12.3)') phase,t,S,R,eta
+enddo
+
+! S case
+phase = 2
+do it = 1,100
+    t = (it-1)*dt
+!    if (phase == 1 .and. t > T_G1) phase = 2
+    if (phase == 2 .and. t > (T_S)) phase = 3
+    if (phase == 3 .and. t > (T_S + T_G2)) exit
+    if (phase == 1) then
+        fsigma = 1
+        V = 1
+    elseif (phase == 2) then
+        fsigma = 1 - (1 - fsmin)*t/T_S
+        V = 1 + t/T_S
+    else
+        fsigma = fsmin
+        V = 2
+    endif
+	S = S_NHEJ + dsigma_dt*t
+	S = fsigma*S
+	R = V**(1./3.)
+    eta = etafun(R,S)
+    St(2,it) = S
+    Rt(2,it) = R
+    etat(2,it) = eta
+!    write(nflog,'(i4,3f8.3,e12.3)') phase,t,S,R,eta
+enddo
+do it = 1,100
+    if (etat(2,it) == 0) exit
+    write(nflog,'(i4,2(2f8.3,e12.3))') it, (St(k,it),Rt(k,it),etat(k,it),k=1,2)
+enddo
+return
 
 phase = 2
 NHEJfast = 1

@@ -618,6 +618,7 @@ if (use_Jeggo) then     ! using this
             write(nfout,'(2(a,3f8.1))') 'pre  DSB at IR: ',DSB0(1:3,1),'  NNHEJ: ',sum(DSB0(1:2,1))
             write(nfout,'(2(a,3f8.1))') 'post DSB at IR: ',DSB0(1:3,2),'  NNHEJ: ',sum(DSB0(1:2,2))
             write(nfout,'(a,3f8.1)')    'total DSB at IR: ',sum(DSB0(NHEJfast,:)),sum(DSB0(NHEJslow,:)),sum(DSB0(HR,:))
+            write(*,*) 'DSB0(HR): ',DSB0(HR,:)
         endif
     endif
 else    ! not using this
@@ -796,7 +797,9 @@ integer :: iph
 real(8) :: pATR, ATR_DSB, dth
 real(8) :: r, t, fz, k1, k2, x, xmax, km, xf
 
-if (iph == G2_phase .and. use_Jaiswal) return
+if (iph == G2_phase .and. use_Jaiswal) then
+    if (ATR_in_S == 0) return
+endif
 k1 = K_ATR(iph,1)
 r = k1*ATR_DSB   ! rate of production of pATR
 t = (tnow - t_irradiation)/3600
@@ -1225,10 +1228,12 @@ do it = 1,Nt
 !
 !            write(*,'(3i6,e12.3)') istep,Nt,it,dCC_act_dt
 !        endif
-    elseif (use_ATR) then
+    elseif (use_ATR .and. D_ATR > 0) then
         dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Kmrp + ATR_inact) ! - Kcc2e * ATR_act * CC_act / (Kmrd + CC_act)
         ATR_act = ATR_act + dt * dATR_act_dt
         ATR_act = min(ATR_act, ATR_tot)
+!        if (single_cell) write(nflog,'(a,i4,4f8.3)') 'iph,D_ATR, Kd2e, ATR_inact, dATR_act_dt: ', &
+!                    iph, D_ATR, Kd2e, ATR_inact, dATR_act_dt
     endif
     dATM_act_dt = Kd2t * D_ATM * ATM_inact / (Kmmp + ATM_inact) - Kti2t * ATM_act / (Kmmd + ATM_act)    
     ATM_act = ATM_act + dt*dATM_act_dt
@@ -1236,9 +1241,9 @@ do it = 1,Nt
 
     t = it*dt
 enddo
-if (dbug) then
-!    write(*,'(a,2i4,4f8.4)') 'kcell,iph,ATR,ATM: ',kcell_now,iph,ATR_act,ATM_act
-!    write(nflog,'(a,2i4,4f8.4)') 'kcell,iph,ATR,ATM: ',kcell_now,iph,ATR_act,ATM_act
+if (single_cell) then
+    write(*,'(a,2i4,4f8.4)') 'kcell,iph,ATR,ATM: ',kcell_now,iph,ATR_act,ATM_act
+    write(nflog,'(a,2i4,4f8.4)') 'kcell,iph,ATR,ATM: ',kcell_now,iph,ATR_act,ATM_act
 endif
 cp%ATM_act = ATM_act
 if (iph == G2_phase) then
@@ -1532,8 +1537,9 @@ totDSB0 = sum(DSB0(NHEJfast,:)) + sum(DSB0(NHEJslow,:))
 totDSB = sum(DSB(NHEJfast,:)) + sum(DSB(NHEJslow,:))
 Pmis = misrepairRate(totDSB0, totDSB, eta_NHEJ)
 dmis = Pmis*(totDSB0 - totDSB)
-if (single_cell) write(*,'(a,2f6.1,e12.3,2f8.3)') 'totDSB0, totDSB, eta_NHEJ, Pmis, dmis: ', &
-                                totDSB0, totDSB, eta_NHEJ, Pmis, dmis
+!if (single_cell) write(*,'(a,i4,f6.2,3f6.1,e12.3,3f8.4)') &
+!                    'iph, progress, totDSB0, totDSB, DSB_rep, eta_NHEJ, Pmis, dmis, tIR: ', &
+!                        phase,cp%progress,totDSB0, totDSB, totDSB0-totDSB, eta_NHEJ, Pmis, dmis, tIR
 Nmis(1) = Nmis(1) + dmis*(1 - f_S)  ! doubled at mitosis
 Nmis(2) = Nmis(2) + dmis*f_S
 misjoins(1) = misjoins(1) + Nmis(1) + Nmis(2)
@@ -1559,6 +1565,7 @@ if (sum(DSB0(TMEJ,:)) > 0) then ! not used currently
 endif
 cp%DSB = DSB
 cp%Nmis = cp%Nmis + Nmis
+!write(*,*) 'end   DSB(3,2): ',DSB(3,2)
 
 ! record signalling for single-cell
 if (single_cell) then
