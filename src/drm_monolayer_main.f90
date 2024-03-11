@@ -112,9 +112,9 @@ endif
 
 ! Synchronisation of cell IR
 use_synchronise = .false.
-use_single = .true. ! to simulate a cell (or cells) at specified synch_phase and synch_progress
-synch_phase = S_phase   !G1 is 1 - 6, S is 7 - 15, G2 is 16 - 19
-synch_fraction = 0.1
+use_single = .false. ! to simulate a cell (or cells) at specified synch_phase and synch_progress
+synch_phase = G1_phase   !G1 is 1 - 6, S is 7 - 15, G2 is 16 - 19
+synch_fraction = 0.8    ! only used if use_single true (also synch_phase)
 nph = 1
 if (use_synchronise) then
     if (use_single) then
@@ -141,6 +141,7 @@ use_fixed_CP = .false.
 compute_cycle = .true.
 i_hypoxia_cutoff = 3
 i_growth_cutoff = 1
+!do synch_phase = 1,3
 do irun = 1,nph   ! 1,1
     if (use_synchronise) then
         synch_fraction = progress(irun)    !(irun-1)*0.2
@@ -188,5 +189,6 @@ do irun = 1,nph   ! 1,1
 	t2 = wtime()
 	write(*,*) 'time: ',t2-t1
 enddo
+!enddo
 end
 

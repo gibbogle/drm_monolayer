@@ -39,7 +39,7 @@ integer, parameter :: TMEJ = 4   ! this is really alt-EJ (was MDR)
 !real(8) :: eta = 0.0006506387875449218
 real(8) :: Pcomplex = 0.4337    ! fraction of created DSBs that are complex (McMahon: complexFrac)
 real(8) :: pJeggo = 0.9         ! fraction of post-replication DSBs that are fast. (NOT USED)
-real(8) :: fsmin = 0.5
+real(8) :: Kcoh = 1.0       ! cohesin effect
 !real(8) :: PHR = 0.8      ! fraction of post-replication simple DSBs that are repaired by HR (slow) rather than NHEJ (fast)
 real(8) :: pHRs_max, pHRc_max, pHRs_G2, pHRc_G2
 logical :: use_sigmoid = .true.
@@ -210,7 +210,7 @@ read(nfin,*) Klethal
     do j = 1,4
         do iph = 1,3
             read(nfin,*) K_ATM(iph,j)
-            write(*,*) j,iph,K_ATM(iph,j)
+!            write(*,*) j,iph,K_ATM(iph,j)
             write(nflog,*) j,iph,K_ATM(iph,j)
         enddo
      enddo
@@ -218,7 +218,7 @@ read(nfin,*) Klethal
     do j = 1,4
         do iph = 2,3
             read(nfin,*) K_ATR(iph,j)
-            write(*,*) j,iph,K_ATR(iph,j)
+!            write(*,*) j,iph,K_ATR(iph,j)
             write(nflog,*) j,iph,K_ATR(iph,j)
         enddo
     enddo
@@ -239,7 +239,7 @@ read(nfin,*) repRate(NHEJslow)
 read(nfin,*) repRate(HR)
 read(nfin,*) repRate(TMEJ)
 read(nfin,*) pComplex
-read(nfin,*) fsmin  !pJeggo
+read(nfin,*) Kcoh  !pJeggo was fsmin
 read(nfin,*) pHRs_max
 read(nfin,*) pHRc_max
 read(nfin,*) rmin
@@ -284,7 +284,8 @@ if (use_Jaiswal) then
         CC_threshold = CC_threshold_factor*CC_tot
     endif
 endif
-call make_eta_table(sigma_NHEJ, sigma_TMEJ, fsmin)
+
+call make_eta_table(sigma_NHEJ, sigma_TMEJ, Kcoh)
 
 ATMsum = 0  ! to investigate ATM dependence on parameters
 ATRsum = 0  ! to investigate ATR dependence on parameters
@@ -566,9 +567,9 @@ if (use_Jeggo) then     ! using this
     If (f_S > 0) Then
         pHRs = fIliakis*pHRs_max * ((1 - rmin) * fdecay(th) + rmin)
         pHRc = fIliakis*pHRc_max * ((1 - rmin) * fdecay(th) + rmin)
-    if (single_cell) &
-        write(*,'(a,i2,5f10.3)') 'phase, cp%progress, th, fdecay(th), pHRs, pHRc: ', &
-                                  phase, cp%progress, th, fdecay(th), pHRs, pHRc
+        if (single_cell) &
+            write(*,'(a,i2,5f10.3)') 'phase, cp%progress, th, fdecay(th), pHRs, pHRc: ', &
+                                      phase, cp%progress, th, fdecay(th), pHRs, pHRc
     else
         pHRs = 0
         pHRc = 0
@@ -608,7 +609,7 @@ if (use_Jeggo) then     ! using this
         if (kcell_now == 1) then
             write(*,'(a,5f8.4)') 'fIliakis, decay, pHRs, pHRc, pHR: ', &
                     fIliakis, ((1 - rmin) * fdecay(th) + rmin), pHRs,pHRc,pHR
-            write(*,*) 'Npre, Npost: ',Npre,Npost
+            write(*,*) 'Npre, Npost, f_S, pHR: ',Npre,Npost,f_S,pHR
             write(*,'(2(a,3f8.1))') 'pre  DSB at IR: ',DSB0(1:3,1),'  NNHEJ: ',sum(DSB0(1:2,1))
             write(*,'(2(a,3f8.1))') 'post DSB at IR: ',DSB0(1:3,2),'  NNHEJ: ',sum(DSB0(1:2,2))
             write(*,'(a,3f8.1)')    'total DSB at IR: ',sum(DSB0(NHEJfast,:)),sum(DSB0(NHEJslow,:)),sum(DSB0(HR,:))
@@ -1198,7 +1199,6 @@ elseif (iph == G2_phase) then
 else
     return
 endif
-if (single_cell) write(nflog,*) 'CC_act: ',CC_act
 if (use_cell_kcc2a_dependence) then
     Kkcc2a = cp%Kcc2a
 else
@@ -1241,10 +1241,10 @@ do it = 1,Nt
 
     t = it*dt
 enddo
-if (single_cell) then
-    write(*,'(a,2i4,4f8.4)') 'kcell,iph,ATR,ATM: ',kcell_now,iph,ATR_act,ATM_act
-    write(nflog,'(a,2i4,4f8.4)') 'kcell,iph,ATR,ATM: ',kcell_now,iph,ATR_act,ATM_act
-endif
+!if (single_cell) then
+!    write(*,'(a,2i4,4f8.4)') 'kcell,iph,ATR,ATM: ',kcell_now,iph,ATR_act,ATM_act
+!    write(nflog,'(a,2i4,4f8.4)') 'kcell,iph,ATR,ATM: ',kcell_now,iph,ATR_act,ATM_act
+!endif
 cp%ATM_act = ATM_act
 if (iph == G2_phase) then
     cp%CC_act = CC_act
@@ -1524,9 +1524,11 @@ elseif (phase >= G2_phase) then
 endif
 tIR = (t_simulation - t_irradiation)/3600   ! time since IR, in hours
 tIR = max(tIR,0.0)
-eta_NHEJ = eta_lookup(phase, NHEJfast, f_S, tIR) 
-!write(*,'(a,i2,3f10.4)') 'phase, f_S, tIR: eta_NHEJ: ',phase, f_S, tIR, eta_NHEJ
-eta_TMEJ = eta_lookup(phase, TMEJ, f_S, tIR) 
+if (use_Arnould) then
+    eta_NHEJ = eta_Arnould(phase, f_S, tIR, R_Arnould, sigma_NHEJ, Kcoh)
+else
+    eta_NHEJ = eta_lookup(phase, NHEJfast, f_S, tIR) 
+endif
 
 Nmis = 0
 ! For NHEJ pathways
@@ -1537,8 +1539,13 @@ totDSB0 = sum(DSB0(NHEJfast,:)) + sum(DSB0(NHEJslow,:))
 totDSB = sum(DSB(NHEJfast,:)) + sum(DSB(NHEJslow,:))
 Pmis = misrepairRate(totDSB0, totDSB, eta_NHEJ)
 dmis = Pmis*(totDSB0 - totDSB)
+
+! Here we could increment 
+! Nreptot by Nrep = totDSB0 - totDSB
+! Pmistot by Nrep*Pmis
+
 !if (single_cell) write(*,'(a,i4,f6.2,3f6.1,e12.3,3f8.4)') &
-!                    'iph, progress, totDSB0, totDSB, DSB_rep, eta_NHEJ, Pmis, dmis, tIR: ', &
+!                    'iph, pr, totDSB0, totDSB, DSB_rep, eta, Pmis, dmis, tIR: ', &
 !                        phase,cp%progress,totDSB0, totDSB, totDSB0-totDSB, eta_NHEJ, Pmis, dmis, tIR
 Nmis(1) = Nmis(1) + dmis*(1 - f_S)  ! doubled at mitosis
 Nmis(2) = Nmis(2) + dmis*f_S
@@ -1587,7 +1594,7 @@ end subroutine
 subroutine survivalProbability(cp)
 type(cell_type), pointer :: cp
 real(8) :: DSB(NP,2), totDSB(2), Nmis(2), Nlethal(2), Paber(2), Pbase, Papop, Pmit(2), Psurv
-real(8) :: Nlethal_sum, Paber1_nodouble
+real(8) :: Nlethal_sum, Paber1_nodouble, Nmistot
 integer :: k, jpp
 
 DSB = cp%DSB
@@ -1656,14 +1663,15 @@ else
 endif
 
 if (single_cell) then
-write(*,'(a,i1,7f6.1,7f8.3,4f8.4)') 'AAA ',synch_phase,synch_fraction,cp%DSB0(1:3,1),cp%DSB0(1:3,2),t_mitosis, &
-            totDSB,Pmit,Nmis,Paber,cp%psurvive,cp%psurvive_nodouble
+    Nmistot = 2*Nmis(1) + Nmis(2)
+    write(*,'(a,i1,6f6.1,8f8.3,3f8.4)') 'AAA ',synch_phase,synch_fraction,cp%DSB0(1:2,1),cp%DSB0(1:3,2),t_mitosis, &
+            totDSB,Pmit,Nmis,Nmistot,Paber,cp%psurvive  !,cp%psurvive_nodouble
 ! write out signalling results
-open(nfpar, file='signal.out', status = 'replace')
-do k = 1,istep_signal
-    write(nfpar,'(4f10.6)') signalling(:,k)
-enddo
-close(nfpar)
+!open(nfpar, file='signal.out', status = 'replace')
+!do k = 1,istep_signal
+!    write(nfpar,'(4f10.6)') signalling(:,k)
+!enddo
+!close(nfpar)
 endif
 end subroutine
 
@@ -1755,5 +1763,84 @@ write(nflog,'(a,i6,f8.2,i6,3f8.3)') 'S stats: ',istep, hour,cnt, ATM_DSB_ave,pAT
 
 end subroutine
 #endif
+
+!------------------------------------------------------------------------
+!------------------------------------------------------------------------
+subroutine test_Pmis
+type(cell_type), pointer :: cp
+real(8) :: dose = 6, dt = 0.1, Reffmin = 0.9, sigma = 0.0413, dsigma_dt = 0.0239, Kcoh = 1.0
+real(8) :: r1 = 2.081, r2 = 0.2604, p = 0.43, T_S = 9.04
+real(8) :: t, N(2), dN(2), Ntot0, Ntot, R, S, eta, eta_A
+real(8) :: Pmis(100), Nrep(100), f_S, fsigma, Ptot, Nreptot, Pmis_ave
+integer :: it
+integer :: nhours = 2
+
+write(*,*) 'test_Pmis'
+! Evaluate Pmis at intervals over a period after IR, compute weighted average 
+! G1, IR at 0.0
+! Initial DSBs
+kcell_now = 1
+cp => cell_list(1)
+cp%phase = G2_phase
+cp%progress = 0.3
+if (use_Iliakis) then
+	if (cp%phase >= S_phase) then
+		fIliakis = kIliakis**nIliakis/(kIliakis**nIliakis + (dose-dose_threshold)**nIliakis)
+	else
+		fIliakis = 1
+	endif
+	if (cp%phase == S_phase .and. no_S_Iliakis) then 
+        fIliakis = 1
+    endif
+else
+	fIliakis = 1.0
+endif
+call cellIrradiation(cp,dose,0.0d0)
+write(nflog,*)
+write(nflog,'(a,i4,f6.2)') 'phase, progress: ',cp%phase,cp%progress
+write(nflog,'(a,5f8.3)') 'dose, DSB0: ',dose,cp%DSB0(1:2,:)
+write(nflog,'(a,2f8.4)') 'Reffmin, dsigma_dt: ',Reffmin, dsigma_dt
+! Repair
+N(1) = cp%DSB0(1,1) + cp%DSB0(1,2)  ! NHEJfast
+N(2) = cp%DSB0(2,1) + cp%DSB0(2,2)  ! NHEJslow
+
+do it = 1,nhours*10
+    t = it*dt
+    if (cp%phase == 1) then
+        f_S = 0
+        R = (1 - Reffmin)*exp(-Kclus*t) + Reffmin
+    elseif (cp%phase == 2) then
+        f_S = t/T_S + cp%progress
+        R = (1 - f_S)*Reffmin + f_S*1.26
+    elseif (cp%phase == 3) then
+        f_S = 1
+        R = 1.26
+    endif
+    fsigma = 1 - (1 - Kcoh)*f_S
+    S = fsigma*(sigma + t*dsigma_dt)
+    eta = etafun(R,S)
+!    eta_A = eta_Arnould(f_S, t, Rmin, sigma, Kcoh)
+!    write(nflog,*) 'eta_Arnould: ',eta_A   ! checking that eta_A = eta   OK!
+!    write(nflog,'(a,4f8.4,e12.3)') 'R, S, sigma,dsigma_dt,eta: ',R,S, sigma,dsigma_dt,eta
+    Ntot0 = N(1) + N(2)
+    dN(1) = r1*dt*N(1)
+    dN(2) = r2*dt*N(2)
+    N(1) = N(1) - dN(1)
+    N(2) = N(2) - dN(2)
+    Ntot = N(1) + N(2)
+    Pmis(it) = misrepairRate(Ntot0, Ntot, eta)
+    Nrep(it) = dN(1) + dN(2)
+    write(nflog,'(i4,5f8.2,e12.3,f8.4)') it, f_S, R, Ntot0, Ntot, Nrep(it),eta, Pmis(it)
+enddo   
+Ptot = 0
+Nreptot = 0
+do it = 1,nhours*10
+    Ptot = Ptot + Nrep(it)*Pmis(it)
+    Nreptot = Nreptot + Nrep(it)
+enddo
+Pmis_ave = Ptot/Nreptot
+write(nflog,*) 'Pmis_ave: ',Pmis_ave
+return
+end subroutine
 
 end module

@@ -39,9 +39,33 @@ eta = (6/(4*pi*R**3))*theta15(R,S)
 end function	
 
 !--------------------------------------------------------------------------
+! fsmin is Kcoh
+! Note that the new expression for Reff covers the whole cycle - phase not used.
+!--------------------------------------------------------------------------
+function eta_Arnould(phase,f_S, tIR, Reffmin, S_NHEJ, fsmin) result(eta)
+integer :: phase
+real(8) :: f_S, tIR, Reffmin, S_NHEJ, fsmin, eta
+real(8) :: Reff, sigma, fsigma
+
+!if (phase == 1) then
+!    Reff = (1 - Reffmin)*exp(-Kclus*tIR) + Reffmin
+!elseif (phase == 3) then
+!    Reff = 1.26
+!else
+!    Reff = (1 - f_S)*Reffmin + f_S*1.26
+!endif
+Reff = (1 - f_S)*((1 - Reffmin)*exp(-Kclus*tIR) + Reffmin) + f_S*1.26
+fsigma = 1 - (1 - fsmin)*f_S
+sigma = S_NHEJ + tIR*dsigma_dt
+sigma = fsigma*sigma
+eta = etafun(Reff,sigma)
+!write(*,'(a,7e12.3)') 'eta_Arnould: ',f_S,tIR,Reff,S_NHEJ,fsmin,sigma,eta
+end function
+
+!--------------------------------------------------------------------------
 ! S_NHEJ, S_TMEJ are sigma_NHEJ, sigma_TMEJ
 ! fsmin is the minimum of the multiplying factor fsigma that reduces sigma 
-! as f_S increases.
+! as f_S increases.  This is the cohesin effect: fsmin = f_coh
 !--------------------------------------------------------------------------
 subroutine make_eta_table(S_NHEJ, S_TMEJ, fsmin)
 real(8) :: S_NHEJ, S_TMEJ, fsmin
@@ -60,7 +84,7 @@ do it = 1,NtIR
 	S = fsigma*S
 	eta = etafun(R,S)
 	eta_table(k,it,1:2) = eta
-    write(nflog,'(2i4,f8.4)') k,it,eta
+!    write(nflog,'(2i4,f8.4)') k,it,eta
 	eta = etafun(R,S_TMEJ)
 	eta_table(k,it,3:NP) = eta
 !	write(nflog,'(a,2i4,3f8.4)') 'k, it, R, S, eta_NHEJ: ', k, it, R, S, eta_table(k,it,1)
@@ -140,12 +164,26 @@ eta = (1-fk)*(1-fi)*eta_table(k1,it1,path) + fk*(1-fi)*eta_table(k2,it1,path) &
 !write(*,'(a,2f7.3,4i3,e12.3)') 'eta_lookup: f_S,tIR,k1,k2,it1,it2,eta: ',f_S,tIR,k1,k2,it1,it2,eta
 end function
 
+!--------------------------------------------------------------------------
+!--------------------------------------------------------------------------
 subroutine test_eta(S_NHEJ, fsmin)
 real(8) :: S_NHEJ, fsmin
 real(8) :: f_S, tIR, dt, t, fsigma, V, eta, S, R
-real(8) :: St(2,100), Rt(2,100), etat(2,100)
+real(8) :: St(2,100), Rt(2,100), etat(2,100), eta_array(11)
 real(8), parameter :: T_G1 = 6.35, T_S = 9.0, T_G2 = 3.2
-integer :: phase, nt, it, k, NHEJfast
+integer :: phase, nt, it, k, NHEJfast, iR, iS
+
+! Evaluate eta_Arnould
+write(*,'(a,11f8.2)') '    R     ',(1 + (iS-1)/10., iS=1,11)
+do iR = 11,1,-1
+    R = 0.5 + (iR-1)*0.05
+    do iS = 1,11
+        S = S_NHEJ*(1 +(iS-1)/10.)
+        eta_array(iS) = etafun(R,S) 
+    enddo
+    write(*,'(f6.2,4x,11f8.5)') R,eta_array
+enddo
+return
 
 ! Compare R, S, eta vs tIR for two cases: IR at start of G1, IR at start of S
 dt = 0.2
