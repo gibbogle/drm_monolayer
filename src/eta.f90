@@ -107,7 +107,7 @@ eta = etafun(Reff,sigma)
 !sigma = S_NHEJ !+ tIR*dsigma_dt
 !sigma = fsigma*sigma
 !eta = etafun(Reff,sigma)
-write(nfres,'(a,6e12.3)') 'eta_Arnould: f_S,tIR,Rmin,Reff,sigma,eta: ',f_S,tIR,Reffmin,Reff,sigma,eta
+!write(nfres,'(a,6e12.3)') 'eta_Arnould: f_S,tIR,Rmin,Reff,sigma,eta: ',f_S,tIR,Reffmin,Reff,sigma,eta
 end function
 
 !--------------------------------------------------------------------------
