@@ -10,6 +10,30 @@ real(8) :: dsigma_dt
 real(8) :: eta_table(Neta,NtIR,NP)
 
 contains
+
+!--------------------------------------------------------------------------
+! From MEDRAS
+! S is sigma
+! R is Radius
+! d is r = 2*Radius
+!--------------------------------------------------------------------------
+function thetaM(R, S) result(thetaVal)
+real(8) :: R, S
+real(8) :: d, d2, R2, R3, S2
+real(8) :: termOne, termTwo, termThree, scaling, thetaVal
+
+d = 2*R
+d2 = d*d
+R2 = R*R
+R3 = R*R2
+S2 = S*S
+termOne = 8*sqrt(2*pi)*R3*S*erf(d/(S*sqrt(2.)))
+termTwo = -exp(-d2/(2*S2))*(d2*d2 + 4*d2*(S2 - 3*R2) + 16*d*R3 + 8*S2*(S2 - 3*R2))
+termThree = 8*S2*S2 - 24*R2*S2
+scaling = pi*S2/(4*R3)
+thetaVal = (termOne + termTwo + termThree)*scaling
+end function
+
 !--------------------------------------------------------------------------
 ! From Eq 15 in McMahon2021
 ! S is sigma
@@ -28,6 +52,18 @@ scaling   = 2*pi*S2/(R*R2)
 thetaVal = (termOne + termTwo + termThree)*scaling
 end function	
 
+subroutine check_eta(S)
+real(8) :: S
+real(8) :: R, eta
+
+write(*,*) 'check_eta:'
+R = 1
+eta = (6/(4*pi*R**3))*theta15(R,S)
+write(*,*) 'eta from theta15: ',eta
+eta = (6/(4*pi*R**3))*thetaM(R,S)
+write(*,*) 'eta from thetaM: ',eta
+end subroutine
+
 !--------------------------------------------------------------------------
 ! From Eq 14 in McMahon2021
 ! S is sigma
@@ -35,7 +71,8 @@ end function
 function etafun(R,S) result(eta)
 real(8) :: R, S, eta
 
-eta = (6/(4*pi*R**3))*theta15(R,S)
+!eta = (6/(4*pi*R**3))*theta15(R,S)
+eta = (6/(4*pi*R**3))*thetaM(R,S)
 end function	
 
 !--------------------------------------------------------------------------
@@ -58,8 +95,19 @@ Reff = (1 - f_S)*((1 - Reffmin)*exp(-Kclus*tIR) + Reffmin) + f_S*1.26
 fsigma = 1 - (1 - fsmin)*f_S
 sigma = S_NHEJ + tIR*dsigma_dt
 sigma = fsigma*sigma
+
+! Testing
+!Reff = (1 - f_S) + f_S*1.26
+!sigma = S_NHEJ
+
 eta = etafun(Reff,sigma)
-!write(*,'(a,7e12.3)') 'eta_Arnould: ',f_S,tIR,Reff,S_NHEJ,fsmin,sigma,eta
+!write(*,'(a,2f8.2,2e12.3)') 'f_S, Reff, sigma, eta: ',f_S,Reff,sigma, eta
+!! pmis.f90
+!fsigma = 1 + (1 - Kcoh)*f_S
+!sigma = S_NHEJ !+ tIR*dsigma_dt
+!sigma = fsigma*sigma
+!eta = etafun(Reff,sigma)
+write(nfres,'(a,6e12.3)') 'eta_Arnould: f_S,tIR,Rmin,Reff,sigma,eta: ',f_S,tIR,Reffmin,Reff,sigma,eta
 end function
 
 !--------------------------------------------------------------------------

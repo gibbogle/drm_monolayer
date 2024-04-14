@@ -299,7 +299,7 @@ summaryData(1:37) = [ rint(istep), rint(Ncells), rint(TNviable), rint(TNnonviabl
 	cmedium(OXYGEN:DRUG_A-1), cmedium(DRUG_A:DRUG_A+1), &
 	doubling_time, r_O, r_G, rint(ndivided), &
 	100*phase_fraction(1:5)]
-if (.not.use_PEST) then
+if (.not.use_PEST .and. .false.) then
 write(nfres,'(a,a,2a12,i8,e12.4,13i7,63e13.5)') trim(header),' ',gui_run_version, dll_run_version, &
 	istep, hour, Ncells_type(1:2), TNviable, TNnonviable, &
     Ndrug_dead(1,1:2), Nradiation_dead(1:2), TNdead, &

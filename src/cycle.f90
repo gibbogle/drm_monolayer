@@ -40,10 +40,9 @@ subroutine log_timestep(cp, ccp, dt)
 type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
 real(REAL_KIND) :: dt
-real(REAL_KIND) :: tIR
+real(REAL_KIND) :: tIR, Cdrug
 integer :: Nwrite
 logical :: switch
-
 
 !if (cp%dVdt == 0) then
 !	write(nflog,*) 'dVdt=0, kcell: ',kcell_now,cp%phase

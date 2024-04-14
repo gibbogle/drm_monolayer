@@ -578,7 +578,7 @@ logical, parameter :: constant_S_pHR = .true.
 real(REAL_KIND), parameter :: dose_threshold = 1
 integer :: ATR_in_S = 1		! 0 = no ATR signalling in S, 1 = signalling, no CP effect, 2 = signalling and CP effect
 logical, parameter :: use_Arnould = .true.
-real(REAL_KIND) :: R_Arnould = 0.7, Kclus = 0.693	! for DSB clustering
+real(REAL_KIND) :: R_Arnould = 0.8, Kclus = 0.693	! for DSB clustering
 
 ! Greens function section
 logical :: greens = .false.
@@ -595,6 +595,10 @@ real(REAL_KIND) :: mitosis_std = 0.1336*3600     ! Chao 2019, Erlang k=14, L = 2
 
 real(REAL_KIND) :: phase_exit_time_sum
 integer :: npet
+
+! Drug half-life simulation
+logical :: use_drug_halflife
+real(REAL_KIND) :: Khalflife, drug_time, drug_conc0
 
 !integer :: icentral !extracellular variable index corresponding to a central site (NX/2,NY/2,NZ/2)
 

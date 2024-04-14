@@ -34,9 +34,10 @@ integer, parameter :: TMEJ = 4   ! this is really alt-EJ (was MDR)
 
 
 ! Note: McMahon parameter values are from MEDRAS code, specifically medrascell.py
-!       ------------------------
+! --------------------------------------------------------------------------------
+! a useless comment
 
-!real(8) :: eta = 0.0006506387875449218
+!real(8) :: eta = 0.0006506
 real(8) :: Pcomplex = 0.4337    ! fraction of created DSBs that are complex (McMahon: complexFrac)
 real(8) :: pJeggo = 0.9         ! fraction of post-replication DSBs that are fast. (NOT USED)
 real(8) :: Kcoh = 1.0       ! cohesin effect
@@ -165,6 +166,8 @@ integer :: ng11, ng12   ! to record post-mitosis G1
 integer :: istep_signal         ! time step index for signalling()
 real(8) :: signalling(4,1000)    ! 1 = time since IR, 2 = ATM_act, 3 = ATR_act, 4 = CC_act
 
+real(8) :: next_write_time,save_fslow
+
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
 contains
@@ -252,7 +255,9 @@ read(nfin,*) Chalf
 read(nfin,*) Preass
 read(nfin,*) dsigma_dt
 read(nfin,*) sigma_NHEJ
-write(nflog,*) 'sigma_NHEJ: ',sigma_NHEJ
+write(*,*) 'sigma_NHEJ: ',sigma_NHEJ
+
+call check_eta(sigma_NHEJ)
 
 if (use_Jaiswal) then
     read(nfin,*) Kcc2a
@@ -320,9 +325,14 @@ elseif (iphase_hours == -2) then    ! PDSN dose = 2
     compute_cycle = .true.
     normalise = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
-    nphase_hours = 6
     next_phase_hour = 1
-    phase_hour(1:6) = [1.0, 2.0, 3.0, 5.0, 8.5, 11.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+!    nphase_hours = 6
+!    phase_hour(1:6) = [1.0, 2.0, 3.0, 5.0, 8.5, 11.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+    nphase_hours = 25
+    do j = 1,25
+        phase_hour(j) = j
+    enddo
+!    phase_hour(1:5) = [5.0, 8.5, 11.5, 18.0, 25.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 elseif (iphase_hours == -3) then    ! PDSN dose = 6
     expt_tag = "PDSN6G"
     compute_cycle = .true.
@@ -527,6 +537,7 @@ type(cycle_parameters_type),pointer :: ccp
 logical :: use_Jeggo = .true.
 
 cp%irradiated = .true.
+next_write_time = 0
 ccp => cc_parameters(1)
 phase = cp%phase
 cp%phase0 = min(phase, M_phase)
@@ -696,6 +707,7 @@ cp%totDSB0 = totDSB0
 !cp%Nlethal = 0
 cp%Nmis = 0
 !if (kcell_now <= 10) write(*,'(a,2i6,8f8.2)') 'IR: kcell, phase,DSB,f_S: ',kcell_now,phase,cp%DSB(1:4),f_S
+if (Ncells == 1) write(nfres,'(a,2i6,8f8.2)') 'IR: kcell, phase,DSB: ',kcell_now,phase,cp%DSB0(1:3,1),cp%DSB0(1:3,2)
 
 totPmit = 0
 totPaber = 0
@@ -1119,6 +1131,7 @@ else
 !        if (kcell_now == 10) write(*,'(a,i4,4f8.3)') 'slowdown: ',kcell_now,fATM,fATR,fslow,cp%progress
     endif
 endif
+save_fslow = fslow
 !if (kcell_now == 1) write(*,'(a,2i6,3f6.3)') 'kcell, phase, fslow: ',kcell_now, cp%phase, fslow, fATM, fATR
 end function
 
@@ -1238,7 +1251,9 @@ do it = 1,Nt
     dATM_act_dt = Kd2t * D_ATM * ATM_inact / (Kmmp + ATM_inact) - Kti2t * ATM_act / (Kmmd + ATM_act)    
     ATM_act = ATM_act + dt*dATM_act_dt
     ATM_act = min(ATM_act, ATM_tot)
-
+    if (single_cell .and. it == -1) then
+        write(nfres,'(a,4f8.4)') 'Jaiswal: dt,D_ATM,ATM_inact,ATM_act: ',dt,D_ATM,ATM_inact,ATM_act
+    endif
     t = it*dt
 enddo
 !if (single_cell) then
@@ -1311,7 +1326,45 @@ atanNum = sqrt(3.0)*eta*repairedBreaks
 atanDen = 2 + eta*(2*initialBreaks*finalBreaks*eta + initialBreaks + finalBreaks) 
 Pmis = 1 - 2 * atan(atanNum/atanDen) / (repairedBreaks*sqrt(3.0)*eta)
 
+!write(*,*) 'misrepairRate: '
+!write(*,'(a,3f6.1)') 'initialBreaks, finalBreaks, repairedBreaks: ',initialBreaks, finalBreaks, repairedBreaks
+!write(*,'(a,2e12.3)') 'eta, Pmis: ',eta,Pmis
 end function
+
+!------------------------------------------------------------------------
+! Moved here from updateRepair
+!------------------------------------------------------------------------
+subroutine getRepRateFactor(cp)
+type(cell_type), pointer :: cp
+real(REAL_KIND) :: Cdrug
+
+repRateFactor = 1.0     ! why??  This make repRateFactor(3) = 1
+! DNA-PK inhibition, DSB reassignment
+!if (use_constant_drug_conc) then
+!    Cdrug = Caverage(MAX_CHEMO + DRUG_A)
+!else
+!    Cdrug = cp%Cin(DRUG_A)
+!endif
+!if (cp%ID == 1) write(*,*) 'updateRepair: Cdrug: ',Cdrug, t_simulation/3600
+!inhibrate = inhibitRate(Cdrug)
+!if (inhibrate > 0) then
+!    do k = 1,NP-1
+!        Nreassign = DSB(k)*inhibrate*dt
+!        DSB(k) = DSB(k) - Nreassign
+!        DSB(TMEJ) = DSB(TMEJ) + Nreassign
+!    enddo
+!endif
+! Now the effect of inhibition is to reduce the repair rate.
+! Chalf is the drug concentration that reduces repair rate by 1/2.  fRR = exp(-k*C/Chalf)
+! fRR = 0.5 when C = Chalf, 0.5 = exp(-k), k = -log(0.5) = 0.693
+if (Chalf == 0) then
+    write(nflog,*) 'ERROR: Chalf = 0  Preass: ',Preass
+    write(*,*) 'ERROR: getRepRateFactor: Chalf = 0  Preass: ',Preass
+    stop
+endif
+Cdrug = Caverage(MAX_CHEMO + DRUG_A)
+repRateFactor(1:2) = exp(-0.693*Cdrug/Chalf)    ! what about path = 3, HR? 
+end subroutine
 
 !------------------------------------------------------------------------
 ! To use parameters from mcradio, need to convert time from secs to hours
@@ -1325,9 +1378,10 @@ real(8) :: dt
 integer :: phase
 real(8) :: DSB(NP,2)
 real(8) :: DSB0(NP,2)
-real(8) :: totDSB0, totDSB, Pmis, Nmis(2), dmis, dNmis(NP), totDSBinfid0, totDSBinfid, ATR_DSB, ATM_DSB, dth, binMisProb
+real(8) :: totDSB0, totDSB, Pmis, Nmis(2), dmis, dNmis(NP), totDSBinfid0, totDSBinfid
+real(8) :: ATR_DSB, ATM_DSB, dth, binMisProb
 real(8) :: Cdrug, inhibrate, Nreassign
-real(8) :: f_S, eta_NHEJ, eta_TMEJ, tIR, eta
+real(8) :: f_S, eta_NHEJ, eta_TMEJ, tIR, eta, Nrep
 real(8) :: th_since_IR
 logical :: pathUsed(NP)
 integer :: k, iph, jpp  ! jpp = 1 for pre, = 2 for post
@@ -1350,30 +1404,7 @@ iph = phase
 DSB = cp%DSB
 !write(*,'(a,i4,4f8.1)') 'phase,DSB: ',phase,DSB(1:4)
 !if (iph == G1_phase) write(*,*) 'updateRepair: G1 cell: ',kcell_now
-repRateFactor = 1.0
-! DNA-PK inhibition, DSB reassignment
-if (use_constant_drug_conc) then
-    Cdrug = Caverage(MAX_CHEMO + DRUG_A)
-else
-    Cdrug = cp%Cin(DRUG_A)
-endif
-!inhibrate = inhibitRate(Cdrug)
-!if (inhibrate > 0) then
-!    do k = 1,NP-1
-!        Nreassign = DSB(k)*inhibrate*dt
-!        DSB(k) = DSB(k) - Nreassign
-!        DSB(TMEJ) = DSB(TMEJ) + Nreassign
-!    enddo
-!endif
-! Now the effect of inhibition is to reduce the repair rate.
-! Chalf is the drug concentration that reduces repair rate by 1/2.  fRR = exp(-k*C/Chalf)
-! fRR = 0.5 when C = Chalf, 0.5 = exp(-k), k = -log(0.5) = 0.693
-if (Chalf == 0) then
-    write(nflog,*) 'ERROR: Chalf = 0'
-    write(*,*) 'ERROR: Chalf = 0'
-    stop
-endif
-repRateFactor(1:2) = exp(-0.693*Cdrug/Chalf) 
+call getRepRateFactor(cp)
 !if (kcell_now == 1) write(nflog,'(a,4f10.4)') 'Cdrug IC,EC,Chalf,fRR: ',Cdrug,Caverage(MAX_CHEMO + DRUG_A),Chalf,repRateFactor(1)
 ! Reassignment to pathway 4 is (tentatively) constant
 ! Preass is an input parameter = prob of reassignment per hour
@@ -1401,7 +1432,7 @@ totDSB0 = sum(DSB0)
 !    return
 !endif
 !if (kcell_now == 1) write(*,'(a,2i6,3f8.2)') 'updateRepair: kcell, phase, DSB0: ',kcell_now,cp%phase,cp%DSB(1:3)
-
+!if (Ncells == 1) write(nfres,'(a,i4,9f8.2)') 'phase,t,DSB0: ',phase,t_simulation/3600,DSB0
 ATM_DSB = sum(DSB(NHEJslow,:)) + sum(DSB(HR,:))   ! complex DSB
 ATR_DSB = sum(DSB(HR,:))
 
@@ -1440,7 +1471,7 @@ endif
 do_G1_Jaiswal = .true.      ! Now do Jaiswal for G1 whether pre- or post-mitosis.  Use special katm parameters for G1 post-mitosis
 if (((iph == G1_phase).and.do_G1_Jaiswal).or.(iph >= S_phase)) then
     call Jaiswal_update(cp,dth)
-!    if (iph == G1_phase) write(*,'(a,2i6,e12.3)') 'did Jaiswal: ',kcell_now, cp%generation, cp%ATM_act
+!    if (iph == G2_phase) write(*,'(a,2i6,e12.3)') 'did Jaiswal: ',kcell_now, cp%generation, cp%ATM_act
 endif
 
 if ((iph == 1 .and. use_G1_pATM) .or. (iph == 2 .and. use_S_pATM)) then 
@@ -1448,7 +1479,7 @@ if ((iph == 1 .and. use_G1_pATM) .or. (iph == 2 .and. use_S_pATM)) then
 endif
 
 DSB = 0
-do k = 1,NP
+do k = 1,3
 do jpp = 1,2
 !   if (dbug .and. DSB0(k) > 0) write(*,*) 'pathwayRepair: k,DSB0(k): ',kcell_now,k,DSB0(k)
     call pathwayRepair(k, dth, DSB0(k,jpp), DSB(k,jpp))
@@ -1526,6 +1557,7 @@ tIR = (t_simulation - t_irradiation)/3600   ! time since IR, in hours
 tIR = max(tIR,0.0)
 if (use_Arnould) then
     eta_NHEJ = eta_Arnould(phase, f_S, tIR, R_Arnould, sigma_NHEJ, Kcoh)
+!    eta_NHEJ = etafun(1.d0,sigma_NHEJ)
 else
     eta_NHEJ = eta_lookup(phase, NHEJfast, f_S, tIR) 
 endif
@@ -1539,6 +1571,7 @@ totDSB0 = sum(DSB0(NHEJfast,:)) + sum(DSB0(NHEJslow,:))
 totDSB = sum(DSB(NHEJfast,:)) + sum(DSB(NHEJslow,:))
 Pmis = misrepairRate(totDSB0, totDSB, eta_NHEJ)
 dmis = Pmis*(totDSB0 - totDSB)
+Nrep = totDSB0 - totDSB
 
 ! Here we could increment 
 ! Nreptot by Nrep = totDSB0 - totDSB
@@ -1575,13 +1608,35 @@ cp%Nmis = cp%Nmis + Nmis
 !write(*,*) 'end   DSB(3,2): ',DSB(3,2)
 
 ! record signalling for single-cell
-if (single_cell) then
-    istep_signal = istep_signal + 1
-    signalling(1,istep_signal) = tIR
-    signalling(2,istep_signal) = cp%ATM_act
-    signalling(3,istep_signal) = cp%ATR_act
-    signalling(4,istep_signal) = cp%CC_act
+!if (single_cell) then
+!    istep_signal = istep_signal + 1
+!    signalling(1,istep_signal) = tIR
+!    signalling(2,istep_signal) = cp%ATM_act
+!    signalling(3,istep_signal) = cp%ATR_act
+!    signalling(4,istep_signal) = cp%CC_act
+!endif
+
+! To investigate single-cell behaviour
+if (single_cell .and. cp%irradiated) then
+    tIR = (t_simulation - t_irradiation)/3600   ! time since IR, in hours
+    if (tIR > next_write_time) then
+! This was to explore slowdown
+!       if (next_write_time == 0) write(nfres,'(a)') &
+!'       iph   t    ATM    fslow   Pmis      Nmis            total'
+!       write(nfres,'(a,i3,f6.1,3f8.4,4f8.2)')  &
+!'time: ',phase,next_write_time,cp%ATM_act,save_fslow,Pmis,Nmis,cp%Nmis
+
+! Now explore NDSB, Pmis and Nmis
+       if (next_write_time == 0) write(nfres,'(a)') &
+'iph f_S   tIR    pre-NHEJ0    post-NHEJ0        pre-NHEJ     post-NHEJ      Pmis   dmis Nmis(1) Nmis(2)'
+        write(nfres,'(i2,f5.2,f6.1,4f7.2,3x,4f7.2,3x,f6.3,f6.2,2f7.1)') & !'iph, tIR,DSB0,DSB,Pmis,dmis,Nmis: ', &
+            iph,f_S,tIR,DSB0(1:2,:),DSB(1:2,:),Pmis,dmis,cp%Nmis
+        write(nfres,'(a,i2,3f8.2,e12.3,f6.3)') 'iph,tIR,totDSB0,Nrep,eta,Pmis: ', &
+            phase,tIR,totDSB0,Nrep,eta_NHEJ,Pmis
+        next_write_time = next_write_time + 1
+    endif
 endif
+
 end subroutine
 
 !------------------------------------------------------------------------
@@ -1619,13 +1674,21 @@ if (cp%phase0 < M_phase) then   ! G1, S, G2
     Paber1_nodouble = exp(-Klethal*Nmis(1))
     Paber(2) = exp(-Klethal*Nmis(2))
     cp%Psurvive = Pmit(1)*Pmit(2)*Paber(1)*Paber(2)  
-    cp%Psurvive_nodouble = Pmit(1)*Pmit(2)*Paber1_nodouble*Paber(2)  
-    if (kcell_now == 1) write(*,'(a,2f8.3,6e12.3)') 'totDSB,Pmit,Nmis,Paber: ',&
-                        totDSB,Pmit,Nmis,Paber  
+    cp%Psurvive_nodouble = Pmit(1)*Pmit(2)*Paber1_nodouble*Paber(2)
+    if (single_cell) write(nfres,'(a,6e12.3)') 'totNmisjoins,totNDSB: ', &
+        2*totNmisjoins(1),totNmisjoins(2),2*totNmisjoins(1)+totNmisjoins(2),totNDSB,sum(totNDSB)
+    if (Ncells == 1) write(nfres,'(a,2f8.3,8e12.3)') 'totDSB,Pmit,Nmis,totNmis,Paber,SF: ', &
+        totDSB,Pmit,2*Nmis(1),Nmis(2),2*Nmis(1)+Nmis(2),Paber,cp%Psurvive  
+    !if (cp%Psurvive < 1.0E-30) then
+    !    write(nflog,'(a,5e12.3)') 'Psurvive: ',cp%Psurvive,Pmit(1:2),Paber(1:2)
+    !    write(nflog,'(a,4f8.2)') 'totDSB, Nmis: ',totDSB(1:2),Nmis(1:2)
+    !endif
 else    ! M_phase or dividing
     Paber = 1
     cp%Psurvive = Pmit(1)*Pmit(2)*Msurvival
-!    write(nflog,'(a,i6,3f10.4)') 'IR in mitosis: ',kcell_now,totDSB,cp%totDSB0,Pmit
+    if (kcell_now == 1) write(*,'(a,2f8.3,6e12.3)') 'totDSB,Pmit,Nmis,Paber: ',&
+                        totDSB,Pmit,Nmis,Paber  
+    if (single_cell) write(nfres,'(a,2f8.3,6e12.3)') '(2) totDSB,Pmit,Nmis,Paber: ',totDSB,Pmit,Nmis,Paber  
 endif
 totSFfactor(3) = totSFfactor(3) + Paber(1)*Paber(2)
 if (kcell_now <= -10) then
@@ -1666,6 +1729,7 @@ if (single_cell) then
     Nmistot = 2*Nmis(1) + Nmis(2)
     write(*,'(a,i1,6f6.1,8f8.3,3f8.4)') 'AAA ',synch_phase,synch_fraction,cp%DSB0(1:2,1),cp%DSB0(1:3,2),t_mitosis, &
             totDSB,Pmit,Nmis,Nmistot,Paber,cp%psurvive  !,cp%psurvive_nodouble
+    write(*,'(a,f8.3)') 'mitosis_time: ',cp%mitosis_time/3600
 ! write out signalling results
 !open(nfpar, file='signal.out', status = 'replace')
 !do k = 1,istep_signal
@@ -1673,6 +1737,40 @@ if (single_cell) then
 !enddo
 !close(nfpar)
 endif
+end subroutine
+
+!------------------------------------------------------------------------
+! Evaluate SFave at the time of drug washout
+!------------------------------------------------------------------------
+subroutine washoutSF
+type(cell_type), pointer :: cp
+real(8) :: DSB(NP,2), Nmis(2), Nlethal(2), Paber(2), Pmit(2), Psurvive
+real(8) :: totDSB(2), SFwave, sumDSB(2),sumNmis
+integer :: icell, k, jpp
+
+sumDSB = 0
+sumNmis = 0
+SFwave = 0
+do icell = 1,Ncells
+    cp => cell_list(icell)
+    DSB = cp%DSB
+    do jpp = 1,2
+        totDSB(jpp) = sum(DSB(:,jpp))
+    enddo
+    sumDSB = sumDSB + totDSB
+    Nmis = cp%Nmis
+    sumNmis = sumNmis + 2*Nmis(1) + Nmis(2)
+    do k = 1,2
+        Pmit(k) = exp(-mitRate(k)*totDSB(k))
+    enddo
+    Paber(1) = exp(-2*Klethal*Nmis(1))
+    Paber(2) = exp(-Klethal*Nmis(2))
+    Psurvive = Pmit(1)*Pmit(2)*Paber(1)*Paber(2)
+    SFwave = SFwave + Psurvive
+enddo
+SFwave = SFwave/Ncells
+write(nflog,'(a,2e12.3)') 'SFwave, log10(SFwave): ',SFwave,log10(SFwave)
+write(nflog,'(a,3f11.2)') 'aveDSB, aveNmis: ',sumDSB/Ncells, sumNmis/Ncells
 end subroutine
 
 !------------------------------------------------------------------------

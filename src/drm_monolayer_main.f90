@@ -112,9 +112,9 @@ endif
 
 ! Synchronisation of cell IR
 use_synchronise = .false.
-use_single = .false. ! to simulate a cell (or cells) at specified synch_phase and synch_progress
-synch_phase = G1_phase   !G1 is 1 - 6, S is 7 - 15, G2 is 16 - 19
-synch_fraction = 0.8    ! only used if use_single true (also synch_phase)
+use_single = .true. ! to simulate a cell (or cells) at specified synch_phase and synch_progress
+synch_phase = S_phase   !G1 is 1 - 6, S is 7 - 15, G2 is 16 - 19
+synch_fraction = 0.1    ! only used if use_single true (also synch_phase)
 nph = 1
 if (use_synchronise) then
     if (use_single) then
@@ -147,14 +147,11 @@ do irun = 1,nph   ! 1,1
         synch_fraction = progress(irun)    !(irun-1)*0.2
         write(*,*)
     	write(*,'(a,2i4,f6.3)') 'irun, synch_phase, synch_fraction: ',irun,synch_phase,synch_fraction
-!    	write(nflog,*)
 !    	write(nflog,'(a,2i4,f6.3)') 'irun, synch_phase, synch_fraction: ',irun,synch_phase,synch_fraction
     endif
 	inbuflen = len(infile)
 	outbuflen = len(outfile)
 	write(*,*) 'call execute'
-!	write(nfrun,*) 'infile: ',infile
-!	write(nfrun,*) 'outfile: ',outfile
     res = irun
 	call execute(ncpu,infile,inbuflen,outfile,outbuflen,res)
 	if (res /= 0) stop
@@ -165,7 +162,6 @@ do irun = 1,nph   ! 1,1
 	write(*,*) 'nsumm_interval: ',nsumm_interval
 	call get_summary(summarydata,i_hypoxia_cutoff,i_growth_cutoff)
 	do jstep = 1,Nsteps+1
-!		write(*,*) 'jstep: ',jstep
 		call simulate_step(res)
 		if (mod(jstep,nsumm_interval) == 0) then
 			call get_summary(summarydata,i_hypoxia_cutoff,i_growth_cutoff)
@@ -181,6 +177,8 @@ do irun = 1,nph   ! 1,1
 			stop
 		endif
 	enddo
+    write(*,*) 'res: ',res
+    if (res == 0) write(*,*) 'Exceeded nsteps, not all cells reached mitosis, increase ndays'
 	if (simulate_colony) then
 	    call make_colony_distribution(colony_days,dist,ddist,ndist,PE)
 	endif

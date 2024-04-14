@@ -52,6 +52,7 @@ call logger("ReadCellParams new")
 call ReadCellParams(ok)
 if (.not.ok) return
 call logger("did ReadCellParams")
+write(*,*) 'seed: ',seed
 
 !write(nflog,*) 'Open: phase.log: ', synch_fraction
 !open(nfphase, file='phase.log',status='replace')
@@ -707,7 +708,7 @@ if (.not.(use_PEST .and. simulate_colony)) then
 	    write(nflog,*) 'Opened ',trim(outputfile)
     endif
     
-if (.not.use_PEST) then
+if (.not.use_PEST .and. .false.) then
 write(nfres,'(a)') 'date info GUI_version DLL_version &
 istep hour Ncells(1) Ncells(2) Nviable Nnonviable &
 NdrugA_dead(1) NdrugA_dead(2) &
@@ -913,6 +914,12 @@ do idrug = 1,Ndrugs_used
 		endif
     enddo
     write(nflog,*) 'drug: ',idrug,drug(idrug)%classname,'  ',drug(idrug)%name
+    if (drug(1)%halflife(0) == 0) then
+        Khalflife = 0
+    else
+        Khalflife = 0.693/drug(1)%halflife(0)
+    endif
+    use_drug_halflife = (Khalflife > 0)
     ! Repair inhibiting drug
     ! Now assume that any drug used is a DNA-PK inhibiter
     use_inhibiter = .true.
@@ -990,6 +997,7 @@ do itime = 1,ntimes
 		event(kevent)%idrug = idrug
 		event(kevent)%volume = vol
 		event(kevent)%conc = conc
+        drug_conc0 = conc   ! used to compute effect of decay on Caverage, in grower().
 		event(kevent)%O2conc = O2conc
 		event(kevent)%dose = 0
 		event(kevent)%full = .false.	
@@ -1718,10 +1726,12 @@ do kevent = 1,Nevents
 		elseif (E%etype == MEDIUM_EVENT) then
 			write(logmsg,'(a,f8.0,f8.3,2f8.4)') 'MEDIUM_EVENT: time, volume, O2medium: ',t_simulation,E%volume,E%O2medium
 			call logger(logmsg)
+            call washoutSF
 			C = 0
 			C(OXYGEN) = E%O2medium
 			C(GLUCOSE) = E%glumedium
 			C(DRUG_A:DRUG_A+1) = 0
+            drug_conc0 = 0      ! for decay calc in grower() 
 			V = E%volume
 			full = E%full
 			call MediumChange(V,C,full)
@@ -1751,6 +1761,7 @@ do kevent = 1,Nevents
 			call UpdateChemomap
 !			call UpdateCbnd(0.0d0)
             is_event = .true.
+            drug_time = t_simulation
 		endif
 		event(kevent)%done = .true.
 	endif
@@ -2224,7 +2235,7 @@ if (dbug .or. mod(istep,nthour) == 0) then
 	ntphase = nphaseh + ntphase
 !	write(nflog,*)
 	write(nflog,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells   !, ' N reached mitosis: ',NPsurvive    ,' Napop: ',Napop    !, &
-!	write(*,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells   !, ' N reached mitosis: ',NPsurvive    ,' Napop: ',Napop    !, &
+	write(*,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells   !, ' N reached mitosis: ',NPsurvive    ,' Napop: ',Napop    !, &
     call get_phase_distribution(phase_count)
     total = sum(phase_count(1:4))
     phase_dist = 100*phase_count/total
@@ -2287,6 +2298,7 @@ if (use_PEST) then  ! check that all phase distributions have been estimated
     PEST_OK = (next_phase_hour == 0)
 endif
     
+!write(*,*) 'NPsurvive: ',NPsurvive, (Nirradiated - Napop)
 !write(*,'(a,3i8)') 'NPsurvive, Nirradiated,Napop: ',NPsurvive, Nirradiated,Napop
 if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
     ! getSFlive computes the average psurvive for all cells that reach mitosis,
@@ -2310,7 +2322,7 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
         do kcell = 1,nlist
             cp => cell_list(kcell)
             total_mitosis_time = total_mitosis_time + cp%mitosis_time
-            if (cp%psurvive > 1.0e-8) then
+!            if (cp%psurvive > 1.0e-30) then     ! was 1.0E-8
                 if (cp%mitosis_time < CA_time) then
                     NpreCA = NpreCA + 1
                     Pp = cp%psurvive
@@ -2330,17 +2342,20 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
 !                        write(*,'(a,2i6,f8.3)') 'daughters: ', kcell, cp%phase0,Pd
 !                    endif
                 else
+                    write(nflog,'(a,2f8.2)') 'mitosis_time, CA_time: ',cp%mitosis_time/3600, CA_time/3600
                     newSFtot = newSFtot + cp%psurvive
                     Nnew = Nnew + 1
 !                    if (cp%phase0 < 4 .and. cp%psurvive < 0.4) write(*,'(a,2i6,f8.3)') 'psurvive: ',kcell, cp%phase0,cp%psurvive
                 endif
-            endif
+!            else
+!                write(nflog,'(a,e12.3)') 'psurvive: ',cp%psurvive
+!            endif
         enddo
         write(*,'(a,3i6,2f10.3)') 'NpreCA, Nd, Nnew, newSFtot, newSFave: ',NpreCA,Nd,Nnew,newSFtot,newSFtot/Nnew
         write(*,'(a,3i6,f8.4)') 'nlist,Nirradiated,NPsurvive, new SFave: ',nlist,Nirradiated,NPsurvive,newSFtot/nlist
         write(*,'(a,i8,f8.2)') 'Average mitosis_time: ',nlist,total_mitosis_time/(3600*nlist)
+        write(*,'(a,f8.2,i6)') 'CA_time, NpreCA: ',CA_time/3600,NpreCA
     endif
-    
     if (NPsurvive > 0) then
         SFave = SFtot/NPsurvive
     else
@@ -2353,6 +2368,7 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
 !        SFave = SFlive
 !    endif
     write(*,*)
+    write(nflog,'(a,i6)') 'Npsurvive: ',Npsurvive
     write(logmsg,'(a,e12.4,f8.3)') 'SFave,log10(SFave): ',SFave,log10(SFave)
     call logger(logmsg)
 
@@ -2641,8 +2657,10 @@ write(nflog,'(a,6f12.3)') 'totPmit, totPaber, tottotDSB: ',totPmit, totPaber, to
 write(*,'(a,i6,5f11.1)') 'Nmitosis, totPmit, totPaber, tottotDSB: ',int(Nmitosis),totPmit, totPaber, tottotDSB
 write(*,'(a,6e12.3)') 'totPaber: ',totPaber
 
-write(nflog,'(a,7f8.3)') 'Ave NDSB(pre, post), Nmisjoins, SF factors: ', &
-            totNDSB/nmitosis,totNmisjoins/nmitosis,totSFfactor/nmitosis
+! adjust for pre-rep doubling of misjoins
+totNmisjoins(1) = 2*totNmisjoins(1)
+write(nflog,'(a,7f9.3)') 'Ave (pre, post) NDSB, Nmisjoins: ', &
+    totNDSB/nmitosis,totNmisjoins/nmitosis,sum(totNmisjoins)/nmitosis
 !write(logmsg,'(a,8f8.3)') 'phase_dist:      ',phase_dist(0:3)
 !call logger(logmsg)
 !write(*,'(a,f8.3)') 'Final average pATM: ',ATMsum/nirradiated

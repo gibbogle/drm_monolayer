@@ -675,7 +675,7 @@ integer :: k, kcell, nlist0, ityp, idrug, prev_phase, kpar=0
 type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
 real(REAL_KIND) :: rr(3), c(3), rad, d_desired, R, rrsum, pdeath, mitosis_duration, f_CP
-real(REAL_KIND) :: fslow(3)
+real(REAL_KIND) :: fslow(3), Cdrug
 integer :: nslow(3)
 integer, parameter :: MAX_DIVIDE_LIST = 100000
 integer :: ndivide, divide_list(MAX_DIVIDE_LIST)
@@ -686,6 +686,17 @@ ok = .true.
 changed = .false.
 nlist0 = nlist
 ndivide = 0
+
+! Note that Caverage is used, although it should be used when the drug conc is constant
+! This is because drug halflife is being shoe-horned into the model quickly
+if (use_drug_halflife) then
+!    Cdrug = Caverage(MAX_CHEMO + DRUG_A)
+!    Cdrug = Cdrug*exp(-Khalflife*dt/3600)
+! Try this !!!!
+    Cdrug = drug_conc0*exp(-Khalflife*(t_simulation - drug_time)/3600)
+!	write(*,'(a,3e12.3)') 'grower: ',drug_time/3600, t_simulation/3600,Cdrug
+    Caverage(MAX_CHEMO + DRUG_A) = Cdrug
+endif
 
 fslow = 0
 nslow = 0
