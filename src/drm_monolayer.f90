@@ -2341,11 +2341,11 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
 !                        Nd = Nd + 2
 !                        write(*,'(a,2i6,f8.3)') 'daughters: ', kcell, cp%phase0,Pd
 !                    endif
-                else
-                    write(nflog,'(a,2f8.2)') 'mitosis_time, CA_time: ',cp%mitosis_time/3600, CA_time/3600
-                    newSFtot = newSFtot + cp%psurvive
-                    Nnew = Nnew + 1
-!                    if (cp%phase0 < 4 .and. cp%psurvive < 0.4) write(*,'(a,2i6,f8.3)') 'psurvive: ',kcell, cp%phase0,cp%psurvive
+!                else
+!                    write(nflog,'(a,2f8.2)') 'mitosis_time, CA_time: ',cp%mitosis_time/3600, CA_time/3600
+!                    newSFtot = newSFtot + cp%psurvive
+!                    Nnew = Nnew + 1
+!!                    if (cp%phase0 < 4 .and. cp%psurvive < 0.4) write(*,'(a,2i6,f8.3)') 'psurvive: ',kcell, cp%phase0,cp%psurvive
                 endif
 !            else
 !                write(nflog,'(a,e12.3)') 'psurvive: ',cp%psurvive
