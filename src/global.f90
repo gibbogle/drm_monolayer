@@ -1250,6 +1250,20 @@ enddo
 !write(*,'(a,5i6)') 'phase_count: ',phase_count(0:4)
 end subroutine
 
+function poisson_gen(L) result(res)
+real(8) :: L
+integer :: k, res, kpar=0
+real(8) :: p, u
+k = 0
+p = 1
+do
+	k = k+1
+	u = par_uni(kpar)
+	p = p*u
+	if (p < L) exit
+enddo
+res = k-1
+end function
 
 
 end module

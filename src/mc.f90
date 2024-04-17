@@ -530,17 +530,25 @@ integer :: phase
 real(8) :: DSB0(NP,2)
 real(8) :: totDSB0, baseDSB, fin, T_S, f_S, NG1, NNHEJ, pHRs, pHRc, pHR, pNHEJ, NHRs, NHRc
 real(8) :: Pbase, Pdie, R
-real(8) :: DSB_Gy = 35
+real(8) :: DSB_Gy, L    ! = 35
 real(8) :: th, Npre, Npre_s, Npre_c, Npost, Npost_s, Npost_c, Pc, x
 integer, parameter :: option = 2
 type(cycle_parameters_type),pointer :: ccp
 logical :: use_Jeggo = .true.
+logical :: use_Poisson_DSB = .true.
 
 cp%irradiated = .true.
 next_write_time = 0
 ccp => cc_parameters(1)
 phase = cp%phase
 cp%phase0 = min(phase, M_phase)
+!
+L = exp(-35.d0)
+if (use_Poisson_DSB) then
+    DSB_Gy = poisson_gen(L)
+else
+    DSB_Gy = 35
+endif
 NG1 = DSB_Gy*dose
 DSB0 = 0
 istep_signal = 1
