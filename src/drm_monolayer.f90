@@ -1079,7 +1079,7 @@ if (drop_event > 0) then    ! need to remove DRUG event from the list
         event(kevent-1) = event(kevent)
     enddo
     Nevents = Nevents - 1
-    CA_time = 18*60*60
+!    CA_time = 18*60*60
     flushing = .false.
 	do idrug = 1,ndrugs_used
 		if (drugname == drug(idrug)%name) then
@@ -2341,10 +2341,10 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
 !                        Nd = Nd + 2
 !                        write(*,'(a,2i6,f8.3)') 'daughters: ', kcell, cp%phase0,Pd
 !                    endif
-!                else
-!                    write(nflog,'(a,2f8.2)') 'mitosis_time, CA_time: ',cp%mitosis_time/3600, CA_time/3600
-!                    newSFtot = newSFtot + cp%psurvive
-!                    Nnew = Nnew + 1
+                !else
+                !    write(nflog,'(a,2f8.2)') 'mitosis_time, CA_time: ',cp%mitosis_time/3600, CA_time/3600
+                !    newSFtot = newSFtot + cp%psurvive
+                !    Nnew = Nnew + 1
 !!                    if (cp%phase0 < 4 .and. cp%psurvive < 0.4) write(*,'(a,2i6,f8.3)') 'psurvive: ',kcell, cp%phase0,cp%psurvive
                 endif
 !            else

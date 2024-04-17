@@ -551,7 +551,7 @@ integer :: N_checkpoint     ! number of cells in checkpoint - not growing
 integer :: ntphase(8)
 integer :: NPsurvive, Nirradiated, Napop
 real(REAL_KIND), allocatable :: Psurvive(:)
-real(REAL_KIND) :: CA_time = 18*60*60   ! seconds
+real(REAL_KIND) :: CA_time = 99*60*60   ! seconds, default value overridden by protocol
 logical :: include_daughters = .true.
 !logical, parameter :: phase_dist = .true.
 real(REAL_KIND) :: t_irradiation, SFave, t_mitosis
