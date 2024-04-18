@@ -544,7 +544,7 @@ phase = cp%phase
 cp%phase0 = min(phase, M_phase)
 !
 L = exp(-35.d0)
-if (use_Poisson_DSB) then
+if (use_Poisson_DSB .and. Ncells > 1) then
     DSB_Gy = poisson_gen(L)
 else
     DSB_Gy = 35
@@ -676,7 +676,6 @@ else    ! not using this
     endif
 endif    
 !write(*,'(a,2i4,6f8.1)') 'cellIrradiation: ',kcell_now,phase,DSB0(1:3,1),DSB0(1:3,2)
-
 cp%pATM = 0
 cp%pATR = 0
 if (phase == G1_phase) then
@@ -1128,7 +1127,7 @@ else
             fslow = max(0.0,fATM + fATR - 1)
         else
             fslow = fATM*fATR
-            if (single_cell) write(nflog,'(a,3f8.3)') 'fATM, fATR, fslow: ',fATM, fATR, fslow
+!            if (single_cell) write(nflog,'(a,3f8.3)') 'fATM, fATR, fslow: ',fATM, fATR, fslow
             if (kcell_now <= -10) then
                 write(*,'(a,i6,i4,3f6.3)') 'fslow: ',kcell_now,iph,fATM,fATR,fslow
                 write(nflog,'(a,i6,i4,3f6.3)') 'fslow: ',kcell_now,iph,fATM,fATR,fslow
@@ -1408,6 +1407,11 @@ phase = cp%phase
 !    write(nflog,*) 'updateRepair: phase: ',phase
 !    stop
 !endif
+if (cp%DSB0(TMEJ,1) /= 0) then
+    write(*,*) 'DSB0(TMEJ,1): ',cp%DSB0(TMEJ,1)
+    write(nflog,*) 'a DSB0(TMEJ,1): ',cp%DSB0(TMEJ,1)
+    stop
+endif
 iph = phase
 DSB = cp%DSB
 !write(*,'(a,i4,4f8.1)') 'phase,DSB: ',phase,DSB(1:4)
@@ -1425,12 +1429,16 @@ if (Preass > 0 .and. phase >= S_phase) then
 !            DSB(TMEJ) = DSB(TMEJ) + Nreassign*(1 - SSAfrac)
 !            DSB(SSA) = DSB(SSA) + Nreassign*SSAfrac
 !        else
-            DSB(TMEJ,jpp) = DSB(TMEJ,jpp) + Nreassign
+!            DSB(TMEJ,jpp) = DSB(TMEJ,jpp) + Nreassign
 !        endif
     enddo
     enddo
 endif
 DSB0 = DSB     ! initial DSBs for this time step
+if (DSB0(TMEJ,1) /= 0) then
+    write(nflog,*) 'b DSB0(TMEJ,1): ',DSB0(TMEJ,1)
+    stop
+endif
 !if (single_cell) write(*,'(a,8f6.1)') 'DSB0: ',DSB0
 ! Revised approach with no fidelity, just misrejoining
 
@@ -1579,6 +1587,11 @@ totDSB0 = sum(DSB0(NHEJfast,:)) + sum(DSB0(NHEJslow,:))
 totDSB = sum(DSB(NHEJfast,:)) + sum(DSB(NHEJslow,:))
 Pmis = misrepairRate(totDSB0, totDSB, eta_NHEJ)
 dmis = Pmis*(totDSB0 - totDSB)
+if (isnan(dmis)) then
+    write(nflog,*) 'dmis is NaN'
+    write(nflog,'(a,2f8.2,e12.3)') 'totDSB0, totDSB, eta_NHEJ: ',totDSB0, totDSB, eta_NHEJ
+    stop
+endif
 Nrep = totDSB0 - totDSB
 
 ! Here we could increment 
@@ -1605,6 +1618,7 @@ misjoins(1) = misjoins(1) + Nmis(1) + Nmis(2)
 !endif
 if (sum(DSB0(TMEJ,:)) > 0) then ! not used currently
     ! For TMEJ pathway
+    write(nflog,'(a,4f8.2)') 'TMEJ: DSB0, DSB: ',DSB0(TMEJ,:),DSB(TMEJ,:)
     Pmis = misrepairRate(sum(DSB0(TMEJ,:)), sum(DSB(TMEJ,:)), eta_TMEJ)
     dmis = Pmis*(sum(DSB0(TMEJ,:)) - sum(DSB(TMEJ,:)))
     Nmis(1) = Nmis(1) + dmis*(1 - f_S)
@@ -1613,6 +1627,7 @@ if (sum(DSB0(TMEJ,:)) > 0) then ! not used currently
 endif
 cp%DSB = DSB
 cp%Nmis = cp%Nmis + Nmis
+if (single_cell) write(nflog,'(a,4e12.3)') 'f_S,dmis,Nmis: ',f_S,dmis,cp%Nmis
 !write(*,*) 'end   DSB(3,2): ',DSB(3,2)
 
 ! record signalling for single-cell
@@ -1725,7 +1740,7 @@ if (Nlethal_sum > NMDIST*ddist_Nlethal) then
 else
     k = Nlethal_sum/ddist_Nlethal + 1
     count_Nlethal(k) = count_Nlethal(k) + 1
-endif
+endif 
 if (sum(totDSB) > NMDIST*ddist_totDSB) then
     count_totDSB(NMDIST) = count_totDSB(NMDIST) + 1
 else
