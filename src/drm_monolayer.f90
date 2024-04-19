@@ -2368,6 +2368,7 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
 !        SFave = SFlive
 !    endif
     write(*,*)
+    write(nflog,'(a,f8.2)') 'CA_time: ',CA_time/3600
     write(nflog,'(a,i6)') 'Npsurvive: ',Npsurvive
     write(logmsg,'(a,e12.4,f8.3)') 'SFave,log10(SFave): ',SFave,log10(SFave)
     call logger(logmsg)
