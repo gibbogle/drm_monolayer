@@ -1627,7 +1627,7 @@ if (sum(DSB0(TMEJ,:)) > 0) then ! not used currently
 endif
 cp%DSB = DSB
 cp%Nmis = cp%Nmis + Nmis
-if (single_cell) write(nflog,'(a,4e12.3)') 'f_S,dmis,Nmis: ',f_S,dmis,cp%Nmis
+!if (single_cell) write(nflog,'(a,4e12.3)') 'f_S,dmis,Nmis: ',f_S,dmis,cp%Nmis
 !write(*,*) 'end   DSB(3,2): ',DSB(3,2)
 
 ! record signalling for single-cell

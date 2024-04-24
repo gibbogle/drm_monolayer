@@ -2001,7 +2001,7 @@ mp => master_cell%metab
 t_simulation = istep*DELTA_T	! seconds
 !write(nfout,'(2i4,12f10.3)') istep,cp%phase,cp%progress,t_simulation/3600,cp%DSB(1:3,1),cp%Nmis
 
-if (single_cell) write(nflog,*) 'Ncells_type: ',Ncells_type
+!if (single_cell) write(nflog,*) 'Ncells_type: ',Ncells_type
 
 !write(*,*) 'start simulate_step: t_simulation: ',istep,t_simulation !,cell_list(1)%progress
 !call testmetab2
