@@ -40,8 +40,8 @@ subroutine log_timestep(cp, ccp, dt)
 type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
 real(REAL_KIND) :: dt
-real(REAL_KIND) :: tIR, Cdrug
-integer :: Nwrite
+real(REAL_KIND) :: tIR, Cdrug, totDSB(2)
+integer :: Nwrite, jpp
 logical :: switch
 
 !if (cp%dVdt == 0) then
@@ -90,9 +90,11 @@ elseif (cp%phase == S_phase) then
         cp%t_start_G2 = istep*DELTA_T
         nSdelay = nSdelay + 1   ! only S doesn't use stops
         if (single_cell) then
+            do jpp = 1,2
+                totDSB(jpp) = sum(cp%DSB(:,jpp))
+            enddo
             write(*,'(a,2f6.2)') 'G2 entry: tnow, N_DSB: ',tnow/3600,sum(cp%DSB(1:3,:))
-            write(nflog,'(a,3f6.3)') 'G2 entry: tnow, N_DSB, ATR: ', &
-                                tnow/3600,sum(cp%DSB(1:3,:)),cp%ATR_act
+            write(nflog,'(a,3f8.1,4x,3f8.1)') 'G2 entry: DSB, Nmis: ',totDSB,sum(totDSB),2*cp%Nmis(1),cp%Nmis(2),2*cp%Nmis(1)+cp%Nmis(2)
 ! Try this
 !            cp%ATM_act = 0
 !            cp%ATR_act = 0

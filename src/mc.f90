@@ -1388,7 +1388,7 @@ real(8) :: DSB0(NP,2)
 real(8) :: totDSB0, totDSB, Pmis, Nmis(2), dmis, dNmis(NP), totDSBinfid0, totDSBinfid
 real(8) :: ATR_DSB, ATM_DSB, dth, binMisProb
 real(8) :: Cdrug, inhibrate, Nreassign
-real(8) :: f_S, eta_NHEJ, eta_TMEJ, tIR, eta, Nrep
+real(8) :: f_S, eta_NHEJ, eta_TMEJ, tIR, eta, Nrep, sigma
 real(8) :: th_since_IR
 logical :: pathUsed(NP)
 integer :: k, iph, jpp  ! jpp = 1 for pre, = 2 for post
@@ -1399,6 +1399,7 @@ logical :: use_ATM != .false.
 logical :: dbug
 logical :: use_G1_tdelay = .false.
 logical :: do_G1_Jaiswal
+logical :: use_constant_V = .true.
 
 dth = dt/3600   ! hours
 use_ATM = .not.use_fixed_CP
@@ -1571,11 +1572,18 @@ elseif (phase >= G2_phase) then
 endif
 tIR = (t_simulation - t_irradiation)/3600   ! time since IR, in hours
 tIR = max(tIR,0.0)
-if (use_Arnould) then
-    eta_NHEJ = eta_Arnould(phase, f_S, tIR, R_Arnould, sigma_NHEJ, Kcoh)
-!    eta_NHEJ = etafun(1.d0,sigma_NHEJ)
+if (use_constant_V) then
+    sigma = sigma_NHEJ + tIR*dsigma_dt
+    eta_NHEJ = etafun(1.d0,sigma)
 else
-    eta_NHEJ = eta_lookup(phase, NHEJfast, f_S, tIR) 
+    if (use_Arnould) then
+        eta_NHEJ = eta_Arnould(phase, f_S, tIR, R_Arnould, sigma_NHEJ, Kcoh)
+        if (single_cell .and. (tIR > 9) .and. (tIR < 10)) &
+            write(nflog,'(a,i4, 5f6.2, e12.3)') 'eta_Arnould: ', phase, f_S, tIR, R_Arnould, sigma_NHEJ, Kcoh, eta_NHEJ
+    !    eta_NHEJ = etafun(1.d0,sigma_NHEJ)
+    else
+        eta_NHEJ = eta_lookup(phase, NHEJfast, f_S, tIR) 
+    endif
 endif
 
 Nmis = 0
@@ -1598,9 +1606,11 @@ Nrep = totDSB0 - totDSB
 ! Nreptot by Nrep = totDSB0 - totDSB
 ! Pmistot by Nrep*Pmis
 
-!if (single_cell) write(*,'(a,i4,f6.2,3f6.1,e12.3,3f8.4)') &
-!                    'iph, pr, totDSB0, totDSB, DSB_rep, eta, Pmis, dmis, tIR: ', &
-!                        phase,cp%progress,totDSB0, totDSB, totDSB0-totDSB, eta_NHEJ, Pmis, dmis, tIR
+if (single_cell .and. (tnow < CA_time)) then
+    write(nflog,'(a,i4,f6.2,3f6.1,e12.3,3f8.4)') &
+                 'iph, pr, totDSB0, totDSB, DSB_rep, eta, Pmis, dmis, tIR: ', &
+                     phase,cp%progress,totDSB0, totDSB, totDSB0-totDSB, eta_NHEJ, Pmis, dmis, tIR
+endif
 Nmis(1) = Nmis(1) + dmis*(1 - f_S)  ! doubled at mitosis
 Nmis(2) = Nmis(2) + dmis*f_S
 misjoins(1) = misjoins(1) + Nmis(1) + Nmis(2)
@@ -1698,10 +1708,13 @@ if (cp%phase0 < M_phase) then   ! G1, S, G2
     Paber(2) = exp(-Klethal*Nmis(2))
     cp%Psurvive = Pmit(1)*Pmit(2)*Paber(1)*Paber(2)  
     cp%Psurvive_nodouble = Pmit(1)*Pmit(2)*Paber1_nodouble*Paber(2)
-    if (single_cell) write(nfres,'(a,6e12.3)') 'totNmisjoins,totNDSB: ', &
+    if (single_cell) then
+        write(nfres,'(a,6e12.3)') 'totNmisjoins,totNDSB: ', &
         2*totNmisjoins(1),totNmisjoins(2),2*totNmisjoins(1)+totNmisjoins(2),totNDSB,sum(totNDSB)
-    if (Ncells == 1) write(nfres,'(a,2f8.3,8e12.3)') 'totDSB,Pmit,Nmis,totNmis,Paber,SF: ', &
-        totDSB,Pmit,2*Nmis(1),Nmis(2),2*Nmis(1)+Nmis(2),Paber,cp%Psurvive  
+!        write(nflog,'(a,9f8.3,e12.3)') 'totDSB,Pmit,Nmis,totNmis,Paber,SF: ', &
+!        totDSB,Pmit,2*Nmis(1),Nmis(2),2*Nmis(1)+Nmis(2),Paber,cp%Psurvive  
+        write(nflog,'(a,3f8.1,4x,3f8.1)') 'mitosis: DSB, Nmis: ',totDSB,sum(totDSB),2*Nmis(1),Nmis(2),2*Nmis(1)+Nmis(2)
+     endif
     !if (cp%Psurvive < 1.0E-30) then
     !    write(nflog,'(a,5e12.3)') 'Psurvive: ',cp%Psurvive,Pmit(1:2),Paber(1:2)
     !    write(nflog,'(a,4f8.2)') 'totDSB, Nmis: ',totDSB(1:2),Nmis(1:2)
@@ -1792,8 +1805,12 @@ do icell = 1,Ncells
     SFwave = SFwave + Psurvive
 enddo
 SFwave = SFwave/Ncells
-write(nflog,'(a,2e12.3)') 'SFwave, log10(SFwave): ',SFwave,log10(SFwave)
-write(nflog,'(a,3f11.2)') 'aveDSB, aveNmis: ',sumDSB/Ncells, sumNmis/Ncells
+if (single_cell) then
+    write(nflog,'(a,3f8.1,4x,3f8.1)') 'washout: DSB, Nmis: ',totDSB,sum(totDSB),2*Nmis(1),Nmis(2),2*Nmis(1)+Nmis(2)
+else
+    write(nflog,'(a,2e12.3)') 'SFwave, log10(SFwave): ',SFwave,log10(SFwave)
+    write(nflog,'(a,3f11.2)') 'aveDSB, aveNmis: ',sumDSB/Ncells, sumNmis/Ncells
+endif
 end subroutine
 
 !------------------------------------------------------------------------

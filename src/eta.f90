@@ -101,6 +101,7 @@ sigma = fsigma*sigma
 !sigma = S_NHEJ
 
 eta = etafun(Reff,sigma)
+!if (tIR > 9 .and. tIR < 10) write(*,'(a,4f8.3,e12.3)') 'tIR, f_S, Reff, sigma, eta: ', tIR, f_S, Reff, sigma, eta
 !write(*,'(a,2f8.2,2e12.3)') 'f_S, Reff, sigma, eta: ',f_S,Reff,sigma, eta
 !! pmis.f90
 !fsigma = 1 + (1 - Kcoh)*f_S

@@ -70,8 +70,8 @@ integer :: kcell, site(3), iv, ityp, n, kpar=0  !, idrug, im, ichemo
 real(REAL_KIND) :: C_O2, SER, p_death, p_recovery, R, kill_prob, tmin, Cdrug, total
 real(REAL_KIND) :: SER_OER(2)
 integer :: phase_count(0:4)
-real(REAL_KIND) :: ph_dist(0:4)
-integer :: counts(8)
+real(REAL_KIND) :: ph_dist(0:4), totDSB(2)
+integer :: counts(8), jpp
 type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
 !logical :: dies
@@ -243,8 +243,15 @@ total = 0
 do kcell = 1,nlist
     cp => cell_list(kcell)
     total = total + cp%totDSB0
-    if (kcell <= 10) write(nflog,'(a,i6,f9.1)') 'totDSB0: ',kcell,cp%totDSB0
+!    if (kcell <= 10) write(nflog,'(a,i6,f9.1)') 'totDSB0: ',kcell,cp%totDSB0
 enddo
+if (single_cell) then
+	do jpp = 1,2
+		totDSB(jpp) = sum(cp%DSB(:,jpp))
+    enddo
+    write(nflog,'(a,3f8.1)') 'At IR: DSB: ',totDSB,sum(totDSB)
+endif
+
 write(*,*) 'Irradiation: phase counts: ',counts
 write(nflog,*) 'At irradiation, total DSB: ',total
 end subroutine
