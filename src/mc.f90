@@ -1399,7 +1399,7 @@ logical :: use_ATM != .false.
 logical :: dbug
 logical :: use_G1_tdelay = .false.
 logical :: do_G1_Jaiswal
-logical :: use_constant_V = .true.
+logical :: use_constant_V = .false.
 
 dth = dt/3600   ! hours
 use_ATM = .not.use_fixed_CP
