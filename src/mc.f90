@@ -180,6 +180,7 @@ integer :: nfin
 integer :: iuse_baserate, iuse_exp, iphase_hours, icase, nCPparams, iph, j
 real(8) :: TMEJrep, TMEJfid, SSArep, SSAfid
 real(8) :: pHR_S, pfc_S, pHR_G2, pfc_G2, k3, k4
+logical :: use_equal_mitrates = .true.
 
 write(*,*) 'ReadMcParameters:'
 read(nfin,*) iphase_hours
@@ -188,6 +189,7 @@ read(nfin,*) baseRate
 write(*,*) 'baseRate: ',baseRate
 read(nfin,*) mitRate(1)
 read(nfin,*) mitRate(2)
+if (use_equal_mitrates) mitrate(2) = mitrate(1)
 read(nfin,*) Msurvival
 read(nfin,*) Klethal
 !read(nfin,*) nCPparams
