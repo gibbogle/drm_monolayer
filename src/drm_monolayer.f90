@@ -2660,6 +2660,11 @@ write(*,'(a,6e12.3)') 'totPaber: ',totPaber
 
 ! adjust for pre-rep doubling of misjoins
 totNmisjoins(1) = 2*totNmisjoins(1)
+if (use_equal_mitrates) then
+    write(nflog,*) 
+    write(nflog,*) '!!!! use_equal_mitrates = true !!!!'
+    write(nflog,*)
+endif
 write(nflog,'(a,7f9.3)') 'Ave (pre, post) NDSB, Nmisjoins: ', &
     totNDSB/nmitosis,totNmisjoins/nmitosis,sum(totNmisjoins)/nmitosis
 !write(logmsg,'(a,8f8.3)') 'phase_dist:      ',phase_dist(0:3)
