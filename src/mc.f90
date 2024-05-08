@@ -536,7 +536,7 @@ real(8) :: th, Npre, Npre_s, Npre_c, Npost, Npost_s, Npost_c, Pc, x
 integer, parameter :: option = 2
 type(cycle_parameters_type),pointer :: ccp
 logical :: use_Jeggo = .true.
-logical :: use_Poisson_DSB = .true.
+logical :: use_Poisson_DSB = .false.
 
 cp%irradiated = .true.
 next_write_time = 0
