@@ -2323,6 +2323,7 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
             cp => cell_list(kcell)
             total_mitosis_time = total_mitosis_time + cp%mitosis_time
 !            if (cp%psurvive > 1.0e-30) then     ! was 1.0E-8
+!            write(*,'(a,2e12.3)') 'cp%mitosis_time, CA_time: ',cp%mitosis_time, CA_time
                 if (cp%mitosis_time < CA_time) then
                     NpreCA = NpreCA + 1
                     Pp = cp%psurvive
@@ -2333,10 +2334,10 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
                     SFtot = SFtot - Pp + 2*Pd
                     newSFtot = newSFtot + 2*Pd
                     Nnew = Nnew + 2
-                    if (kcell <= 100) then
+    !                if (kcell <= 100) then
     !                    write(*,'(a,i6,2e12.3)') 'daughters: kcell, Pp, Pd: ',kcell,Pp,Pd
     !                    write(*,'(a,2i3,2f8.3)') 'kcell,phase0,Pp,2*Pd: ',kcell,cp%phase0,Pp,2*Pd
-                    endif
+    !                endif
 !                    if (cp%phase0 < 4 .and. Pd < 0.3) then
 !                        Nd = Nd + 2
 !                        write(*,'(a,2i6,f8.3)') 'daughters: ', kcell, cp%phase0,Pd
@@ -2647,13 +2648,13 @@ do kcell = 1,nlist
     nir(ph) = nir(ph) + 1
     sftot(ph) = sftot(ph) + cp%Psurvive
 enddo
-nir = max(nir,1)
+!nir = max(nir,1)       ! this was an error
 nmitosis = sum(nir)
 write(*,'(a,4i6)') 'nir: ',nir
-write(*,'(a,4f10.6)') 'Average SF by phase: ',sftot/nir
-if (use_synchronise) then
-    if (phase_log) write(nfphase,'(a,4f8.4)') 'Average SF by phase: ',sftot/nir
-endif
+!write(*,'(a,4f10.6)') 'Average SF by phase: ',sftot/nir
+!if (use_synchronise) then
+!    if (phase_log) write(nfphase,'(a,4f8.4)') 'Average SF by phase: ',sftot/nir
+!endif
 write(nflog,'(a,6f12.3)') 'totPmit, totPaber, tottotDSB: ',totPmit, totPaber, tottotDSB
 write(*,'(a,i6,5f11.1)') 'Nmitosis, totPmit, totPaber, tottotDSB: ',int(Nmitosis),totPmit, totPaber, tottotDSB
 write(*,'(a,6e12.3)') 'totPaber: ',totPaber
@@ -2667,6 +2668,9 @@ if (use_equal_mitrates) then
 endif
 write(nflog,'(a,7f9.3)') 'Ave (pre, post) NDSB, Nmisjoins: ', &
     totNDSB/nmitosis,totNmisjoins/nmitosis,sum(totNmisjoins)/nmitosis
+write(*,'(a,7f9.3)') 'Ave (pre, post) NDSB, Nmisjoins: ', &
+    totNDSB/nmitosis,totNmisjoins/nmitosis,sum(totNmisjoins)/nmitosis
+write(*,'(a,4f9.3)') 'BBB: ',log10(SFave),totNDSB/nmitosis,sum(totNmisjoins)/nmitosis
 !write(logmsg,'(a,8f8.3)') 'phase_dist:      ',phase_dist(0:3)
 !call logger(logmsg)
 !write(*,'(a,f8.3)') 'Final average pATM: ',ATMsum/nirradiated

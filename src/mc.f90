@@ -532,11 +532,11 @@ real(8) :: DSB0(NP,2)
 real(8) :: totDSB0, baseDSB, fin, T_S, f_S, NG1, NNHEJ, pHRs, pHRc, pHR, pNHEJ, NHRs, NHRc
 real(8) :: Pbase, Pdie, R
 real(8) :: DSB_Gy, L    ! = 35
-real(8) :: th, Npre, Npre_s, Npre_c, Npost, Npost_s, Npost_c, Pc, x
+real(8) :: th, Npre, Npre_s, Npre_c, Npost, Npost_s, Npost_c, Pc, x, fstart
 integer, parameter :: option = 2
 type(cycle_parameters_type),pointer :: ccp
 logical :: use_Jeggo = .true.
-logical :: use_Poisson_DSB = .false.
+logical :: use_Poisson_DSB = .true.
 
 cp%irradiated = .true.
 next_write_time = 0
@@ -556,24 +556,28 @@ istep_signal = 1
 signalling(:,1) = 0
 
 if (use_Jeggo) then     ! using this
+    fstart = 0
+    if (constant_S_pHR) fstart = 0.8
     If (phase == G1_phase) Then
         f_S = 0
     ElseIf (phase == S_phase) Then
         f_S = cp%progress
 !        th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
-        if (constant_S_pHR) then
-            th = 0
-        else
-            th = cp%progress*ccp%T_S/3600
-        endif
+!        if (constant_S_pHR) then
+!            th = 0
+!        else
+!            th = cp%progress*ccp%T_S/3600
+!        endif
+        th = max(0.0d0,(cp%progress - fstart)*ccp%T_S/3600)
     ElseIf (phase >= G2_phase) Then
         f_S = 1
 !        th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
-        if (constant_S_pHR) then
-            th = (cp%progress*ccp%T_G2)/3600       
-        else
-            th = (ccp%T_S + cp%progress*ccp%T_G2)/3600
-        endif    
+!        if (constant_S_pHR) then
+!            th = (cp%progress*ccp%T_G2)/3600       
+!        else
+!            th = (ccp%T_S + cp%progress*ccp%T_G2)/3600
+!        endif
+        th = (1.0 - fstart)*T_S + cp%progress*ccp%T_G2/3600
     End If
     cp%f_S_at_IR = f_S
     totDSB0 = (1 + f_S) * NG1
