@@ -426,7 +426,7 @@ real(REAL_KIND) :: spcrad_value
 real(REAL_KIND) :: total_dMdt
 !real(REAL_KIND) :: total_flux_prev, medium_Cbnd_prev
 real(REAL_KIND) :: start_wtime
-real(REAL_KIND) :: IR_time
+real(REAL_KIND) :: IR_time_h, CA_time_h
 
 ! Metabolism parameters
 real(REAL_KIND) :: f_GL     ! ratio of lactate production to glucose consumption (not used in simple metab)
@@ -551,7 +551,7 @@ integer :: N_checkpoint     ! number of cells in checkpoint - not growing
 integer :: ntphase(8)
 integer :: NPsurvive, Nirradiated, Napop
 real(REAL_KIND), allocatable :: Psurvive(:)
-real(REAL_KIND) :: CA_time = 99*60*60   ! seconds, default value overridden by protocol
+!real(REAL_KIND) :: CA_time = 99*60*60   ! seconds, default value overridden by protocol
 logical :: include_daughters = .true.
 !logical, parameter :: phase_dist = .true.
 real(REAL_KIND) :: t_irradiation, SFave, t_mitosis
@@ -575,7 +575,7 @@ logical :: overstepped
 
 logical, parameter :: no_S_Iliakis = .false.	! If true this suppresses Iliakis effect in S-phase
 logical, parameter :: constant_S_pHR = .true.
-real(REAL_KIND), parameter :: dose_threshold = 1
+real(REAL_KIND), parameter :: dose_threshold = 0
 integer :: ATR_in_S = 1		! 0 = no ATR signalling in S, 1 = signalling, no CP effect, 2 = signalling and CP effect
 logical, parameter :: use_Arnould = .true.
 real(REAL_KIND) :: R_Arnould = 0.7, Kclus = 0.693	! for DSB clustering
@@ -600,6 +600,12 @@ integer :: npet
 ! Drug half-life simulation
 logical :: use_drug_halflife
 real(REAL_KIND) :: Khalflife, drug_time, drug_conc0
+
+! CA and flushing time
+! In Cho1 CDTD, CA starts (trypsinisation) at flushing time,
+! in Cho2 CDTD, CA always starts at 24h
+!logical, parameter :: CA_at_flushing = .false.	! set = .false. to get SF for Cho2 CDTD expts, which used CA at 24h
+
 
 !integer :: icentral !extracellular variable index corresponding to a central site (NX/2,NY/2,NZ/2)
 

@@ -991,7 +991,11 @@ do itime = 1,ntimes
 		read(nf,*) O2conc
 		read(nf,*) O2flush
 		read(nf,*) conc
-		CA_time = (t + dt)*60*60    ! assuming that CA occurs at drug flushing time
+      !  if (CA_at_flushing) then
+    		!CA_time = (t + dt)*60*60    ! assuming that CA occurs at drug flushing time
+      !  else
+      !      CA_time = 24*60*60          ! for Cho2 CDTD expts
+      !  endif
 		event(kevent)%time = t
 		event(kevent)%ichemo = ichemo
 		event(kevent)%idrug = idrug
@@ -1012,6 +1016,10 @@ do itime = 1,ntimes
 !        if (.not.(idrug == 1 .and. use_inhibiter)) then     ! the flushing MEDIUM_EVENT is not added if the drug is an inhibiter
 !		    kevent = kevent + 1
             flushing = .true.
+            if (dt < 0) then    ! this signals a CDTD expt for which CA_time = flushing time, i.e. Cho1 only.  Otherwise CA_time takes the input parameter value.
+                dt = -dt
+                CA_time_h = dt
+            endif
 		    Eflush%etype = MEDIUM_EVENT
 		    Eflush%time = t + dt
 		    Eflush%ichemo = 0
@@ -1049,7 +1057,8 @@ do itime = 1,ntimes
 		read(nf,*) t
 		if (use_synchronise) then
 		    t = 0.001   ! might need to be > 0
-		endif
+        endif
+        CA_time_h = CA_time_h + t
 		read(nf,*) dose
 		event(kevent)%time = t
 		event(kevent)%dose = dose	
@@ -1060,7 +1069,7 @@ do itime = 1,ntimes
 		    phase_hour(1:nphase_hours) = t + phase_hour(1:nphase_hours)
 		endif
 		write(nflog,'(a,i3,a,f6.1,a,f6.2)') 'Radiation event: ', kevent,'  dose: ',dose,' hour: ',t
-        IR_time = t
+        IR_time_h = t
 	endif
 enddo
 Nevents = kevent
@@ -2299,21 +2308,20 @@ if (use_PEST) then  ! check that all phase distributions have been estimated
 endif
     
 !write(*,*) 'NPsurvive: ',NPsurvive, (Nirradiated - Napop)
-!write(*,'(a,3i8)') 'NPsurvive, Nirradiated,Napop: ',NPsurvive, Nirradiated,Napop
 if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
     ! getSFlive computes the average psurvive for all cells that reach mitosis,
     ! which number NPsurvive = Nirradiated - Napop.
-!    SFlive = getSFlive()
     call getSFlive(SFlive)
     SFtot = SFlive*(Nirradiated - Napop)
     write(*,*)
-    write(*,'(a,3i6,e12.3)') 'NPsurvive,Nirradiated,Napop,SFtot: ',NPsurvive,Nirradiated,Napop,SFtot
-    write(*,'(a,f8.4)') 'Unadjusted SFave = SFtot/NPsurvive: ',SFtot/NPsurvive
-    write(*,'(a,f8.4)') 'SFave including apoptosis killing: ',SFtot/Nirradiated
+    write(nflog,'(a,3i6,e12.3)') 'NPsurvive,Nirradiated,Napop,SFtot: ',NPsurvive,Nirradiated,Napop,SFtot
+    write(nflog,'(a,e12.3)') 'Unadjusted SFave = SFtot/NPsurvive: ',SFtot/NPsurvive
+    write(nflog,'(a,e12.3)') 'SFave including apoptosis killing: ',SFtot/Nirradiated
     if (include_daughters) then
     ! To adjust SFlive to replace a cell that reached mitosis before CA with its daughter cells.
     ! In order to compare simulated SFave with SF determined by experimental CA (clonogenic analysis),
     ! SFave needs to be calculated as the average of cells that make it to CA.
+        write(nflog,*) 'Accounting for daughters: from NPsurvive: ',NPsurvive
         newSFtot = 0
         Nnew = 0
         NpreCA = 0
@@ -2321,10 +2329,11 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
         total_mitosis_time = 0
         do kcell = 1,nlist
             cp => cell_list(kcell)
+            if (cp%state == DEAD) cycle
             total_mitosis_time = total_mitosis_time + cp%mitosis_time
 !            if (cp%psurvive > 1.0e-30) then     ! was 1.0E-8
 !            write(*,'(a,2e12.3)') 'cp%mitosis_time, CA_time: ',cp%mitosis_time, CA_time
-                if (cp%mitosis_time < CA_time) then
+                if (cp%mitosis_time < CA_time_h*3600) then
                     NpreCA = NpreCA + 1
                     Pp = cp%psurvive
                     Pd = 1 - sqrt(1.0 - Pp)   ! Pd = psurvive for the 2 daughters: Pp = 2Pd - Pd^2
@@ -2352,13 +2361,14 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
 !                write(nflog,'(a,e12.3)') 'psurvive: ',cp%psurvive
 !            endif
         enddo
+        write(nflog,*) 'to NPsurvive: ',NPsurvive
         write(*,'(a,3i6,2f10.3)') 'NpreCA, Nd, Nnew, newSFtot, newSFave: ',NpreCA,Nd,Nnew,newSFtot,newSFtot/Nnew
         write(*,'(a,3i6,f8.4)') 'nlist,Nirradiated,NPsurvive, new SFave: ',nlist,Nirradiated,NPsurvive,newSFtot/nlist
         write(*,'(a,i8,f8.2)') 'Average mitosis_time: ',nlist,total_mitosis_time/(3600*nlist)
-        write(*,'(a,f8.2,i6)') 'CA_time, NpreCA: ',CA_time/3600,NpreCA
+        write(*,'(a,f8.2,i6)') 'CA_time_h, NpreCA: ',CA_time_h,NpreCA
     endif
     if (NPsurvive > 0) then
-        SFave = SFtot/NPsurvive
+        SFave = SFtot/(NPsurvive + Napop)
     else
         SFave = 0
     endif
@@ -2369,8 +2379,8 @@ if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop)) .and. PEST_OK) then
 !        SFave = SFlive
 !    endif
     write(*,*)
-    write(nflog,'(a,f8.2)') 'CA_time: ',CA_time/3600
-    write(nflog,'(a,i6)') 'Npsurvive: ',Npsurvive
+    write(nflog,'(a,f8.2)') 'CA_time_h: ',CA_time_h
+    write(nflog,'(a,2i6)') 'Npsurvive, Napop: ',Npsurvive,Napop
     write(logmsg,'(a,e12.4,f8.3)') 'SFave,log10(SFave): ',SFave,log10(SFave)
     call logger(logmsg)
 
@@ -2440,7 +2450,7 @@ do kcell = 1,nlist
     cp => cell_list(kcell)
     if (cp%state == DEAD) cycle
     if (cp%totDSB0 <= 0) then
-        cycle  ! this cell was not irradiated - must be a daughter cell
+        cycle  ! this cell was not irradiated - must be a daughter cell (can't happen)
     endif
     n = n+1
     sfsum = sfsum + cp%Psurvive
@@ -2478,14 +2488,14 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine completed
 !real(REAL_KIND) :: fract(0:4)
-integer :: kcell, ph, nir(4), nsum, kcellmax, i, j, ityp
-real(REAL_KIND) :: sftot(4), sfsum, sfmax
+integer :: kcell, ph, nir(4), nmitosis,nsum, kcellmax, i, j, ityp
+real(REAL_KIND) :: sftot_phase(4), sfsum, sfmax
 integer :: tadjust
 type(cycle_parameters_type), pointer :: ccp
 type(cell_type), pointer :: cp
 logical :: only_M_phase = .false.
 logical :: PDS4 = .false.
-real(REAL_KIND) :: dt, phi, nmitosis, PDS4_M(3) = [0.191, 0.414286, 0.732812]
+real(REAL_KIND) :: dt, phi, PDS4_M(3) = [0.191, 0.414286, 0.732812]
 real(REAL_KIND) :: normalised_phase_dist(60,0:4)   
 
 if (overstepped) then
@@ -2595,7 +2605,7 @@ endif
 if (output_DNA_rate) then
     write(nflog,*) 'Completed'
     write(*,*) 'Completed'
-    tadjust = IR_time
+    tadjust = IR_time_h
     if (nphase_hours > 0) then
         write(*,*) 'write DNA_rate'
         write(nfres,'(20e15.6)') (recorded_DNA_rate(i),i=1,nphase_hours)
@@ -2609,7 +2619,7 @@ endif
 
 ! Look at average survival by IR phase
 nir = 0
-sftot = 0
+sftot_phase = 0
 !nsum = 0
 !sfsum = 0
 sfmax = 0
@@ -2646,7 +2656,7 @@ do kcell = 1,nlist
         ph = 4
     endif
     nir(ph) = nir(ph) + 1
-    sftot(ph) = sftot(ph) + cp%Psurvive
+    sftot_phase(ph) = sftot_phase(ph) + cp%Psurvive
 enddo
 !nir = max(nir,1)       ! this was an error
 nmitosis = sum(nir)
@@ -2658,7 +2668,8 @@ write(*,'(a,4i6)') 'nir: ',nir
 write(nflog,'(a,6f12.3)') 'totPmit, totPaber, tottotDSB: ',totPmit, totPaber, tottotDSB
 write(*,'(a,i6,5f11.1)') 'Nmitosis, totPmit, totPaber, tottotDSB: ',int(Nmitosis),totPmit, totPaber, tottotDSB
 write(*,'(a,6e12.3)') 'totPaber: ',totPaber
-
+write(nflog,'(a,4f10.5)') 'SFtot_phase: ',SFtot_phase
+write(nflog,'(a,i6,f10.5)') 'Nmitosis,SFtot: ',Nmitosis,sum(SFtot_phase)
 ! adjust for pre-rep doubling of misjoins
 totNmisjoins(1) = 2*totNmisjoins(1)
 if (use_equal_mitrates) then

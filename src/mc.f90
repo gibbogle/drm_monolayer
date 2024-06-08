@@ -184,6 +184,8 @@ real(8) :: pHR_S, pfc_S, pHR_G2, pfc_G2, k3, k4
 write(*,*) 'ReadMcParameters:'
 read(nfin,*) iphase_hours
 write(*,*) 'iphase_hours: ',iphase_hours
+read(nfin,*) CA_time_h
+write(*,*) 'CA_time_h: ',CA_time_h
 read(nfin,*) baseRate
 write(*,*) 'baseRate: ',baseRate
 read(nfin,*) mitRate(1)
@@ -1611,7 +1613,7 @@ Nrep = totDSB0 - totDSB
 ! Nreptot by Nrep = totDSB0 - totDSB
 ! Pmistot by Nrep*Pmis
 
-if (single_cell .and. (tnow < CA_time)) then
+if (single_cell .and. (tnow < CA_time_h*3600)) then
     write(nflog,'(a,i4,f6.2,3f6.1,e12.3,3f8.4)') &
                  'iph, pr, totDSB0, totDSB, DSB_rep, eta, Pmis, dmis, tIR: ', &
                      phase,cp%progress,totDSB0, totDSB, totDSB0-totDSB, eta_NHEJ, Pmis, dmis, tIR
