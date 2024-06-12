@@ -580,6 +580,7 @@ integer :: ATR_in_S = 1		! 0 = no ATR signalling in S, 1 = signalling, no CP eff
 logical, parameter :: use_Arnould = .true.
 real(REAL_KIND) :: R_Arnould = 0.7, Kclus = 0.693	! for DSB clustering
 logical :: use_equal_mitrates = .false.
+logical :: use_cell_kcc2a_dependence = .true.
 
 ! Greens function section
 logical :: greens = .false.

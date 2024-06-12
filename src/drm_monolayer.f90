@@ -547,7 +547,7 @@ call logger('Finished reading input data')
 
 ! Try setting this for each cell unless use_cell_kcc2a_dependence
 Kcc2a = get_Kcc2a(kmccp,CC_tot,CC_threshold_factor,cc_parameters(1)%T_G2/3600)
-
+write(nflog,*) 'did get_Kcc2a: ',Kcc2a
 single_cell = (initial_count==1)
 write(nflog,*) 'single_cell: ',single_cell
 
@@ -1238,10 +1238,10 @@ do kcell = 1,initial_count
 	kcc2a_sum = kcc2a_sum + cp%kcc2a
 !    write(*,*) 'Kcc2a: ',cp%Kcc2a
 enddo
-write(nflog,'(a,2f8.3)') 'kcc2a_ave, calc: ',kcc2a_ave,kcc2a_sum/initial_count
-write(*,'(a,2f10.4)') 'kt2cc min, max: ',kt2cc_min,kt2cc_max
-write(nflog,'(a,2f10.4)') 'kt2cc min, max: ',kt2cc_min,kt2cc_max
-write(*,*)
+!write(nflog,'(a,2f8.3)') 'kcc2a_ave, calc: ',kcc2a_ave,kcc2a_sum/initial_count
+!write(*,'(a,2f10.4)') 'kt2cc min, max: ',kt2cc_min,kt2cc_max
+!write(nflog,'(a,2f10.4)') 'kt2cc min, max: ',kt2cc_min,kt2cc_max
+!write(*,*)
 write(*,'(a,5i6)') 'Initial phase counts: ',counts
 write(*,'(a,5f8.3)') 'Initial phase %ages: ',100.0*real(counts)/sum(counts)
 write(*,*)
@@ -1500,7 +1500,10 @@ T_G1 = ccp%T_G1/fp(1)
 T_S = ccp%T_S/fp(2)
 T_G2 = ccp%T_G2/fp(3)
 !T_M = ccp%T_M/fp(4)
-if (use_cell_kcc2a_dependence) cp%Kcc2a = get_Kcc2a(kmccp,CC_tot,CC_threshold_factor,T_G2/3600)
+if (use_cell_kcc2a_dependence) then
+    cp%Kcc2a = get_Kcc2a(kmccp,CC_tot,CC_threshold_factor,T_G2/3600)
+!    write(nflog,*) 'T_G2, cp%Kcc2a: ',T_G2/3600,cp%Kcc2a
+endif
 
 !if (kcell <= 10) then
 !    write(*,'(a,i4,8f6.3)') 'kcell,fg,T_G1-M: ',kcell,fg(:),T_G1/3600,T_S/3600,T_G2/3600,T_M/3600
@@ -1574,10 +1577,14 @@ elseif (t <= tswitch(3)) then
     if (use_Jaiswal) then   ! need to initialise CC_act
         cp%DSB = 0
         dth = (t - tswitch(2))/3600
-        if (single_cell) write(nflog,*) 'SetInitialCellCycleStatus: dth: ',dth
+        if (single_cell) write(nflog,'(a,3f8.3)') 'SetInitialCellCycleStatus: dth: ',t/3600, tswitch(2)/3600, dth
         call Jaiswal_update(cp,dth)
+        cp%CC_act = min(cp%CC_act,0.9*CC_threshold)     ! to prevent premature mitosis
         if (single_cell) write(nflog,*) 'SetInitialCellCycleStatus: initial CC_act: ',cp%CC_act
 !        if (cp%CC_act > CC_threshold) write(nflog,'(a,i6,f8.1,3f8.3)') 'SetInitialCellCycleStatus: dth,T_G2,progress,CC_act: ',kcell,dth,T_G2/3600,cp%progress,cp%CC_act
+        !write(nflog,*) 'stopping:'
+        !write(*,*) 'stopping:'
+        !stop
     endif
 else
 !    cp%fp = metab*f_CP/fg(M_phase)      ! not used

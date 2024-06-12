@@ -119,7 +119,6 @@ logical :: negligent_G2_CP = .false.
 logical :: use_DSB_CP = .false.
 logical :: use_D_model = .false.
 
-logical :: use_cell_kcc2a_dependence = .true.
 real(8) :: kcc2a_ave
 logical :: use_exp_slowdown = .false.
 logical :: use_G1_stop = .false.    ! These flags control use of either CP delay (true) or slowdown (false)
@@ -1220,6 +1219,8 @@ elseif (iph == G2_phase) then
     elseif (t_G2 > 30) then
         ATR_act = ATR_act*(t_G2 - 30)/(40 - 30)
     endif
+!    write(*,'(a,3f12.3)') 'G2: ATR_act, CC_act, t_G2: ',ATR_act, CC_act, t_G2
+!    write(nflog,'(a,i6,5f10.3)') 'G2: kcell, ATR_act, D_ATM, D_ATR, CC_act, tnow: ',kcell_now,ATR_act, D_ATM, D_ATR, CC_act, tnow/3600
 !    if (kcell_now == 1) write(*,*) '**** G2 D_ATM = D_ATR = 0 in jaiswal_update ****'
 !    D_ATR = 0
 !    D_ATM = 0
@@ -1228,11 +1229,13 @@ else
 endif
 if (use_cell_kcc2a_dependence) then
     Kkcc2a = cp%Kcc2a
+!    write(nflog,*) 'from use_cell_kcc2a_dependence: ',Kkcc2a
 else
     Kkcc2a = Kcc2a
+!    write(nflog,*) 'from NOT use_cell_kcc2a_dependence: ',Kkcc2a
 endif
-!if (single_cell) &
-!write(*,'(a,4e12.3)') 'CC_act,CC_inact,ATM_act,ATR_act: ',CC_act,CC_inact,ATM_act,ATR_act
+!write(nflog,'(a,6e12.3)') 'Jaiswal params: ',Kkcc2a,Kmccp,cp%Kt2cc,Kmccmd,cp%Ke2cc,Kmccrd
+!write(nflog,'(a,5f12.4)') 'CC_act,ATM_act,ATM_tot,ATR_act,ATR_tot: ',CC_act,ATM_act,ATM_tot,ATR_act,ATR_tot
 do it = 1,Nt
     ATM_inact = ATM_tot - ATM_act
     ATR_inact = ATR_tot - ATR_act
@@ -1244,6 +1247,7 @@ do it = 1,Nt
 ! Try this
         dCC_act_dt = max(dCC_act_dt,0.0)
         CC_act = CC_act + dt * dCC_act_dt
+!        write(nflog,'(a,i6,2e12.3)') 'it,CC_act,dCC_act_dt: ',it,CC_act,dCC_act_dt
         CC_act = max(CC_act, 0.0)
         ATR_act = ATR_act + dt * dATR_act_dt
         ATR_act = min(ATR_act, ATR_tot)
@@ -1613,11 +1617,11 @@ Nrep = totDSB0 - totDSB
 ! Nreptot by Nrep = totDSB0 - totDSB
 ! Pmistot by Nrep*Pmis
 
-if (single_cell .and. (tnow < CA_time_h*3600)) then
-    write(nflog,'(a,i4,f6.2,3f6.1,e12.3,3f8.4)') &
-                 'iph, pr, totDSB0, totDSB, DSB_rep, eta, Pmis, dmis, tIR: ', &
-                     phase,cp%progress,totDSB0, totDSB, totDSB0-totDSB, eta_NHEJ, Pmis, dmis, tIR
-endif
+!if (single_cell .and. (tnow < CA_time_h*3600)) then
+!    write(nflog,'(a,i4,f6.2,3f6.1,e12.3,3f8.4)') &
+!                 'iph, pr, totDSB0, totDSB, DSB_rep, eta, Pmis, dmis, tIR: ', &
+!                     phase,cp%progress,totDSB0, totDSB, totDSB0-totDSB, eta_NHEJ, Pmis, dmis, tIR
+!endif
 Nmis(1) = Nmis(1) + dmis*(1 - f_S)  ! doubled at mitosis
 Nmis(2) = Nmis(2) + dmis*f_S
 misjoins(1) = misjoins(1) + Nmis(1) + Nmis(2)
@@ -1715,7 +1719,7 @@ if (cp%phase0 < M_phase) then   ! G1, S, G2
     Paber(2) = exp(-Klethal*Nmis(2))
     cp%Psurvive = Pmit(1)*Pmit(2)*Paber(1)*Paber(2)  
     cp%Psurvive_nodouble = Pmit(1)*Pmit(2)*Paber1_nodouble*Paber(2)
-!    write(nfres,'(a,3e12.3,4f8.3)') 'Psurvive, Pmit(2), Paber(2), totDSB(2), Nmis(2): ',cp%Psurvive, Pmit(2), Paber(2),totDSB(2),Nmis(2),cp%kt2cc,cp%ke2cc
+    write(nfres,'(a,3e12.3,6f8.3)') 'Psurvive, Pmit(2), Paber(2), totDSB(2), Nmis(2): ',cp%Psurvive, Pmit(2), Paber(2),totDSB(2),Nmis(2),cp%kt2cc,cp%ke2cc,cp%divide_time/3600,tnow/3600
     if (single_cell) then
         write(nfres,'(a,6e12.3)') 'totNmisjoins,totNDSB: ', &
         2*totNmisjoins(1),totNmisjoins(2),2*totNmisjoins(1)+totNmisjoins(2),totNDSB,sum(totNDSB)

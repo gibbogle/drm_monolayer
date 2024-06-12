@@ -71,7 +71,7 @@ CC_factor = CC_threshold_factor
 x0 = alfa + beta*kmccp      ! initial guess
 t0 = tmitosis(CC_tot,x0,kmccp)
 !write(*,*) 't0,T_G2: ',t0,T_G2
-call newton(x0,t0,CC_tot,kmccp,T_G2)    ! find x0 = kcc2a such that tmitosis = T_G2
+call newton(x0,t0,CC_tot,kmccp,1.1*T_G2)    ! find x0 = kcc2a such that tmitosis = T_G2
 kcc2a = x0
 end function
 
