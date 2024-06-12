@@ -1304,13 +1304,18 @@ cp%metab = phase_metabolic(1)
 cp%metab%C_GlnEx_prev = 0
 
 ! Jaiswal
-R = par_rnor(kpar)
-if (abs(R) > 2) R = R/2
-kfactor = max(0.0,1 + R*jaiswal_std)
-!kfactor = rv_lognormal(0.0d0,1.001d0,kpar)
+!R = par_rnor(kpar)
+!if (abs(R) > 2) R = R/2
+!kfactor = max(0.0,1 + R*jaiswal_std)
+R = par_uni(kpar)
+kfactor = 1 + (R - 0.5)*jaiswal_std
 if (single_cell) kfactor = 1
 cp%kt2cc = kt2cc*kfactor
+R = par_uni(kpar)
+kfactor = 1 + (R - 0.5)*jaiswal_std
+if (single_cell) kfactor = 1
 cp%ke2cc = ke2cc*kfactor
+
 !if (kcell <= 100) write(nflog,'(a,5f10.4)') 'Jaiswal R: ',R,kfactor,cp%kt2cc
 cp%CC_act = 0   ! CC_act0
 !R = par_uni(kpar)

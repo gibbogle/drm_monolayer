@@ -1667,13 +1667,13 @@ if (single_cell .and. cp%irradiated) then
 !'time: ',phase,next_write_time,cp%ATM_act,save_fslow,Pmis,Nmis,cp%Nmis
 
 ! Now explore NDSB, Pmis and Nmis
-       if (next_write_time == 0) write(nfres,'(a)') &
-'iph f_S   tIR    pre-NHEJ0    post-NHEJ0        pre-NHEJ     post-NHEJ      Pmis   dmis Nmis(1) Nmis(2)'
-        write(nfres,'(i2,f5.2,f6.1,4f7.2,3x,4f7.2,3x,f6.3,f6.2,2f7.1)') & !'iph, tIR,DSB0,DSB,Pmis,dmis,Nmis: ', &
-            iph,f_S,tIR,DSB0(1:2,:),DSB(1:2,:),Pmis,dmis,cp%Nmis
-        write(nfres,'(a,i2,3f8.2,e12.3,f6.3)') 'iph,tIR,totDSB0,Nrep,eta,Pmis: ', &
-            phase,tIR,totDSB0,Nrep,eta_NHEJ,Pmis
-        next_write_time = next_write_time + 1
+!       if (next_write_time == 0) write(nfres,'(a)') &
+!'iph f_S   tIR    pre-NHEJ0    post-NHEJ0        pre-NHEJ     post-NHEJ      Pmis   dmis Nmis(1) Nmis(2)'
+!        write(nfres,'(i2,f5.2,f6.1,4f7.2,3x,4f7.2,3x,f6.3,f6.2,2f7.1)') & !'iph, tIR,DSB0,DSB,Pmis,dmis,Nmis: ', &
+!            iph,f_S,tIR,DSB0(1:2,:),DSB(1:2,:),Pmis,dmis,cp%Nmis
+!        write(nfres,'(a,i2,3f8.2,e12.3,f6.3)') 'iph,tIR,totDSB0,Nrep,eta,Pmis: ', &
+!            phase,tIR,totDSB0,Nrep,eta_NHEJ,Pmis
+!        next_write_time = next_write_time + 1
     endif
 endif
 
@@ -1715,6 +1715,7 @@ if (cp%phase0 < M_phase) then   ! G1, S, G2
     Paber(2) = exp(-Klethal*Nmis(2))
     cp%Psurvive = Pmit(1)*Pmit(2)*Paber(1)*Paber(2)  
     cp%Psurvive_nodouble = Pmit(1)*Pmit(2)*Paber1_nodouble*Paber(2)
+!    write(nfres,'(a,3e12.3,4f8.3)') 'Psurvive, Pmit(2), Paber(2), totDSB(2), Nmis(2): ',cp%Psurvive, Pmit(2), Paber(2),totDSB(2),Nmis(2),cp%kt2cc,cp%ke2cc
     if (single_cell) then
         write(nfres,'(a,6e12.3)') 'totNmisjoins,totNDSB: ', &
         2*totNmisjoins(1),totNmisjoins(2),2*totNmisjoins(1)+totNmisjoins(2),totNDSB,sum(totNDSB)
