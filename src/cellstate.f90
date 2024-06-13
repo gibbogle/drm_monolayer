@@ -149,6 +149,7 @@ counts = 0
 !    allocate(Psurvive(4*Ncells))
     NPsurvive = 0
     Napop = 0
+    Nmitotic = 0
     tmin = 1.0      ! for now...
     n = 0
     do kcell = 1,nlist

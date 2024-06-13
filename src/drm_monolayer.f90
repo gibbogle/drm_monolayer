@@ -1203,6 +1203,7 @@ counts = 0
 lastID = 0
 kcell = 0
 Ncells_type = 0
+t_irradiation = -1
 !if (kcell > initial_count) then
 !	write(logmsg,*) 'Cell count already exceeds specified number: ',kcell,initial_count
 !	call logger(logmsg)
@@ -1292,12 +1293,8 @@ cp%totMis = 0
 cp%mitosis_duration = get_mitosis_duration()
 !if (kcell <= 10) write(*,'(a,i6,2f6.3)') 'mitosis_duration: ',kcell,ccp%T_M/3600,cp%mitosis_duration/3600
 V0 = Vdivide0/2
-!cp%divide_volume = get_divide_volume(ityp, V0, Tdiv, gfactor)
-!cp%divide_time = Tdiv
-!cp%fg = gfactor
-!call set_divide_volume(kcell, V0)
 kcell_now = kcell
-call set_divide_volume(cp, V0)  ! sets %divide_volume and %divide_time
+!!!call set_divide_volume(cp, V0)  ! sets %divide_volume and %divide_time
 !cp%dVdt = max_growthrate(ityp)
 cp%metab = phase_metabolic(1)
 !cp%metab%I_rate = r_Iu	! this is just to ensure that initial growth rate is not 0
@@ -1353,7 +1350,13 @@ cp%G2_time = 0
 !        cp%Kcc2a = kfactor*Kcc2a_ave
 !        if (kcell <= 100) write(nflog,'(a,5f10.4)') 'Kcc2a R: ',R,kfactor,cp%kcc2a
 !    endif
-    call SetInitialCellCycleStatus(kcell,cp)
+
+!!!    call SetInitialCellCycleStatus(kcell,cp)
+!   added
+    cp%phase = G1_phase
+    cp%progress = 0
+!!!--------------------------------------------------------    
+    
     if (cp%phase == M_phase) then
         write(*,'(a,i8,f6.3)') 'M_phase, mitosis_duration: ',kcell,cp%mitosis_duration/3600
         stop
@@ -1411,38 +1414,6 @@ cp%Psurvive = -1    ! flags Psurvive not yet computed
 
 end subroutine
 
-!--------------------------------------------------------------------------------
-!--------------------------------------------------------------------------------
-subroutine CreateMastercell
-type(cell_type), pointer :: cp
-type(cycle_parameters_type),pointer :: ccp
-
-cp => master_cell
-cp%ID = 0
-cp%state = ALIVE
-cp%generation = 1
-cp%celltype = 1
-ccp => cc_parameters(1)
-cp%Iphase = .true.
-cp%metab = phase_metabolic(1)
-!cp%metab%I_rate = r_Iu	! this is just to ensure that initial growth rate is not 0
-!cp%metab%C_GlnEx_prev = 0
-!cp%ATP_tag = .false.
-!cp%GLN_tag = .false.
-cp%drug_tag = .false.
-cp%radiation_tag = .false.
-!cp%growth_delay = .false.
-cp%G2_M = .false.
-cp%p_rad_death = 0
-cp%Cin(OXYGEN) = chemo(OXYGEN)%bdry_conc
-cp%Cin(GLUCOSE) = chemo(GLUCOSE)%bdry_conc
-#if 0
-cp%Cin(LACTATE) = chemo(LACTATE)%bdry_conc
-cp%Cin(GLUTAMINE) = chemo(GLUTAMINE)%bdry_conc
-cp%Cin(OTHERNUTRIENT) = chemo(OTHERNUTRIENT)%bdry_conc
-#endif
-end subroutine
-
 !--------------------------------------------------------------------------------------
 ! Steel: 
 ! Probability density function of progress through cell cycle: f(t) = 2b exp(-bt) 
@@ -1488,27 +1459,17 @@ scale = Tc/Tmean
 fg = cp%fg
 metab = 1.0
 f_CP = 1.0
-!fp(1) = metab*f_CP/fg(G1_phase)
-!fp(2) = metab*f_CP/fg(S_phase)
-!fp(3) = metab*f_CP/fg(G2_phase)
 fp(:) = metab*f_CP/fg(:)
-!T_G1 = ccp%T_G1*fg(G1_phase)
-!T_S = ccp%T_S*fg(S_phase)
-!T_G2 = ccp%T_G2*fg(G2_phase)
-!T_M = ccp%T_M*fg(M_phase)
 T_G1 = ccp%T_G1/fp(1)
 T_S = ccp%T_S/fp(2)
 T_G2 = ccp%T_G2/fp(3)
 !T_M = ccp%T_M/fp(4)
 if (use_cell_kcc2a_dependence) then
     cp%Kcc2a = get_Kcc2a(kmccp,CC_tot,CC_threshold_factor,T_G2/3600)
+    cp%Kcc2a = min(cp%kcc2a, 0.9*CC_threshold)
 !    write(nflog,*) 'T_G2, cp%Kcc2a: ',T_G2/3600,cp%Kcc2a
 endif
 
-!if (kcell <= 10) then
-!    write(*,'(a,i4,8f6.3)') 'kcell,fg,T_G1-M: ',kcell,fg(:),T_G1/3600,T_S/3600,T_G2/3600,T_M/3600
-!    write(nflog,'(a,i4,8f6.3)') 'kcell,fg,T_G1-M: ',kcell,fg(:),T_G1/3600,T_S/3600,T_G2/3600,T_M/3600
-!endif
 if (use_synchronise) then
 !    if (kcell == 1) then
 !        write(nfphase,'(a,i4,f6.3)') 'synch_phase, synch_fraction: ',synch_phase, synch_fraction
@@ -1579,8 +1540,8 @@ elseif (t <= tswitch(3)) then
         dth = (t - tswitch(2))/3600
         if (single_cell) write(nflog,'(a,3f8.3)') 'SetInitialCellCycleStatus: dth: ',t/3600, tswitch(2)/3600, dth
         call Jaiswal_update(cp,dth)
-        cp%CC_act = min(cp%CC_act,0.9*CC_threshold)     ! to prevent premature mitosis
-        if (single_cell) write(nflog,*) 'SetInitialCellCycleStatus: initial CC_act: ',cp%CC_act
+        cp%CC_act = min(cp%CC_act,0.95*CC_threshold)     ! to prevent premature mitosis
+        if (kcell_now == -689) write(nflog,*) 'SetInitialCellCycleStatus: initial CC_act: ',cp%CC_act
 !        if (cp%CC_act > CC_threshold) write(nflog,'(a,i6,f8.1,3f8.3)') 'SetInitialCellCycleStatus: dth,T_G2,progress,CC_act: ',kcell,dth,T_G2/3600,cp%progress,cp%CC_act
         !write(nflog,*) 'stopping:'
         !write(*,*) 'stopping:'
@@ -1609,6 +1570,39 @@ if (single_cell) then
 endif
 cp%t_divide_last = -t
 end subroutine
+
+!--------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------
+subroutine CreateMastercell
+type(cell_type), pointer :: cp
+type(cycle_parameters_type),pointer :: ccp
+
+cp => master_cell
+cp%ID = 0
+cp%state = ALIVE
+cp%generation = 1
+cp%celltype = 1
+ccp => cc_parameters(1)
+cp%Iphase = .true.
+cp%metab = phase_metabolic(1)
+!cp%metab%I_rate = r_Iu	! this is just to ensure that initial growth rate is not 0
+!cp%metab%C_GlnEx_prev = 0
+!cp%ATP_tag = .false.
+!cp%GLN_tag = .false.
+cp%drug_tag = .false.
+cp%radiation_tag = .false.
+!cp%growth_delay = .false.
+cp%G2_M = .false.
+cp%p_rad_death = 0
+cp%Cin(OXYGEN) = chemo(OXYGEN)%bdry_conc
+cp%Cin(GLUCOSE) = chemo(GLUCOSE)%bdry_conc
+#if 0
+cp%Cin(LACTATE) = chemo(LACTATE)%bdry_conc
+cp%Cin(GLUTAMINE) = chemo(GLUTAMINE)%bdry_conc
+cp%Cin(OTHERNUTRIENT) = chemo(OTHERNUTRIENT)%bdry_conc
+#endif
+end subroutine
+
 
 !--------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------
@@ -2005,7 +1999,7 @@ integer :: phase_count(0:4), nG2
 real(REAL_KIND) :: total, tadjust
 real(REAL_KIND) :: fATM, fATR, fCP, dtCPdelay, dtATMdelay, dtATRdelay, ATM_DSB, DNA_rate
 real(REAL_KIND) :: pATM_sum, pATR_sum, DSB_sum
-real(REAL_KIND) :: SFtot, Pp, Pd, newSFtot, total_mitosis_time
+real(REAL_KIND) :: SFtot, Pp, Pd, newSFtot, total_mitosis_time, V0
 logical :: PEST_OK
 logical :: ok = .true.
 logical :: dbug
@@ -2107,9 +2101,7 @@ do idiv = 0,ndiv-1
         call CheckDrugPresence
     endif
     
-    if (dbug) write(nflog,*) 'GrowCells'
-    call GrowCells(DELTA_T,t_simulation,ok)
-    if (dbug) write(nflog,*) 'did GrowCells'
+    if (t_irradiation > 0) call GrowCells(DELTA_T,t_simulation,ok)
 
     if (.not.ok) then
 	    res = 3
@@ -2136,6 +2128,14 @@ endif
 if (radiation_dose >= 0) then
 	write(logmsg,'(a,f6.1)') 'Radiation dose: ',radiation_dose
 	call logger(logmsg)
+! could make calls to set_divide_volume and SetInitialCellCycleStatus here
+! before Irradiation
+    do kcell = 1,Ncells
+        cp => cell_list(kcell)
+        V0 = Vdivide0/2
+        call set_divide_volume(cp,V0)
+        call SetInitialCellCycleStatus(kcell,cp)
+    enddo
 	call Irradiation(radiation_dose, ok)
 	if (.not.ok) then
 		res = 3

@@ -549,7 +549,7 @@ logical :: DRM = .true.
 logical, parameter :: use_Napop = .true.   ! use count of apoptosed cells in SFave calculation - true for consistency with CA
 integer :: N_checkpoint     ! number of cells in checkpoint - not growing
 integer :: ntphase(8)
-integer :: NPsurvive, Nirradiated, Napop
+integer :: NPsurvive, Nirradiated, Napop, Nmitotic
 real(REAL_KIND), allocatable :: Psurvive(:)
 !real(REAL_KIND) :: CA_time = 99*60*60   ! seconds, default value overridden by protocol
 logical :: include_daughters = .true.
@@ -810,7 +810,6 @@ ityp = cp%celltype
 ccp => cc_parameters(ityp)
 
 rVmax = max_growthrate(ityp)
-!V0 = Vdivide0/2
 #if 0
 if (use_exponential_cycletime) then
     if (ccp%Pk_G1 > 0) then
@@ -843,8 +842,6 @@ Tfixed = T_M
 Tdiv = DivideTime(ityp)     ! log-normally distributed
 Tdiv = min(Tdiv,1.2*divide_time_median(ityp))
 Tgrowth = Tdiv - Tfixed
-!T_G1 = Tgrowth*ccp%T_G1/(ccp%T_G1 + ccp%T_G2)
-!T_G2 = Tgrowth*ccp%T_G2/(ccp%T_G1 + ccp%T_G2)
 T_G1 = Tgrowth*ccp%T_G1/(ccp%T_G1 + ccp%T_S + ccp%T_G2)
 T_S = Tgrowth*ccp%T_S/(ccp%T_G1 + ccp%T_S + ccp%T_G2)
 T_G2 = Tgrowth*ccp%T_G2/(ccp%T_G1 + ccp%T_S + ccp%T_G2)
@@ -852,7 +849,6 @@ fg(G1_phase) = T_G1/ccp%T_G1
 fg(S_phase) = T_S/ccp%T_S
 fg(G2_phase) = T_G2/ccp%T_G2
 if (single_cell) fg = 1.0
-!if (kcell_now == 2674) write(nflog,'(a,i6,2x,5f6.3)') 'set_divide_volume: Tdiv,T_M,Tgrowth,T_G2,fg(3): ',kcell_now,Tdiv/3600,T_M/3600,Tgrowth/3600,T_G2/3600,fg(3)
 V = V0 + rVmax*(T_G1/fg(G1_phase) + T_S/fg(S_phase) + T_G2/fg(G2_phase))
 cp%divide_volume = V
 cp%divide_time = Tdiv   ! cycle time, varies with cell
@@ -872,6 +868,15 @@ if (single_cell) then
 	write(*,'(a,4f8.3)') 'single_cell fg: ',fg
 endif
 end subroutine	
+
+!--------------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------
+!subroutine InitCell(kcell,cp)
+!integer :: kcell
+!type(cell_type), pointer :: cp
+!call SetInitialCellCycleStatus(kcell,cp)
+!end subroutine
+
 
 !--------------------------------------------------------------------------------------
 ! This is actually cycle time
