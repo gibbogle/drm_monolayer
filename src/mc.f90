@@ -60,7 +60,7 @@ real(8) :: fidRate(NP)  = [0.98537, 1.0, 0.4393, 0.0]  ! by pathway  with HR sim
 real(8) :: apopRate = 0.01117   ! (McMahon: apoptoticRate) (NOT USED only baseRate is used)
 real(8) :: baseRate = 0.000739  ! (McMahon: baseRate)
 real(8) :: mitRate(2)   !  = 0.0141    ! (McMahon: mitoticRate)
-real(8) :: Msurvival = 0.05
+real(8) :: Msurvival = 1.0
 real(8) :: Kaber = 1.0          ! now fixed, McMahon has 1.  
 real(8) :: Klethal = 0.4
 real(8) :: K_ATM(3,4) ! = [0.076, 0.3, 1.0, 1.0]    ! (1) and (2) are the parameters of kinase kinetics, (3) and (4) are CP slowdown parameters
@@ -1712,6 +1712,7 @@ type(cell_type), pointer :: cp
 real(8) :: DSB(NP,2), totDSB(2), Nmis(2), Nlethal(2), Paber(2), Pbase, Papop, Pmit(2), Psurv
 real(8) :: Nlethal_sum, Paber1_nodouble, Nmistot, tIR,totNmis
 integer :: k, jpp
+real(8), parameter :: kmit = 0.033  ! Baide et al., D10 = 0.1
 
 DSB = cp%DSB
 do jpp = 1,2
@@ -1754,7 +1755,8 @@ else    ! M_phase or dividing
         Nmitotic = Nmitotic + 1
     endif
     Paber = 1
-    cp%Psurvive = Pmit(1)*Pmit(2)*Msurvival
+!    cp%Psurvive = Pmit(1)*Pmit(2)*Msurvival
+    cp%Psurvive = exp(-kmit*sum(totDSB))
     if (kcell_now == 1) write(*,'(a,2f8.3,6e12.3)') 'totDSB,Pmit,Nmis,Paber: ',&
                         totDSB,Pmit,Nmis,Paber  
     if (single_cell) write(nfres,'(a,2f8.3,6e12.3)') '(2) totDSB,Pmit,Nmis,Paber: ',totDSB,Pmit,Nmis,Paber  
