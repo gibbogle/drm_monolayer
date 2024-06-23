@@ -25,6 +25,7 @@ integer, parameter :: CONSTANT_DIST    = 4
 integer, parameter :: ALIVE = 1
 integer, parameter :: DYING = 2
 integer, parameter :: DEAD = 3
+integer, parameter :: DIVIDED = 4
 
 integer, parameter :: G1_phase      = 1
 integer, parameter :: G1_checkpoint = 6
@@ -602,6 +603,8 @@ integer :: npet
 logical :: use_drug_halflife
 real(REAL_KIND) :: Khalflife, drug_time, drug_conc0
 
+logical :: test_run = .false.	! to check Psurvive etc
+
 ! CA and flushing time
 ! In Cho1 CDTD, CA starts (trypsinisation) at flushing time,
 ! in Cho2 CDTD, CA always starts at 24h
@@ -834,9 +837,13 @@ if (use_exponential_cycletime) then
 else
 #endif
 
+if (test_run) then
+    cp%fg = 1.0
+    cp%divide_volume = 2*V0
+    cp%divide_time = divide_time_mean(1)
+else
 fg(M_phase) = 1.0
 T_S = ccp%T_S
-!T_M = ccp%T_M
 T_M = cp%mitosis_duration
 Tfixed = T_M
 Tdiv = DivideTime(ityp)     ! log-normally distributed
@@ -853,6 +860,7 @@ V = V0 + rVmax*(T_G1/fg(G1_phase) + T_S/fg(S_phase) + T_G2/fg(G2_phase))
 cp%divide_volume = V
 cp%divide_time = Tdiv   ! cycle time, varies with cell
 cp%fg = fg
+endif
 !if (kcell_now <= 20) then
 !    write(*,*)
 !    write(*,*) 'set_divide_volume: ',kcell_now
@@ -868,15 +876,6 @@ if (single_cell) then
 	write(*,'(a,4f8.3)') 'single_cell fg: ',fg
 endif
 end subroutine	
-
-!--------------------------------------------------------------------------------------
-!--------------------------------------------------------------------------------------
-!subroutine InitCell(kcell,cp)
-!integer :: kcell
-!type(cell_type), pointer :: cp
-!call SetInitialCellCycleStatus(kcell,cp)
-!end subroutine
-
 
 !--------------------------------------------------------------------------------------
 ! This is actually cycle time
@@ -1029,7 +1028,7 @@ real(REAL_KIND) :: t
 type(cycle_parameters_type), pointer :: ccp
 integer :: ityp = 1
 ccp => cc_parameters(ityp)
-if (single_cell) then
+if (single_cell .or. test_run) then
     t = ccp%T_M
 else
     t = rv_normal(ccp%T_M, mitosis_std, 0)
@@ -1263,6 +1262,9 @@ enddo
 !write(*,'(a,5i6)') 'phase_count: ',phase_count(0:4)
 end subroutine
 
+!-----------------------------------------------------------------------------------------
+! https://hpaulkeeler.com/simulating-poisson-random-variables-direct-method/
+!-----------------------------------------------------------------------------------------
 function poisson_gen(L) result(res)
 real(8) :: L
 integer :: k, res, kpar=0

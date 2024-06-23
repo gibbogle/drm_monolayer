@@ -49,6 +49,7 @@ logical :: switch
 !	stop
 !endif
 !if (kcell_now <= 10) write(nflog,'(a,2i4,f6.3)') 'kcell_now, phase, progress: ',kcell_now,cp%phase,cp%progress
+tIR = (tnow - t_irradiation)/3600
 10 continue
 if (cp%phase == G1_phase) then
 !    if (single_cell) then
@@ -94,7 +95,8 @@ elseif (cp%phase == S_phase) then
                 totDSB(jpp) = sum(cp%DSB(:,jpp))
             enddo
             write(*,'(a,2f6.2)') 'G2 entry: tnow, N_DSB: ',tnow/3600,sum(cp%DSB(1:3,:))
-            write(nflog,'(a,3f8.1,4x,3f8.1)') 'G2 entry: DSB, Nmis: ',totDSB,sum(totDSB),2*cp%Nmis(1),cp%Nmis(2),2*cp%Nmis(1)+cp%Nmis(2)
+            write(nflog,'(a,4f8.3,4x,3f8.1)') 'G2 entry: tIR,DSB, Nmis: ',tIR,totDSB,sum(totDSB),2*cp%Nmis(1),cp%Nmis(2),2*cp%Nmis(1)+cp%Nmis(2)
+            write(nflog,'(a,2f8.3)') 'tnow, t_irradiation: ',tnow/3600, t_irradiation/3600
 ! Try this
 !            cp%ATM_act = 0
 !            cp%ATR_act = 0
@@ -118,11 +120,10 @@ elseif (cp%phase == G2_phase) then
             cp%phase = M_phase
             cp%progress = 0
             cp%V = cp%divide_volume     ! set volume here, to maintain correct cell volume at cell division
-            if (single_cell) then
-                t_mitosis = t_simulation/3600
-                write(*,*) 'Reached mitosis at: ',t_mitosis
-                write(nflog,*) 'Reached mitosis at: ',t_mitosis
-                write(nflog,*) 'CC_act: ',cp%CC_act
+            if (single_cell .or. test_run) then
+                t_mitosis = tIR
+                write(*,*) 'Reached start of mitosis at (since IR): ',tIR
+                write(nflog,*) 'kcell,reached start of mitosis at tIR,CC_act: ',kcell_now,tIR,cp%CC_act
             endif
             !write(*,*) 'stopping on mitosis'
             !write(nflog,*) 'stopping on mitosis: ',kcell_now
@@ -181,7 +182,7 @@ elseif (cp%phase == G2_checkpoint) then
 endif
 20  continue
 ! Note: if cp%phase = dividing, no repair
-if (cp%phase /= M_phase) then
+if (cp%phase < M_phase) then
     call updateRepair(cp, dt)
 endif
 end subroutine

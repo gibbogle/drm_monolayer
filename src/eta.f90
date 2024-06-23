@@ -52,6 +52,8 @@ scaling   = 2*pi*S2/(R*R2)
 thetaVal = (termOne + termTwo + termThree)*scaling
 end function	
 
+!--------------------------------------------------------------------------
+!--------------------------------------------------------------------------
 subroutine check_eta(S)
 real(8) :: S
 real(8) :: R, eta
@@ -223,6 +225,8 @@ real(8), parameter :: T_G1 = 6.35, T_S = 9.0, T_G2 = 3.2
 integer :: phase, nt, it, k, NHEJfast, iR, iS
 
 ! Evaluate eta_Arnould
+write(*,*) 'sigma_nhej: ',S_NHEJ
+write(*,*) '           S factor'
 write(*,'(a,11f8.2)') '    R     ',(1 + (iS-1)/10., iS=1,11)
 do iR = 11,1,-1
     R = 0.5 + (iR-1)*0.05

@@ -52,9 +52,8 @@ call logger("ReadCellParams new")
 call ReadCellParams(ok)
 if (.not.ok) return
 call logger("did ReadCellParams")
-write(*,*) 'seed: ',seed
+write(*,*) 'seed: ',seed 
 
-!write(nflog,*) 'Open: phase.log: ', synch_fraction
 !open(nfphase, file='phase.log',status='replace')
 start_wtime = wtime()
 
@@ -1291,7 +1290,7 @@ cp%totMis = 0
 !R = par_rnor(kpar)	! N(0,1)
 !cp%mitosis_duration = (1 + mitosis_std*R)*ccp%T_M
 cp%mitosis_duration = get_mitosis_duration()
-!if (kcell <= 10) write(*,'(a,i6,2f6.3)') 'mitosis_duration: ',kcell,ccp%T_M/3600,cp%mitosis_duration/3600
+!write(nflog,'(a,i6,2f6.3)') 'mitosis_duration: ',kcell,ccp%T_M/3600,cp%mitosis_duration/3600
 V0 = Vdivide0/2
 kcell_now = kcell
 !!!call set_divide_volume(cp, V0)  ! sets %divide_volume and %divide_time
@@ -1306,11 +1305,11 @@ cp%metab%C_GlnEx_prev = 0
 !kfactor = max(0.0,1 + R*jaiswal_std)
 R = par_uni(kpar)
 kfactor = 1 + (R - 0.5)*jaiswal_std
-if (single_cell) kfactor = 1
+if (single_cell .or. test_run) kfactor = 1
 cp%kt2cc = kt2cc*kfactor
 R = par_uni(kpar)
 kfactor = 1 + (R - 0.5)*jaiswal_std
-if (single_cell) kfactor = 1
+if (single_cell .or. test_run) kfactor = 1
 cp%ke2cc = ke2cc*kfactor
 
 !if (kcell <= 100) write(nflog,'(a,5f10.4)') 'Jaiswal R: ',R,kfactor,cp%kt2cc
@@ -1449,12 +1448,12 @@ ityp = cp%celltype
 ccp => cc_parameters(ityp)
 !if (S_phase_RR) then
 !if (use_synchronise .and. (initial_count == 1)) then
-if (single_cell) then
+Tmean = divide_time_mean(ityp)
+if (single_cell .or. test_run) then
     Tc = divide_time_mean(1)
 else
     Tc = cp%divide_time         ! log-normal, implies %fg
 endif
-Tmean = divide_time_mean(ityp)
 scale = Tc/Tmean
 fg = cp%fg
 metab = 1.0
@@ -1463,7 +1462,11 @@ fp(:) = metab*f_CP/fg(:)
 T_G1 = ccp%T_G1/fp(1)
 T_S = ccp%T_S/fp(2)
 T_G2 = ccp%T_G2/fp(3)
-!T_M = ccp%T_M/fp(4)
+if (test_run) then
+    T_M = ccp%T_M/fp(4)
+else
+    T_M = cp%mitosis_duration
+endif
 if (use_cell_kcc2a_dependence) then
     cp%Kcc2a = get_Kcc2a(kmccp,CC_tot,CC_threshold_factor,T_G2/3600)
     cp%Kcc2a = min(cp%kcc2a, 0.9*CC_threshold)
@@ -1488,6 +1491,8 @@ if (use_synchronise) then
         stop
     endif
     cp%progress = synch_fraction
+    write(nflog,'(a,i4,f6.2,5f8.0)') 'synchronise: kcell,synch_fraction,T_G1,T_S,T_G2,T_M,t: ',kcell,synch_fraction,T_G1,T_S,T_G2,T_M,t
+    if (write_nfres) write(nfres,'(a,i4,2f10.2)') 'use_synchronise: synch_phase, synch_fraction, t: ',synch_phase, synch_fraction, t
 else
     b = log(2.0)/Tc
     R = par_uni(kpar)
@@ -1547,7 +1552,7 @@ elseif (t <= tswitch(3)) then
         !write(*,*) 'stopping:'
         !stop
     endif
-else
+else    ! cell in mitosis
 !    cp%fp = metab*f_CP/fg(M_phase)      ! not used
     cp%dVdt = 0
     cp%V = 2*V0
@@ -1556,12 +1561,14 @@ else
 !    cp%t_start_mitosis = -R*cp%mitosis_duration
 ! Try this
     cp%t_start_mitosis = -(t - tswitch(3))
+    cp%progress = (t - tswitch(3))/T_M
 	ncells_mphase = ncells_mphase + 1
     cp%phase = dividing
 !    write(nflog,'(a,i6,2f8.1)') 'Cell dividing: t_start_mitosis: ',kcell,cp%t_start_mitosis,cp%mitosis_duration
 !    cp%progress = 1.0
 !    if (kcell <= 10) write(*,'(a,2i6,2f6.3)') 'SetInitialCellCycleStatus: phase, mitosis_duration, t_start: ',kcell,cp%phase,cp%mitosis_duration/3600,cp%t_start_mitosis/3600
 endif
+cp%f_S_at_IR = cp%progress
 if (single_cell) then
     write(*,*)
     write(*,*) 'Initial phase, progress: ',cp%phase,cp%progress
@@ -2004,8 +2011,6 @@ logical :: PEST_OK
 logical :: ok = .true.
 logical :: dbug
 
-!	real(8) :: pATM, pATR, DSB(NP,2), totDSB0, totMis
-
 cp => cell_list(1)
 !call test_Jaiswal
 !res = 1
@@ -2054,11 +2059,11 @@ endif
 drug_gt_cthreshold = .false.
 
 !if (medium_change_step .or. (chemo(DRUG_A)%present .and..not.DRUG_A_inhibiter)) then
-if (medium_change_step .or. (chemo(DRUG_A)%present .and..not.use_inhibiter)) then
-    ndiv = 6
-else
+!if (medium_change_step .or. (chemo(DRUG_A)%present .and..not.use_inhibiter)) then
+!    ndiv = 6
+!else
     ndiv = 1
-endif
+!endif
 dt = DELTA_T/ndiv
 dts = dt/NT_CONC
 DELTA_T_save = DELTA_T
@@ -2863,6 +2868,8 @@ character*(1) :: numstr
 logical :: ok, success, isopen
 integer :: i
 
+write(*,*) 'Execute 1: synch_phase, synch_fraction: ', synch_phase,synch_fraction
+
 write(*,*) 'ncpu, inbuflen, outbuflen: ',ncpu, inbuflen, outbuflen
 res = 0
 use_TCP = .false.
@@ -2888,6 +2895,7 @@ write(*,*) 'infile: ',trim(infile)
 write(*,*) 'logfile: ',trim(logfile)
 !open(nflog,file='drm_monolayer.log',status='replace')
 open(nflog,file=logfile,status='replace')
+write(*,*) 'Execute 2: synch_phase, synch_fraction: ', synch_phase,synch_fraction
 
 write(nflog,*) 'irun: ',res
 if (phase_log) then
@@ -2944,6 +2952,7 @@ endif
 DELTA_T = 600
 nsteps = 100
 res=0
+write(*,*) 'Execute 3: synch_phase, synch_fraction: ', synch_phase,synch_fraction
 
 call Setup(ncpu,infile,outfile,ok)
 if (ok) then

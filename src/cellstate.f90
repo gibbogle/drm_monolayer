@@ -80,8 +80,7 @@ type(cycle_parameters_type), pointer :: ccp
 ok = .true.
 Nirradiated = Ncells
 t_irradiation = t_simulation
-write(logmsg,*) 'Irradiation: Nirradiated: ',Nirradiated
-call logger(logmsg)
+write(nflog,'(a,f8.3,i6)') 'Irradiation: t, Nirradiated: ',t_irradiation/3600,Nirradiated
 call get_phase_distribution(phase_count)
 total = sum(phase_count)
 ph_dist = 100*phase_count/total
@@ -179,7 +178,6 @@ counts = 0
 !        call radiation_damage(cp, ccp, dose, SER_OER(1), tmin)
         ! Not using LQ formalism
         SER = C_O2/(C_O2 + LQ(ityp)%K_ms)
-        Cdrug = 0
 		if (use_Iliakis) then
 			if (cp%phase >= S_phase) then
 				fIliakis = kIliakis**nIliakis/(kIliakis**nIliakis + (dose-dose_threshold)**nIliakis)
@@ -193,7 +191,7 @@ counts = 0
 			fIliakis = 1.0
 		endif
         SER = 1 ! turn off SER - Bill confirmed
-        call cellIrradiation(cp,dose,Cdrug)
+        call cellIrradiation(cp,dose)
 !        call radiation_damage(cp, ccp, dose, SER, tmin)
         ! Now check for possible death if the cell is in S-phase or M-phase
 #if 0 
@@ -763,17 +761,17 @@ do kcell = 1,nlist0
 		enddo
 		if (drugkilled) cycle
 		cp%mitosis = (tnow - cp%t_start_mitosis)/mitosis_duration
-!        write(nflog,'(a,i6,3f8.1,f8.3)') 'grower: kcell, mitosis: ',kcell, tnow, cp%t_start_mitosis,mitosis_duration,cp%mitosis
+        if (test_run) write(nflog,'(a,i6,3f10.1,f8.3)') 'grower: kcell, mitosis: ',kcell, tnow, cp%t_start_mitosis,mitosis_duration,cp%mitosis
 		
         if (cp%mitosis >= 1) then
 			cp%G2_time = tnow - cp%t_start_G2
 !            if (kcell <= 10) write(nflog,'(a,2i6,f8.3)') 'grower: divide cell, time: ',istep,kcell,cp%G2_time/3600
-!            write(nflog,'(a,i6,f6.3)') 'Exit M_phase: kcell, time: ',kcell_now,t_simulation/3600
 ! if use_SF (i.e. we are computing SF_ave) then only cells not satisfying (is_radiation .and. cp%Psurvive < 0) need to divide
 !			write(*,'(a,2L4,f8.3)') 'use_SF, is_radiation, cp%Psurvive: ',use_SF, is_radiation, cp%Psurvive
             if (use_SF) then
 			    if (is_radiation .and. cp%Psurvive < 0) then
 			        ! compute survival probability (ala McMahon, mcradio)
+            if (test_run) write(nflog,'(a,i6,f6.3)') 'Exit M_phase, get P_survive: kcell, time: ',kcell,t_simulation/3600
 			        call survivalProbability(cp)
 			    else
 			        divide = .true.
@@ -786,6 +784,7 @@ do kcell = 1,nlist0
     ! end cell simulation---------------------------------------------------------------------
     
 	if (divide) then
+        cycle		! for the current study we do not simulate cell division
 		ndivide = ndivide + 1
 		if (ndivide > MAX_DIVIDE_LIST) then
 		    write(logmsg,*) 'Error: growcells: MAX_DIVIDE_LIST exceeded: ',MAX_DIVIDE_LIST
