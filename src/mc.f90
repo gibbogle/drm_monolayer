@@ -168,7 +168,7 @@ real(8) :: signalling(4,1000)    ! 1 = time since IR, 2 = ATM_act, 3 = ATR_act, 
 real(8) :: next_write_time,save_fslow
 
 logical, parameter :: drop_mitotic_cells = .false.
-logical, parameter :: write_nfres = .true.
+logical, parameter :: write_nfres = .false.
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
