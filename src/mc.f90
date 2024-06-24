@@ -1363,8 +1363,9 @@ endif
 t = t_simulation/3600.
 tIR = (tnow - t_irradiation)/3600
 if (test_run .and. (kcell_now==3 .or. kcell_now==6)) then
-    write(nflog,'(a,i4,f8.2,2e12.3,f8.3)') 'Jaiswal_update: kcell,tIR,ATM_act,ATR_act,CC_act: ',kcell_now,tIR,ATM_act,ATR_act,CC_act
+    write(nflog,'(a,2i4,f8.2,2e12.3,f8.3)') 'Jaiswal_update: kcell,iph,tIR,ATM_act,ATR_act,CC_act: ',kcell_now,iph,tIR,ATM_act,ATR_act,CC_act
 endif
+if (kcell_now == 18) write(nflog,'(a,2i4,f8.2,2e12.3,f8.3)') 'Jaiswal_update: kcell,iph,tIR,ATM_act,ATR_act,CC_act: ',kcell_now,iph,tIR,ATM_act,ATR_act,CC_act
 !write(nflog,'(a,9f8.3)') 'tIR,CC_act,dCC_act_dt,d(1:3), ATM_act, ATR_act: ',tIR,CC_act,dCC_act_dt, d(1:3), ATM_act, ATR_act
 !write(nflog,'(a,4f8.3,e12.3)') 'tIR, D_ATM, ATR_act, ATM_act,dCC_act_dt: ',tIR,D_ATM, ATR_act, ATM_act,dCC_act_dt
 end subroutine
