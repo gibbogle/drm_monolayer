@@ -1720,8 +1720,8 @@ if (sum(DSB0(TMEJ,:)) > 0) then ! not used currently
 endif
 cp%DSB = DSB
 cp%Nmis = cp%Nmis + Nmis
-if (kcell_now == -5) write(nflog,'(a,2i3,f6.3,f8.1,2e12.3,5f8.3)') 'kcell,phase,f_S,NJEJ0,eta,Pmis,dmis,Nmis,cp%Nmis: ', &
-    kcell_now,cp%phase,f_S,totDSB0,eta_nhej,Pmis,dmis,Nmis,cp%Nmis
+if (kcell_now == 18) write(nflog,'(a,2i3,2f8.3,f8.1,2e12.3,5f8.3)') 'kcell,phase,f_S,tIR,NHEJ0,eta,Pmis,dmis,Nmis,cp%Nmis: ', &
+    kcell_now,cp%phase,f_S,tIR,totDSB0,eta_nhej,Pmis,dmis,Nmis,cp%Nmis
 !if (single_cell) write(nflog,'(a,4e12.3)') 'f_S,dmis,Nmis: ',f_S,dmis,cp%Nmis
 !write(*,*) 'end   DSB(3,2): ',DSB(3,2)
 
@@ -1821,7 +1821,7 @@ endif
 tIR = (tnow - t_irradiation)/3600
 totNmis = 2*Nmis(1)+Nmis(2)
 if (write_nfres) write(nfres,'(a,2i6,5f8.2,e12.3)') 'kcell,phase0,f_s0,tIR,totDSB,totNmis,Psurvive: ',kcell_now,cp%phase0,cp%f_s_at_IR,tIR,totDSB,totNmis,cp%Psurvive
-write(nflog,'(a,2i6,5f8.2,e12.3)') 'kcell,phase0,f_s0,tIR,totDSB,totNmis,Psurvive: ',kcell_now,cp%phase0,cp%f_s_at_IR,tIR,totDSB,totNmis,cp%Psurvive
+!write(nflog,'(a,2i6,5f8.2,e12.3)') 'kcell,phase0,f_s0,tIR,totDSB,totNmis,Psurvive: ',kcell_now,cp%phase0,cp%f_s_at_IR,tIR,totDSB,totNmis,cp%Psurvive
 if (kcell_now == 1) write(nflog,'(a,2i6,5f8.2,e12.3)') 'kcell,phase0,f_s0,tIR,totDSB,totNmis,Psurvive: ',kcell_now,cp%phase0,cp%f_s_at_IR,tIR,totDSB,totNmis,cp%Psurvive
 !write(nfres,'(a,3f8.1,4x,3f8.1)') 'DSB, Nmis: ',totDSB,sum(totDSB),2*Nmis(1),Nmis(2),2*Nmis(1)+Nmis(2)
 totSFfactor(3) = totSFfactor(3) + Paber(1)*Paber(2)
