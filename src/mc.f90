@@ -1821,6 +1821,7 @@ endif
 tIR = (tnow - t_irradiation)/3600
 totNmis = 2*Nmis(1)+Nmis(2)
 if (write_nfres) write(nfres,'(a,2i6,5f8.2,e12.3)') 'kcell,phase0,f_s0,tIR,totDSB,totNmis,Psurvive: ',kcell_now,cp%phase0,cp%f_s_at_IR,tIR,totDSB,totNmis,cp%Psurvive
+write(nflog,'(a,2i6,5f8.2,e12.3)') 'kcell,phase0,f_s0,tIR,totDSB,totNmis,Psurvive: ',kcell_now,cp%phase0,cp%f_s_at_IR,tIR,totDSB,totNmis,cp%Psurvive
 if (kcell_now == 1) write(nflog,'(a,2i6,5f8.2,e12.3)') 'kcell,phase0,f_s0,tIR,totDSB,totNmis,Psurvive: ',kcell_now,cp%phase0,cp%f_s_at_IR,tIR,totDSB,totNmis,cp%Psurvive
 !write(nfres,'(a,3f8.1,4x,3f8.1)') 'DSB, Nmis: ',totDSB,sum(totDSB),2*Nmis(1),Nmis(2),2*Nmis(1)+Nmis(2)
 totSFfactor(3) = totSFfactor(3) + Paber(1)*Paber(2)
