@@ -1568,6 +1568,7 @@ if (iph == G1_phase) then
 endif
 do_G1_Jaiswal = .true.      ! Now do Jaiswal for G1 whether pre- or post-mitosis.  Use special katm parameters for G1 post-mitosis
 if (((iph == G1_phase).and.do_G1_Jaiswal).or.(iph >= S_phase)) then
+    if (kcell_now == 18) write(nflog,'(a,i4,2f10.4)') 'before Jaiswal_update: iph,ATR_act,CC_act: ',iph,cp%ATR_act,cp%CC_act
     if (cp%irradiated) call Jaiswal_update(cp,dth)  ! try this
 !    if (iph == G2_phase) write(*,'(a,2i6,e12.3)') 'did Jaiswal: ',kcell_now, cp%generation, cp%ATM_act
 endif
