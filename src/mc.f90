@@ -1367,7 +1367,7 @@ tIR = (tnow - t_irradiation)/3600
 if (test_run .and. (kcell_now==3 .or. kcell_now==6)) then
     write(nflog,'(a,2i4,f8.2,2e12.3,f8.3)') 'Jaiswal_update: kcell,iph,tIR,ATM_act,ATR_act,CC_act: ',kcell_now,iph,tIR,ATM_act,ATR_act,CC_act
 endif
-if (kcell_now == 18) write(nflog,'(a,2i4,f8.2,2e12.3,f8.3)') 'Jaiswal_update: kcell,iph,tIR,ATM_act,ATR_act,CC_act: ',kcell_now,iph,tIR,ATM_act,ATR_act,CC_act
+!if (kcell_now == 18) write(nflog,'(a,2i4,f8.2,2e12.3,f8.3)') 'Jaiswal_update: kcell,iph,tIR,ATM_act,ATR_act,CC_act: ',kcell_now,iph,tIR,ATM_act,ATR_act,CC_act
 !write(nflog,'(a,9f8.3)') 'tIR,CC_act,dCC_act_dt,d(1:3), ATM_act, ATR_act: ',tIR,CC_act,dCC_act_dt, d(1:3), ATM_act, ATR_act
 !write(nflog,'(a,4f8.3,e12.3)') 'tIR, D_ATM, ATR_act, ATM_act,dCC_act_dt: ',tIR,D_ATM, ATR_act, ATM_act,dCC_act_dt
 end subroutine
@@ -1570,7 +1570,7 @@ if (iph == G1_phase) then
 endif
 do_G1_Jaiswal = .true.      ! Now do Jaiswal for G1 whether pre- or post-mitosis.  Use special katm parameters for G1 post-mitosis
 if (((iph == G1_phase).and.do_G1_Jaiswal).or.(iph >= S_phase)) then
-    if (kcell_now == 18) write(nflog,'(a,i4,2f10.4)') 'before Jaiswal_update: iph,ATR_act,CC_act: ',iph,cp%ATR_act,cp%CC_act
+!    if (kcell_now == 18) write(nflog,'(a,i4,2f10.4)') 'before Jaiswal_update: iph,ATR_act,CC_act: ',iph,cp%ATR_act,cp%CC_act
     if (cp%irradiated) call Jaiswal_update(cp,dth)  ! try this
 !    if (iph == G2_phase) write(*,'(a,2i6,e12.3)') 'did Jaiswal: ',kcell_now, cp%generation, cp%ATM_act
 endif
@@ -1724,8 +1724,8 @@ if (sum(DSB0(TMEJ,:)) > 0) then ! not used currently
 endif
 cp%DSB = DSB
 cp%Nmis = cp%Nmis + Nmis
-if (kcell_now == 18) write(nflog,'(a,2i3,2f8.3,f8.1,2e12.3,5f8.3)') 'kcell,phase,f_S,tIR,NHEJ0,eta,Pmis,dmis,Nmis,cp%Nmis: ', &
-    kcell_now,cp%phase,f_S,tIR,totDSB0,eta_nhej,Pmis,dmis,Nmis,cp%Nmis
+!if (kcell_now == 18) write(nflog,'(a,2i3,2f8.3,f8.1,2e12.3,5f8.3)') 'kcell,phase,f_S,tIR,NHEJ0,eta,Pmis,dmis,Nmis,cp%Nmis: ', &
+!    kcell_now,cp%phase,f_S,tIR,totDSB0,eta_nhej,Pmis,dmis,Nmis,cp%Nmis
 !if (single_cell) write(nflog,'(a,4e12.3)') 'f_S,dmis,Nmis: ',f_S,dmis,cp%Nmis
 !write(*,*) 'end   DSB(3,2): ',DSB(3,2)
 
