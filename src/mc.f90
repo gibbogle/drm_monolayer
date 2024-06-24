@@ -1261,6 +1261,8 @@ Nt = int(dth/dt + 0.5)
 do it = 1,NP
     DSB(it) = sum(cp%DSB(it,:))     ! add pre and post
 enddo
+ATR_act = cp%ATR_act
+CC_act = cp%CC_act
 dbug = (iph == 2 .and. (kcell_now <= 0))
 if (iph == G1_phase) then
     D_ATM = DSB(NHEJslow)*norm_factor
