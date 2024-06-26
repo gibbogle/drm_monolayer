@@ -784,7 +784,7 @@ do kcell = 1,nlist0
     ! end cell simulation---------------------------------------------------------------------
     
 	if (divide) then
-        cycle		! for the current study we do not simulate cell division
+!        cycle		! we do not simulate cell division for SFALL, needed for PDJ
 		ndivide = ndivide + 1
 		if (ndivide > MAX_DIVIDE_LIST) then
 		    write(logmsg,*) 'Error: growcells: MAX_DIVIDE_LIST exceeded: ',MAX_DIVIDE_LIST
