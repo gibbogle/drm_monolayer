@@ -2023,7 +2023,7 @@ t_simulation = istep*DELTA_T	! seconds
 
 !if (single_cell) write(nflog,*) 'Ncells_type: ',Ncells_type
 
-!write(*,*) 'start simulate_step: t_simulation: ',istep,t_simulation !,cell_list(1)%progress
+!write(nflog,'(a,f8.2,2i6,f8.2)') 'start simulate_step: t_simulation: ',t_simulation/3600,istep,cp%phase,cp%progress
 !call testmetab2
 dbug = (istep < 0)
 !Nmetabolisingcells = Ncells - (Ndying(1) + Ndying(2))
@@ -2106,7 +2106,7 @@ do idiv = 0,ndiv-1
         call CheckDrugPresence
     endif
     
-    if (t_irradiation > 0) call GrowCells(DELTA_T,t_simulation,ok)
+    if (t_irradiation >= 0) call GrowCells(DELTA_T,t_simulation,ok)
 
     if (.not.ok) then
 	    res = 3
