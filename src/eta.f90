@@ -85,19 +85,22 @@ function eta_Arnould(phase,f_S, tIR, Reffmin, S_NHEJ, fsmin) result(eta)
 integer :: phase
 real(8) :: f_S, tIR, Reffmin, S_NHEJ, fsmin, eta
 real(8) :: Reff, sigma, fsigma
+logical, parameter :: use_old_method = .false.   ! results the same as new method
 
-!if (phase == 1) then
-!    Reff = (1 - Reffmin)*exp(-Kclus*tIR) + Reffmin
-!elseif (phase == 3) then
-!    Reff = 1.26
-!else
-!    Reff = (1 - f_S)*Reffmin + f_S*1.26
-!endif
-Reff = (1 - f_S)*((1 - Reffmin)*exp(-Kclus*tIR) + Reffmin) + f_S*1.26
+if (use_old_method) then
+    if (phase == 1) then
+        Reff = (1 - Reffmin)*exp(-Kclus*tIR) + Reffmin
+    elseif (phase == 3) then
+        Reff = 1.26
+    else
+        Reff = (1 - f_S)*Reffmin + f_S*1.26
+    endif
+else
+    Reff = (1 - f_S)*((1 - Reffmin)*exp(-Kclus*tIR) + Reffmin) + f_S*1.26
+endif
 fsigma = 1 - (1 - fsmin)*f_S
 sigma = S_NHEJ + tIR*dsigma_dt
 sigma = fsigma*sigma
-
 ! Testing
 !Reff = (1 - f_S) + f_S*1.26
 !sigma = S_NHEJ

@@ -40,7 +40,7 @@ integer, parameter :: TMEJ = 4   ! this is really alt-EJ (was MDR)
 !real(8) :: eta = 0.0006506
 real(8) :: Pcomplex = 0.4337    ! fraction of created DSBs that are complex (McMahon: complexFrac)
 real(8) :: pJeggo = 0.9         ! fraction of post-replication DSBs that are fast. (NOT USED)
-real(8) :: Kcoh = 1.0       ! cohesin effect
+real(8) :: Kcoh     != 1.0       ! cohesin effect (read in input file)
 !real(8) :: PHR = 0.8      ! fraction of post-replication simple DSBs that are repaired by HR (slow) rather than NHEJ (fast)
 real(8) :: pHRs_max, pHRc_max, pHRs_G2, pHRc_G2
 logical :: use_sigmoid = .true.
@@ -535,7 +535,7 @@ real(8) :: dose
 integer :: ityp, kpar = 0
 integer :: phase
 real(8) :: DSB0(NP,2)
-real(8) :: totDSB0, baseDSB, fin, T_S, f_S, NG1, NNHEJ, pHRs, pHRc, pHR, pNHEJ, NHRs, NHRc
+real(8) :: totDSB0, baseDSB, fin, T_S, T_G2,f_S, NG1, NNHEJ, pHRs, pHRc, pHR, pNHEJ, NHRs, NHRc
 real(8) :: Pbase, Pdie, R
 real(8) :: DSB_Gy, L    ! = 35
 real(8) :: th, Npre, Npre_s, Npre_c, Npost, Npost_s, Npost_c, Pc, x, fstart
@@ -546,6 +546,7 @@ logical :: use_Poisson_DSB = .true.
 real(8) :: V0
 integer :: kcell
 
+use_Poisson_DSB = .not. use_no_random
 cp%irradiated = .true.
 next_write_time = 0
 ccp => cc_parameters(1)
@@ -562,6 +563,9 @@ DSB0 = 0
 istep_signal = 1
 signalling(:,1) = 0
 
+T_S = ccp%T_S*cp%fg(2)
+T_G2 = ccp%T_G2*cp%fg(3)
+th = 0
 if (use_Jeggo) then     ! using this
     fstart = 0
     if (constant_S_pHR) fstart = 0.8
@@ -575,7 +579,7 @@ if (use_Jeggo) then     ! using this
 !        else
 !            th = cp%progress*ccp%T_S/3600
 !        endif
-        th = max(0.0d0,(cp%progress - fstart)*ccp%T_S/3600)
+        th = max(0.0d0,(cp%progress - fstart)*T_S/3600)
     ElseIf (phase >= G2_phase) Then
         f_S = 1
 !        th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
@@ -584,7 +588,7 @@ if (use_Jeggo) then     ! using this
 !        else
 !            th = (ccp%T_S + cp%progress*ccp%T_G2)/3600
 !        endif
-        th = ((1.0 - fstart)*ccp%T_S + cp%progress*ccp%T_G2)/3600     ! This was an error, had T_S not ccp%T_S
+        th = ((1.0 - fstart)*T_S + cp%progress*T_G2)/3600     ! This was an error, had T_S (undefined), changed again to replace ccp%T_S by T_S
     End If
     totDSB0 = (1 + f_S) * NG1
     DSB0(TMEJ,:) = 0
@@ -707,7 +711,7 @@ if (phase == G1_phase) then
         Ncells_type(ityp) = Ncells_type(ityp) - 1
         Nviable(ityp) = Ncells_type(ityp)
         Ndead(ityp) = Ndead(ityp) + 1
-!        write(*,*) 'apoptotic death: ',kcell_now, phase
+        write(nflog,*) 'apoptotic death: ',kcell_now, phase
     endif
 elseif (phase == G2_phase) then
     if (use_Jaiswal) then
@@ -1072,6 +1076,10 @@ if (iph == G1_phase) then
             fATM = 1
             return
         else
+            write(*,*) 'get_slowdown_factors: should not get here, stopping'
+            write(nflog,'(a,2i6,2f8.3,i6)') 'in get_slowdown_factors: kcell,iph,birthtime,t_irrad,rad_state: ',kcell_now,iph,cp%birthtime/3600,t_irradiation/3600,cp%rad_state
+            close(nflog)
+            stop
             k3 = KATM3G1M
             k4 = KATM4G1M
         endif
@@ -1385,7 +1393,8 @@ integer :: Nt, it
 
 N = N0
 if (dth >= 0) then
-    Nt = 10
+!    Nt = 10
+    Nt = 1
     dt = dth/Nt
     do it = 1,Nt
         N = N*exp(-repRate(path)*dt*repRateFactor(path))
@@ -1401,19 +1410,21 @@ end subroutine
 function misrepairRate(initialBreaks, finalBreaks, eta) result(Pmis)
 real(8) :: initialBreaks, finalBreaks, eta, Pmis
 real(8) :: repairedBreaks, atanNum, atanDen
+real(8) :: etamod, etafac = 1.0
 
+etamod = etafac*eta
 repairedBreaks = initialBreaks-finalBreaks
 if (repairedBreaks < 1E-10) then
     Pmis = 0
     return
 endif
-atanNum = sqrt(3.0)*eta*repairedBreaks
-atanDen = 2 + eta*(2*initialBreaks*finalBreaks*eta + initialBreaks + finalBreaks) 
-Pmis = 1 - 2 * atan(atanNum/atanDen) / (repairedBreaks*sqrt(3.0)*eta)
+atanNum = sqrt(3.0)*etamod*repairedBreaks
+atanDen = 2 + etamod*(2*initialBreaks*finalBreaks*etamod + initialBreaks + finalBreaks) 
+Pmis = 1 - 2 * atan(atanNum/atanDen) / (repairedBreaks*sqrt(3.0)*etamod)
 
 if (eta > 1.0E-3 .and. test_run) write(nflog,'(a,i6,2e12.3)') 'kcell,eta,Pmis: ',kcell_now,eta,Pmis
 
-!if (kcell_now == 1) write(nflog,'(a,2f8.1,2e12.3)') 'initialBreaks, finalBreaks, eta, Pmis: ',initialBreaks, finalBreaks,eta,Pmis
+if (kcell_now == -1) write(nflog,'(a,2f8.1,2e12.3)') 'initialBreaks, finalBreaks, eta, Pmis: ',initialBreaks, finalBreaks,eta,Pmis
 
 !write(*,*) 'misrepairRate: '
 !write(*,'(a,3f6.1)') 'initialBreaks, finalBreaks, repairedBreaks: ',initialBreaks, finalBreaks, repairedBreaks
@@ -1697,7 +1708,7 @@ Nmis(1) = Nmis(1) + dmis*(1 - f_S)  ! doubled at mitosis
 Nmis(2) = Nmis(2) + dmis*f_S
 misjoins(1) = misjoins(1) + Nmis(1) + Nmis(2)
 
-if (test_run .and. (kcell_now==3 .or. kcell_now==6)) then
+if (kcell_now==-1) then
     write(nflog,'(a,2i4,f8.3,e12.3,f8.2,2e12.3)') 'UpdateRepair: kcell,phase,tIR,eta,totDSB,Pmis,dmis:',kcell_now,iph,tIR,eta_NHEJ,totDSB,Pmis,dmis
 endif
 

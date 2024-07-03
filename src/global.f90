@@ -604,6 +604,7 @@ logical :: use_drug_halflife
 real(REAL_KIND) :: Khalflife, drug_time, drug_conc0
 
 logical :: test_run = .false.	! to check Psurvive etc
+LOGICAL :: use_no_random = .false.	! to turn off variation in cycle time, DSB_Gy
 
 ! CA and flushing time
 ! In Cho1 CDTD, CA starts (trypsinisation) at flushing time,
@@ -837,7 +838,7 @@ if (use_exponential_cycletime) then
 else
 #endif
 
-if (test_run) then
+if (test_run .OR. use_no_random) then
     cp%fg = 1.0
     cp%divide_volume = 2*V0
     cp%divide_time = divide_time_mean(1)
@@ -1028,7 +1029,7 @@ real(REAL_KIND) :: t
 type(cycle_parameters_type), pointer :: ccp
 integer :: ityp = 1
 ccp => cc_parameters(ityp)
-if (single_cell .or. test_run) then
+if (single_cell .or. test_run .OR. use_no_random) then
     t = ccp%T_M
 else
     t = rv_normal(ccp%T_M, mitosis_std, 0)

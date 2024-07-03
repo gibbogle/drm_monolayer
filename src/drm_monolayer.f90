@@ -1305,11 +1305,11 @@ cp%metab%C_GlnEx_prev = 0
 !kfactor = max(0.0,1 + R*jaiswal_std)
 R = par_uni(kpar)
 kfactor = 1 + (R - 0.5)*jaiswal_std
-if (single_cell .or. test_run) kfactor = 1
+if (single_cell .or. test_run .OR. use_no_random) kfactor = 1
 cp%kt2cc = kt2cc*kfactor
 R = par_uni(kpar)
 kfactor = 1 + (R - 0.5)*jaiswal_std
-if (single_cell .or. test_run) kfactor = 1
+if (single_cell .or. test_run .OR. use_no_random) kfactor = 1
 cp%ke2cc = ke2cc*kfactor
 
 !if (kcell <= 100) write(nflog,'(a,5f10.4)') 'Jaiswal R: ',R,kfactor,cp%kt2cc
@@ -1546,7 +1546,7 @@ elseif (t <= tswitch(3)) then
         if (single_cell) write(nflog,'(a,3f8.3)') 'SetInitialCellCycleStatus: dth: ',t/3600, tswitch(2)/3600, dth
         call Jaiswal_update(cp,dth)
         cp%CC_act = min(cp%CC_act,0.95*CC_threshold)     ! to prevent premature mitosis
-        if (kcell_now == -689) write(nflog,*) 'SetInitialCellCycleStatus: initial CC_act: ',cp%CC_act
+!        if (kcell_now > 0) write(nflog,'(a,i6,4f8.3)') 'SetInitialCellCycleStatus: G1 progress,initial CC_act: ',kcell,cp%progress,cp%CC_act,cp%ATM_act,cp%ATR_act
 !        if (cp%CC_act > CC_threshold) write(nflog,'(a,i6,f8.1,3f8.3)') 'SetInitialCellCycleStatus: dth,T_G2,progress,CC_act: ',kcell,dth,T_G2/3600,cp%progress,cp%CC_act
         !write(nflog,*) 'stopping:'
         !write(*,*) 'stopping:'

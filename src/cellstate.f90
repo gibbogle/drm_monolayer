@@ -506,6 +506,8 @@ real(REAL_KIND) :: Kd, dMdt, Cdrug, dt, dkill_prob
 real(REAL_KIND) :: SF, dtstep, kill_prob, c
 integer :: Nsteps, istep
 
+write(*,*) 'getDrugKillProb: should not get here'
+stop
 if (kill_model == 1) then
 	c = Kd*dMdt
 elseif (kill_model == 2) then
@@ -715,7 +717,7 @@ do kcell = 1,nlist0
     	cp => cell_list(kcell)
     endif
 !	if (kcell == 5 .and. cp%psurvive > 0) write(*,'(a,3i6)') 'grower: kcell, phase, state: ',kcell,cp%phase,cp%state
-    
+    if (cp%state == DIVIDED) cycle
 	if (cp%state == DEAD) cycle
 	if (cp%state == DYING) then		! nothing affects a DYING cell (when does it die?)
 		cp%dVdt = 0
