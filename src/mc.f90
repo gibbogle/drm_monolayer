@@ -167,7 +167,7 @@ real(8) :: signalling(4,1000)    ! 1 = time since IR, 2 = ATM_act, 3 = ATR_act, 
 
 real(8) :: next_write_time,save_fslow
 
-logical, parameter :: drop_mitotic_cells = .false.
+logical, parameter :: drop_mitotic_cells = .true.
 logical, parameter :: write_nfres = .false.
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
@@ -1783,7 +1783,7 @@ subroutine survivalProbability(cp)
 type(cell_type), pointer :: cp
 real(8) :: DSB(NP,2), totDSB(2), Nmis(2), Nlethal(2), Paber(2), Pbase, Papop, Pmit(2), Psurv
 real(8) :: Nlethal_sum, Paber1_nodouble, Nmistot, tIR,totNmis
-integer :: k, jpp
+integer :: k, jpp, ityp
 real(8), parameter :: kmit = 0.033  ! Baide et al., D10 = 0.1
 
 DSB = cp%DSB
@@ -1824,14 +1824,20 @@ if (cp%phase0 < M_phase) then   ! G1, S, G2
 else    ! M_phase or dividing
     if (drop_mitotic_cells) then
         cp%state = DEAD
+        cp%Psurvive = 0
         Nmitotic = Nmitotic + 1
+        ityp = cp%celltype
+        Ncells_type(ityp) = Ncells_type(ityp) - 1
+        Nviable(ityp) = Ncells_type(ityp)
+        Ndead(ityp) = Ndead(ityp) + 1
+    else
+        Paber = 1
+!       cp%Psurvive = Pmit(1)*Pmit(2)*Msurvival
+        cp%Psurvive = exp(-kmit*sum(totDSB))
+        if (kcell_now == 1) write(*,'(a,2f8.3,6e12.3)') 'totDSB,Pmit,Nmis,Paber: ',&
+                            totDSB,Pmit,Nmis,Paber  
+        if (single_cell) write(nfres,'(a,2f8.3,6e12.3)') '(2) totDSB,Pmit,Nmis,Paber: ',totDSB,Pmit,Nmis,Paber  
     endif
-    Paber = 1
-!    cp%Psurvive = Pmit(1)*Pmit(2)*Msurvival
-    cp%Psurvive = exp(-kmit*sum(totDSB))
-    if (kcell_now == 1) write(*,'(a,2f8.3,6e12.3)') 'totDSB,Pmit,Nmis,Paber: ',&
-                        totDSB,Pmit,Nmis,Paber  
-    if (single_cell) write(nfres,'(a,2f8.3,6e12.3)') '(2) totDSB,Pmit,Nmis,Paber: ',totDSB,Pmit,Nmis,Paber  
 endif
 tIR = (tnow - t_irradiation)/3600
 totNmis = 2*Nmis(1)+Nmis(2)
@@ -1848,11 +1854,11 @@ if (kcell_now <= -10) then
 !    write(*,*)
 !    write(nflog,'(a,2f10.2)') 'Nlethal, totDSB: ',Nlethal,totDSB
 endif
-if (cp%state /= DEAD) NPsurvive = NPsurvive + 1   ! this is the count of cells for which Psurvive has been computed
-cp%mitosis_time = tnow      ! needed to determine if mitosis occurs before or after CA
-cp%state = DIVIDED
-!Psurvive(NPsurvive) = cp%Psurvive
-
+if (cp%state /= DEAD) then
+    NPsurvive = NPsurvive + 1   ! this is the count of cells for which Psurvive has been computed
+    cp%mitosis_time = tnow      ! needed to determine if mitosis occurs before or after CA
+    cp%state = DIVIDED      ! this actually means that the cell reached division
+endif
 ATMsum = ATMsum + cp%pATM
 ATRsum = ATRsum + cp%pATR
 

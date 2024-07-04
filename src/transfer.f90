@@ -583,11 +583,13 @@ do kcell = 1,nlist
 	Nviable(ityp) = Nviable(ityp) + 1
 enddo
 if (Nlive(1) /= Ncells_type(1)) then
-	write(*,'(a,4i8)') 'Error: getNviable: Nlive /= Ncells_type, nd, Napop, Nmitotic: ',Nlive(1),Ncells_type(1),nd,Napop, Nmitotic
+	write(*,'(a,5i8)') 'Error: getNviable: Nlive /= Ncells_type(1), nd, Napop, Nmitotic: ',Nlive(1),Ncells_type(1),nd,Napop, Nmitotic
+	write(nflog,'(a,5i8)') 'Error: getNviable: Nlive /= Ncells_type(1), nd, Napop, Nmitotic: ',Nlive(1),Ncells_type(1),nd,Napop, Nmitotic
 	stop
 endif
 if (Nviable(1) /= Ncells_type(1) - Ndying(1)) then
-	write(*,'(a,4i8)') 'Error: getNviable: Nviable /= Ncells_type - Ndying, Nmitotic: ',Nviable(1),Ncells_type(1),Ndying(1),Nmitotic
+	write(*,'(a,4i8)') 'Error: getNviable: Nviable /= Ncells_type(1) - Ndying, Nmitotic: ',Nviable(1),Ncells_type(1),Ndying(1),Nmitotic
+	write(nflog,'(a,4i8)') 'Error: getNviable: Nviable /= Ncells_type(1) - Ndying, Nmitotic: ',Nviable(1),Ncells_type(1),Ndying(1),Nmitotic
 	stop
 endif
 
