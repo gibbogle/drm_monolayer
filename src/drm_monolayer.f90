@@ -2325,7 +2325,7 @@ if (use_PEST) then  ! check that all phase distributions have been estimated
 endif
     
 !write(*,*) 'NPsurvive: ',NPsurvive, (Nirradiated - Napop)
-if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop - Nmitotic)) .and. PEST_OK) then
+if (is_radiation .and. (NPsurvive >= (Nirradiated - Napop - Nmitotic)) .and. PEST_OK) then  !!! needs to change
     ! getSFlive computes the average psurvive for all cells that reach mitosis,
     ! which number NPsurvive = Nirradiated - Napop.
     call getSFlive(SFlive)

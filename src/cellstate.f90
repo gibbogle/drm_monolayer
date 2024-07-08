@@ -772,8 +772,9 @@ do kcell = 1,nlist0
 !			write(*,'(a,2L4,f8.3)') 'use_SF, is_radiation, cp%Psurvive: ',use_SF, is_radiation, cp%Psurvive
             if (use_SF) then
 			    if (is_radiation .and. cp%Psurvive < 0) then
+!                if (cp%generation == 2) then
 			        ! compute survival probability (ala McMahon, mcradio)
-            if (test_run) write(nflog,'(a,i6,f6.3)') 'Exit M_phase, get P_survive: kcell, time: ',kcell,t_simulation/3600
+					if (test_run) write(nflog,'(a,i6,f6.3)') 'Exit M_phase, get P_survive: kcell, time: ',kcell,t_simulation/3600
 			        call survivalProbability(cp)
 			    else
 			        divide = .true.
@@ -786,7 +787,7 @@ do kcell = 1,nlist0
     ! end cell simulation---------------------------------------------------------------------
     
 	if (divide) then
-!        cycle		! we do simulate cell division for PDJ, not for SFALL
+        if (cp%generation == 2) cycle		! we do simulate cell division for PDJ, not for SFALL
 		ndivide = ndivide + 1
 		if (ndivide > MAX_DIVIDE_LIST) then
 		    write(logmsg,*) 'Error: growcells: MAX_DIVIDE_LIST exceeded: ',MAX_DIVIDE_LIST

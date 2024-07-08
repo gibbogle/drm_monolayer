@@ -538,15 +538,15 @@ real(8) :: DSB0(NP,2)
 real(8) :: totDSB0, baseDSB, fin, T_S, T_G2,f_S, NG1, NNHEJ, pHRs, pHRc, pHR, pNHEJ, NHRs, NHRc
 real(8) :: Pbase, Pdie, R
 real(8) :: DSB_Gy, L    ! = 35
-real(8) :: th, Npre, Npre_s, Npre_c, Npost, Npost_s, Npost_c, Pc, x, fstart
+real(8) :: th, Npre, Npre_s, Npre_c, Npost, Npost_s, Npost_c, Pc, x, fstart 
 integer, parameter :: option = 2
 type(cycle_parameters_type),pointer :: ccp
 logical :: use_Jeggo = .true.
-logical :: use_Poisson_DSB = .true.
+logical :: use_Poisson_DSB = .false.
 real(8) :: V0
 integer :: kcell
 
-use_Poisson_DSB = .not. use_no_random
+if (use_Poisson_DSB .AND. use_no_random) use_Poisson_DSB = .false.
 cp%irradiated = .true.
 next_write_time = 0
 ccp => cc_parameters(1)
@@ -558,6 +558,7 @@ if (use_Poisson_DSB .and. Ncells > 1) then
 else
     DSB_Gy = 35
 endif
+if (kcell_now <= 10) write(nflog,'(a,i6,f8.3)') 'cellIrradiation: kcell, DSB_Gy: ',kcell_now,DSB_Gy
 NG1 = DSB_Gy*dose
 DSB0 = 0
 istep_signal = 1
@@ -1424,7 +1425,7 @@ Pmis = 1 - 2 * atan(atanNum/atanDen) / (repairedBreaks*sqrt(3.0)*etamod)
 
 if (eta > 1.0E-3 .and. test_run) write(nflog,'(a,i6,2e12.3)') 'kcell,eta,Pmis: ',kcell_now,eta,Pmis
 
-if (kcell_now == -1) write(nflog,'(a,2f8.1,2e12.3)') 'initialBreaks, finalBreaks, eta, Pmis: ',initialBreaks, finalBreaks,eta,Pmis
+if (kcell_now == 1) write(nflog,'(a,2f8.1,2e12.3)') 'initialBreaks, finalBreaks, eta, Pmis: ',initialBreaks, finalBreaks,eta,Pmis
 
 !write(*,*) 'misrepairRate: '
 !write(*,'(a,3f6.1)') 'initialBreaks, finalBreaks, repairedBreaks: ',initialBreaks, finalBreaks, repairedBreaks
