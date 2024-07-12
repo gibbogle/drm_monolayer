@@ -158,7 +158,7 @@ logical :: use_Iliakis
 integer, parameter :: NMDIST = 100
 integer :: count_Nlethal(NMDIST), count_totDSB(NMDIST)
 real(8), parameter :: ddist_Nlethal = 20.0/NMDIST
-real(8), parameter :: ddist_totDSB = 200.0/NMDIST
+real(8), parameter :: ddist_totDSB = 400.0/NMDIST
 
 integer :: ng11, ng12   ! to record post-mitosis G1
 
@@ -542,7 +542,7 @@ real(8) :: th, Npre, Npre_s, Npre_c, Npost, Npost_s, Npost_c, Pc, x, fstart
 integer, parameter :: option = 2
 type(cycle_parameters_type),pointer :: ccp
 logical :: use_Jeggo = .true.
-logical :: use_Poisson_DSB = .false.
+logical :: use_Poisson_DSB = .true.
 real(8) :: V0
 integer :: kcell
 
@@ -589,6 +589,7 @@ if (use_Jeggo) then     ! using this
 !        else
 !            th = (ccp%T_S + cp%progress*ccp%T_G2)/3600
 !        endif
+!        write(*,'(a,2f8.2)') 'T_S, T_G2: ',T_S/3600,T_G2/3600
         th = ((1.0 - fstart)*T_S + cp%progress*T_G2)/3600     ! This was an error, had T_S (undefined), changed again to replace ccp%T_S by T_S
     End If
     totDSB0 = (1 + f_S) * NG1
@@ -1195,14 +1196,14 @@ integer :: it, Nt, i, kpar = 0
 type(cell_type), pointer :: cp
 
 tsim = 60
-dth = 0.1
+dth = 1/6.0     !was 0.1, 1/6 is usual model time step
 Nt = int(tsim/dth)
 !Nt = 1
 tnow = 0
 T_G2h = 3.951   ! use mean divide time
 cp => cell_list(1)
 cp%phase = G2_phase
-cp%progress = 0.0
+cp%progress = 0.9
 cp%t_start_G2 = 0
 do i = 1,8
     kmccp_temp = 4.0 + (i-1)*0.5
@@ -1219,11 +1220,12 @@ write(*,*) 'Kcc2a: ',cp%Kcc2a
 !cp%ke2cc = ke2cc*kfactor
 cp%kt2cc = kt2cc    ! use mean values
 cp%ke2cc = ke2cc
-cp%CC_act = 8
+cp%CC_act = 8.05    ! initialised to G2(0.9)
 cp%ATM_act = 0
 cp%ATR_act = 0
-dose = 8
+dose = 2
 fIliakis = kIliakis**nIliakis/(kIliakis**nIliakis + (dose-dose_threshold)**nIliakis)    ! normally set in Irradiation()
+cp%fg = 1
 call cellIrradiation(cp, dose)
 DSB0 = cp%DSB
 write(*,'(a,3f8.1)') 'DSB0(1:3,1): ',DSB0(1:3,1)
@@ -1235,8 +1237,8 @@ do it = 1,Nt
     call Jaiswal_update(cp, dth)
     t = t + dth
     tnow = t*3600
-    cp%DSB = DSB0*exp(-t/17)
-    write(*,'(2f8.4)') t,cp%CC_act
+    cp%DSB = DSB0*exp(-t*0.256) ! 0.256 OK for dose = 2 (matches model with 45a parameters)
+!    write(*,'(2f8.4)') t,cp%CC_act
     if (cp%CC_act > CC_threshold) exit
 enddo
 stop
@@ -1368,6 +1370,7 @@ if (iph == G2_phase) then
     cp%ATR_act = ATR_act
     cp%dCC_act_dt = dCC_act_dt
 !    write(nflog,'(a,i8,2e12.3)') 'Jaiswal_update: ',kcell_now,CC_act0,CC_act
+!    write(*,'(a,2f8.3)') 'ATM_act, ATR_act: ',ATM_act, ATR_act
 elseif (iph == S_phase .and. use_ATR) then
     cp%ATR_act = ATR_act
 endif

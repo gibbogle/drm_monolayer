@@ -120,8 +120,8 @@ elseif (cp%phase == G2_phase) then
             cp%phase = M_phase
             cp%progress = 0
             cp%V = cp%divide_volume     ! set volume here, to maintain correct cell volume at cell division
+            cp%t_mitosis = tIR
             if (single_cell .or. test_run) then
-                t_mitosis = tIR
                 write(*,*) 'Reached start of mitosis at (since IR): ',tIR
                 write(nflog,*) 'kcell,reached start of mitosis at tIR,CC_act: ',kcell_now,tIR,cp%CC_act
             endif

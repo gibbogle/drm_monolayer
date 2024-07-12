@@ -179,6 +179,7 @@ type cell_type
 	real(REAL_KIND) :: t_divide_next
 	real(REAL_KIND) :: t_S_phase
 	real(REAL_KIND) :: birthtime
+    real(REAL_KIND) :: t_mitosis		! time from IR to end of mitosis
 !	real(REAL_KIND) :: t_anoxia
 !	real(REAL_KIND) :: t_anoxia_die
 !	real(REAL_KIND) :: t_aglucosia
@@ -576,7 +577,7 @@ logical :: overstepped
 
 logical, parameter :: no_S_Iliakis = .false.	! If true this suppresses Iliakis effect in S-phase
 logical, parameter :: constant_S_pHR = .true.
-real(REAL_KIND), parameter :: dose_threshold = 1
+real(REAL_KIND), parameter :: dose_threshold = 0	! was 1
 integer :: ATR_in_S = 1		! 0 = no ATR signalling in S, 1 = signalling, no CP effect, 2 = signalling and CP effect
 logical, parameter :: use_Arnould = .true.
 real(REAL_KIND) :: R_Arnould = 0.7, Kclus = 0.693	! for DSB clustering
