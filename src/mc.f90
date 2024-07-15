@@ -1319,6 +1319,11 @@ endif
 !write(nflog,'(a,6e12.3)') 'Jaiswal params: ',Kkcc2a,Kmccp,cp%Kt2cc,Kmccmd,cp%Ke2cc,Kmccrd
 !write(nflog,'(a,5f12.4)') 'CC_act,ATM_act,ATM_tot,ATR_act,ATR_tot: ',CC_act,ATM_act,ATM_tot,ATR_act,ATR_tot
 do it = 1,Nt
+    
+    ! TEST!!!!
+    !ATM_act = 0
+    !ATR_act = 0
+    
     ATM_inact = ATM_tot - ATM_act
     ATR_inact = ATR_tot - ATR_act
     if (iph == G2_phase) then
@@ -1329,6 +1334,7 @@ do it = 1,Nt
         d(2) = - cp%Kt2cc * ATM_act * CC_act / (Kmccmd + CC_act)    ! ATM_act effect
         d(3) = - cp%Ke2cc * ATR_act * CC_act / (Kmccrd + CC_act)    ! ATR_act effect
         dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Kmrp + ATR_inact) - Kcc2e * ATR_act * CC_act / (Kmrd + CC_act)
+        
 ! Try this
 !        dCC_act_dt = max(dCC_act_dt,0.0)
         CC_act = CC_act + dt * dCC_act_dt
@@ -1351,12 +1357,17 @@ do it = 1,Nt
 !        if (single_cell) write(nflog,'(a,i4,4f8.3)') 'iph,D_ATR, Kd2e, ATR_inact, dATR_act_dt: ', &
 !                    iph, D_ATR, Kd2e, ATR_inact, dATR_act_dt
     endif
-    dATM_act_dt = Kd2t * D_ATM * ATM_inact / (Kmmp + ATM_inact) - Kti2t * ATM_act / (Kmmd + ATM_act)    
+!    if (iph == G2_phase) then   ! just testing to see why G2 is so extended with kiliakis = 1
+        dATM_act_dt = Kd2t * D_ATM * ATM_inact / (Kmmp + ATM_inact) - Kti2t * ATM_act / (Kmmd + ATM_act)   
+!    else
+!        dATM_act_dt = 0
+!    endif
     ATM_act = ATM_act + dt*dATM_act_dt
     ATM_act = min(ATM_act, ATM_tot)
-    if (single_cell .and. it == -1) then
-        write(nfres,'(a,4f8.4)') 'Jaiswal: dt,D_ATM,ATM_inact,ATM_act: ',dt,D_ATM,ATM_inact,ATM_act
-    endif
+!    ATM_act = min(ATM_act,0.5)
+    !if (single_cell .and. iph == G2_phase .and. t_simulation < 3.2*3600) then
+    !    write(*,'(a,4f8.4,e12.3)') 'Jaiswal: dt,D_ATR,ATR_inact,ATR_act,dATRdt: ',dt,D_ATR,ATR_inact,ATR_act,dATR_act_dt
+    !endif
     t = it*dt
 !    if (t_G2 <= 0.1 .and. it <= 10) write(nflog,'(a,3f8.4)') 'D_ATM,ATM_act,ATM_inact: ',D_ATM,ATM_act,ATM_inact
 enddo
@@ -1370,15 +1381,15 @@ if (iph == G2_phase) then
     cp%ATR_act = ATR_act
     cp%dCC_act_dt = dCC_act_dt
 !    write(nflog,'(a,i8,2e12.3)') 'Jaiswal_update: ',kcell_now,CC_act0,CC_act
-!    write(*,'(a,2f8.3)') 'ATM_act, ATR_act: ',ATM_act, ATR_act
+!    write(*,'(a,6f8.3)') 't_simulation, ATM_act, ATR_act, CC_act, D_ATM, D_ATR: ',t_simulation/3600,ATM_act, ATR_act, CC_act,D_ATM,D_ATR
 elseif (iph == S_phase .and. use_ATR) then
     cp%ATR_act = ATR_act
 endif
 t = t_simulation/3600.
 tIR = (tnow - t_irradiation)/3600
-if (test_run .and. (kcell_now==3 .or. kcell_now==6)) then
-    write(nflog,'(a,2i4,f8.2,2e12.3,f8.3)') 'Jaiswal_update: kcell,iph,tIR,ATM_act,ATR_act,CC_act: ',kcell_now,iph,tIR,ATM_act,ATR_act,CC_act
-endif
+!if (test_run .and. (kcell_now==3 .or. kcell_now==6)) then
+!    write(nflog,'(a,2i4,f8.2,2e12.3,f8.3)') 'Jaiswal_update: kcell,iph,tIR,ATM_act,ATR_act,CC_act: ',kcell_now,iph,tIR,ATM_act,ATR_act,CC_act
+!endif
 !if (kcell_now == 18) write(nflog,'(a,2i4,f8.2,2e12.3,f8.3)') 'Jaiswal_update: kcell,iph,tIR,ATM_act,ATR_act,CC_act: ',kcell_now,iph,tIR,ATM_act,ATR_act,CC_act
 !write(nflog,'(a,9f8.3)') 'tIR,CC_act,dCC_act_dt,d(1:3), ATM_act, ATR_act: ',tIR,CC_act,dCC_act_dt, d(1:3), ATM_act, ATR_act
 !write(nflog,'(a,4f8.3,e12.3)') 'tIR, D_ATM, ATR_act, ATM_act,dCC_act_dt: ',tIR,D_ATM, ATR_act, ATM_act,dCC_act_dt

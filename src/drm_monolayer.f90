@@ -541,6 +541,10 @@ endif
 close(nfcell)
 call logger('Finished reading input data')
 
+write(nflog,*) 'Hard-coded parameters:'
+write(nflog,'(a,i3)') 'ATR_in_S: ',ATR_in_S
+write(nflog,'(a,f6.1)') 'dose_threshold: ',dose_threshold
+
 !call checkPD
 !stop
 
@@ -2261,7 +2265,7 @@ if (dbug .or. mod(istep,nthour) == 0) then
 	ntphase = nphaseh + ntphase
 !	write(nflog,*)
 	write(nflog,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells   !, ' N reached mitosis: ',NPsurvive    ,' Napop: ',Napop    !, &
-	write(*,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells   !, ' N reached mitosis: ',NPsurvive    ,' Napop: ',Napop    !, &
+	if (.not. single_cell) write(*,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells   !, ' N reached mitosis: ',NPsurvive    ,' Napop: ',Napop    !, &
     call get_phase_distribution(phase_count)
     total = sum(phase_count(1:4))
     phase_dist = 100*phase_count/total
