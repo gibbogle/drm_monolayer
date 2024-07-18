@@ -2518,7 +2518,7 @@ logical :: only_M_phase = .false.
 logical :: PDS4 = .false.
 real(REAL_KIND) :: dt, phi, PDS4_M(3) = [0.191, 0.414286, 0.732812]
 real(REAL_KIND) :: normalised_phase_dist(60,0:4)   
-REAL(REAL_KIND) :: ave(10)
+REAL(REAL_KIND) :: ave(15), SFMave
 
 if (overstepped) then
     SFave = 1.0E-6
@@ -2704,20 +2704,25 @@ write(nflog,'(a,7f9.3)') 'Ave (pre, post) NDSB, Nmisjoins: ', &
 write(*,'(a,7f9.3)') 'Ave (pre, post) NDSB, Nmisjoins: ', &
     totNDSB/nmitosis,totNmisjoins/nmitosis,sum(totNmisjoins)/nmitosis
 
-! Averages
-ave = 0
-do kcell = 1,nlist
-    cp => cell_list(kcell)
-    do i = 1,3
-        do j = 1,2
-            k = (i-1)*2 + j
-            ave(k) = ave(k) + cp%DSB0(i,j)
+if (.false.) then   ! make this true to write BBB lines
+    ! Averages
+    SFMave = 0
+    ave = 0
+    do kcell = 1,nlist
+        cp => cell_list(kcell)
+        SFMave = SFMave + cp%Psurvive
+        do i = 1,3
+            do j = 1,2
+                k = (i-1)*2 + j
+                ave(k) = ave(k) + cp%DSB0(i,j)
+            enddo
         enddo
+        ave(7) = ave(7) + cp%t_mitosis
     enddo
-    ave(7) = ave(7) + cp%t_mitosis
-enddo
-ave = ave/nlist
-write(*,'(a,f7.3,10f7.2)') 'BBB: ',log10(SFave),totNDSB/nmitosis,sum(totNmisjoins)/nmitosis,ave(1:7)
+    SFMave = SFMave/nlist
+    ave = ave/nlist
+    write(*,'(a,2f7.3,10f7.2)') 'BBB: ',log10(SFMave),log10(SFave),totNDSB/nmitosis,sum(totNmisjoins)/nmitosis,ave(1:7)
+endif
 !write(*,'(a,7f8.2)') 'DSB0,tIR: ',ave(1:7)
 !write(logmsg,'(a,8f8.3)') 'phase_dist:      ',phase_dist(0:3)
 !call logger(logmsg)
