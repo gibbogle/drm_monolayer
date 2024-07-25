@@ -1078,10 +1078,12 @@ if (iph == G1_phase) then
             fATM = 1
             return
         else
-            write(*,*) 'get_slowdown_factors: should not get here, stopping'
-            write(nflog,'(a,2i6,2f8.3,i6)') 'in get_slowdown_factors: kcell,iph,birthtime,t_irrad,rad_state: ',kcell_now,iph,cp%birthtime/3600,t_irradiation/3600,cp%rad_state
-            close(nflog)
-            stop
+            if (use_SF) then
+                write(*,*) 'get_slowdown_factors: should not get here, stopping'
+                write(nflog,'(a,2i6,2f8.3,i6)') 'in get_slowdown_factors: kcell,iph,birthtime,t_irrad,rad_state: ',kcell_now,iph,cp%birthtime/3600,t_irradiation/3600,cp%rad_state
+                close(nflog)
+                stop
+            endif
             k3 = KATM3G1M
             k4 = KATM4G1M
         endif
@@ -1439,7 +1441,7 @@ Pmis = 1 - 2 * atan(atanNum/atanDen) / (repairedBreaks*sqrt(3.0)*etamod)
 
 if (eta > 1.0E-3 .and. test_run) write(nflog,'(a,i6,2e12.3)') 'kcell,eta,Pmis: ',kcell_now,eta,Pmis
 
-if (kcell_now == 1) write(nflog,'(a,2f8.1,2e12.3)') 'initialBreaks, finalBreaks, eta, Pmis: ',initialBreaks, finalBreaks,eta,Pmis
+!if (kcell_now == 1) write(nflog,'(a,2f8.1,2e12.3)') 'initialBreaks, finalBreaks, eta, Pmis: ',initialBreaks, finalBreaks,eta,Pmis
 
 !write(*,*) 'misrepairRate: '
 !write(*,'(a,3f6.1)') 'initialBreaks, finalBreaks, repairedBreaks: ',initialBreaks, finalBreaks, repairedBreaks
@@ -1799,7 +1801,7 @@ type(cell_type), pointer :: cp
 real(8) :: DSB(NP,2), totDSB(2), Nmis(2), Nlethal(2), Paber(2), Pbase, Papop, Pmit(2), Psurv
 real(8) :: Nlethal_sum, Paber1_nodouble, Nmistot, tIR,totNmis
 integer :: k, jpp, ityp
-real(8), parameter :: kmit = 0.033  ! Baide et al., D10 = 0.1
+real(8), parameter :: kmit = 1.0    !0.033  ! Baide et al., D10 = 0.1
 
 DSB = cp%DSB
 do jpp = 1,2

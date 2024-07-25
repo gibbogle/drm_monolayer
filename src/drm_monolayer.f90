@@ -2209,7 +2209,7 @@ if (compute_cycle .or. output_DNA_rate) then
     if (next_phase_hour > 0) then  ! check if this is a phase_hour
         if (real(istep)/nthour >= phase_hour(next_phase_hour)) then   ! record phase_dist
             write(*,*) 'Reached phase hour: ',next_phase_hour,phase_hour(next_phase_hour)
-            if (next_phase_hour <= 5) then
+            if (next_phase_hour <= 9) then
                 write(*,'(a,4i8)') 'count: ',phase_count(1:4)
                 write(nflog,*) 'Reached phase hour: ',next_phase_hour,phase_hour(next_phase_hour)
                 write(nflog,'(a,4i8)') 'count: ',phase_count(1:4)
@@ -2589,10 +2589,13 @@ if (compute_cycle) then
                     write(*,'(a,a,i6)') 'expt_tag,nphase_hours: ',expt_tag,nphase_hours
                     if (expt_tag == "CA-135") then
                         write(nfres,'(20f8.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
+                        write(nflog,'(20f8.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
                     elseif (expt_tag == "CC-11 ") then
                         write(nfres,'(20f8.5)') (normalised_phase_dist(i,1:3),i=1,nphase_hours)
+                        write(nflog,'(20f8.5)') (normalised_phase_dist(i,1:3),i=1,nphase_hours)
                     elseif (expt_tag == "CC-13 ") then
                         write(nfres,'(20f8.5)') (normalised_phase_dist(i,4),i=1,nphase_hours)
+                        write(nflog,'(20f8.5)') (normalised_phase_dist(i,4),i=1,nphase_hours)
                     endif
                 endif
                 if (expt_tag == "PDSN0G") then
