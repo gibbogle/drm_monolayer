@@ -40,11 +40,12 @@ MODULE Par_Zig_mod
 !   REAL(DP), SAVE       ::  wn(0:127), fn(0:127), we(0:255), fe(0:255)
 !   LOGICAL,  SAVE       ::  initialized=.FALSE.
 
-	integer, save :: par_n = 0, par_step
+	integer, save :: par_n = 0, par_step, npar_uni, npar_rnor
 	integer, allocatable, save ::  par_jsr(:), par_kn(:,:), par_ke(:,:)
 	real(DP), allocatable, save :: par_wn(:,:), par_fn(:,:), par_we(:,:), par_fe(:,:)
 
    PUBLIC  :: par_zigset, par_zigfree, par_shr3, par_uni, par_rnor, par_rexp, par_test
+   PUBLIC :: npar_uni, npar_rnor
 
 CONTAINS
 
@@ -69,6 +70,8 @@ SUBROUTINE par_zigset( npar, par_jsrseed, grainsize)
    allocate(par_fe(0:255,0:npar-1))
 
 ! Now treat each instance separately
+npar_uni = 0
+npar_rnor = 0
 do kpar = 0,npar-1
    !  Set the seed
    par_jsr(kpar*par_step) = par_jsrseed(kpar)
@@ -154,6 +157,7 @@ FUNCTION par_uni(kpar) RESULT( fn_val )
        stop
    endif
    fn_val = half + 0.2328306e-9_DP * par_shr3(kpar)
+   npar_uni = npar_uni + 1
    RETURN
 END FUNCTION par_uni
 
@@ -213,6 +217,7 @@ FUNCTION par_rnor(kpar) RESULT( fn_val )
          END IF
       END DO
    END IF
+   npar_rnor = npar_rnor + 1
    RETURN
 END FUNCTION par_rnor
 

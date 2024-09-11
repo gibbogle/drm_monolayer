@@ -462,7 +462,6 @@ do kcell = 1,nlist
 				cp%t_aglucosia = 0
 			endif
 		endif
-#endif
 !	endif
 	
 	do idrug = 1,ndrugs_used	
@@ -495,6 +494,7 @@ do kcell = 1,nlist
             Ndrug_tag(idrug,ityp) = Ndrug_tag(idrug,ityp) + 1
 		endif
 	enddo
+#endif
 enddo
 end subroutine
 
@@ -842,6 +842,7 @@ endif
 !	return
 !endif
 ityp = cp%celltype
+metab = 1
 if (colony_simulation) then
 	if (use_metabolism) then
 !		cp%metab%Itotal = cp%metab%Itotal + dt*cp%metab%I_rate
@@ -894,8 +895,8 @@ if (.not.is_radiation .and. f_CP < 1.0) then
     write(*,*) 'growcell: f_CP < 1'
     stop
 endif
-!write(*,'(a,i6,3e12.3)') 'growcell: ',kcell_now,metab,f_CP,cp%fg(cp%phase)
 cp%fp = metab*f_CP/cp%fg(cp%phase)
+if (kcell_now == -8) write(nflog,'(a,i6,4e13.4)') 'growcell: ',kcell_now,metab,f_CP,cp%fg(cp%phase),cp%fp
 cp%dVdt = cp%fp*max_growthrate(ityp)
 Cdrug(:) = cp%Cin(DRUG_A:DRUG_A+1)
 Vin_0 = cp%V
@@ -1043,7 +1044,7 @@ call set_divide_volume(cp1, V0)
 !cp1%mitosis_duration = (1 + mitosis_std*R)*ccp%T_M
 cp1%mitosis = 0
 cfse0 = cp1%CFSE
-cp1%CFSE = generate_CFSE(cfse0/2)
+!cp1%CFSE = generate_CFSE(cfse0/2)
 cfse2 = cfse0 - cp1%CFSE
 !
 ! Halve drug levels - OK for normal drugs?
@@ -1107,6 +1108,10 @@ cp1%DSB(NHEJfast,:) = 0
 cp1%DSB(HR,:) = 0
 cp1%DSB(TMEJ,:) = 0
 
+!cp1%state = DEAD
+!Ncells_type(1) = Ncells_type(1) - 1
+!return
+
 ! Second cell
 if (ngaps > 0) then
     kcell2 = gaplist(ngaps)
@@ -1128,7 +1133,7 @@ endif
 !write(nflog,'(a,2i6,2f8.2,f8.1)') &
 !'Cell division: ',kcell1,kcell2,cp1%divide_time/3600,(tnow-cp1%t_divide_last)/3600,cp1%divide_time-(tnow-cp1%t_divide_last)
     
-!write(*,*) 'divider: ',kcell1, kcell2
+!if (kcell1 < 1000) write(nflog,'(a,2i6,f10.6)') 'divider: ',kcell1, kcell2,t_simulation/3600
 ncells = ncells + 1
 ityp = cp1%celltype
 ccp => cc_parameters(ityp)

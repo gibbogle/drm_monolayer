@@ -142,7 +142,6 @@ real(8) :: G1_CP_time
 
 ! Checking TMEJ misjoining
 real(8) :: misjoins(2)      ! 1 = NHEJ, 2 = TMEJ
-
 ! Checking prob of slow repair in G2
 logical :: check_G2_slow = .true.
 integer :: nslow_sum
@@ -155,10 +154,10 @@ real(8) :: fIliakis
 logical :: use_Iliakis 
 
 ! Distributions of Nlethal, totDSB at mitosis
-integer, parameter :: NMDIST = 100
-integer :: count_Nlethal(NMDIST), count_totDSB(NMDIST)
-real(8), parameter :: ddist_Nlethal = 20.0/NMDIST
-real(8), parameter :: ddist_totDSB = 400.0/NMDIST
+!integer, parameter :: NMDIST = 500
+!integer :: count_Nlethal(NMDIST), count_totDSB(NMDIST)
+!real(8), parameter :: ddist_Nlethal = 20.0/NMDIST
+!real(8), parameter :: ddist_totDSB = 400.0/NMDIST
 
 integer :: ng11, ng12   ! to record post-mitosis G1
 
@@ -260,9 +259,8 @@ read(nfin,*) Chalf
 read(nfin,*) Preass
 read(nfin,*) dsigma_dt
 read(nfin,*) sigma_NHEJ
-write(*,*) 'sigma_NHEJ: ',sigma_NHEJ
-
-call check_eta(sigma_NHEJ)
+read(nfin,*) R_Arnould
+!call check_eta(sigma_NHEJ)
 
 if (use_Jaiswal) then
     read(nfin,*) Kcc2a
@@ -735,7 +733,6 @@ cp%totDSB0 = totDSB0
 !cp%Nlethal = 0
 cp%Nmis = 0
 !if (kcell_now <= 10) write(*,'(a,2i6,8f8.2)') 'IR: kcell, phase,DSB,f_S: ',kcell_now,phase,cp%DSB(1:4),f_S
-if (Ncells == 1) write(nfres,'(a,2i6,8f8.2)') 'IR: kcell, phase,DSB: ',kcell_now,phase,cp%DSB0(1:3,1),cp%DSB0(1:3,2)
 
 totPmit = 0
 totPaber = 0
@@ -1074,7 +1071,7 @@ k4 = K_ATM(iph,4)
 
 if (iph == G1_phase) then
     if (cp%birthtime > t_irradiation) then      ! post-mitosis
-        if (cp%rad_state == G1_phase) then      ! this cell was irradiated in G1
+        if (cp%rad_state == G1_phase) then      ! this cell was irradiated in G
             fATM = 1
             return
         else
@@ -1103,9 +1100,9 @@ else
     else
         fATM = 1.0
     endif
-!    write(nflog,'(a,2e12.3)') 'atm, fATM: ',atm,fATM
+    if (kcell_now == -2) write(nflog,'(a,2i5,2e12.3)') 'iph, kcell, atm, fATM: ',iph,kcell_now,atm,fATM
 endif
-!if (iph == G1_phase) write(*,'(a,i6,4e12.3)') 'G1 slowdown: ',kcell_now,k3,k4,atm,fATM
+!if (kcell_now == 8) write(nflog,'(a,2i6,4e12.3)') 'slowdown: kcell,iph,k3,k4,atm,fATM: ',kcell_now,iph,k3,k4,atm,fATM
 if (iph == S_phase .and. use_ATR) then
     k3 = K_ATR(iph,3)   !*G2_katr3_factor
     k4 = K_ATR(iph,4)   !*G2_katr4_factor
@@ -1151,6 +1148,7 @@ else
     else
         dt = DELTA_T
         call get_slowdown_factors(cp,fATM, fATR)
+if (kcell_now == -2) write(nflog,'(a,2i4,2f8.3)') 'iph, kcell,fATM,fATR: ',iph, kcell_now,fATM,fATR
         if (use_addATMATRtimes) then
             dt = DELTA_T
             fslow = max(0.0,fATM + fATR - 1)
@@ -1373,6 +1371,7 @@ do it = 1,Nt
     t = it*dt
 !    if (t_G2 <= 0.1 .and. it <= 10) write(nflog,'(a,3f8.4)') 'D_ATM,ATM_act,ATM_inact: ',D_ATM,ATM_act,ATM_inact
 enddo
+!if (kcell_now == 8) write(nflog,'(a,5f9.4,e12.3)') 'Jaiswal: ',D_ATM,Kd2t,Kmmp,Kti2t,Kmmd,dATM_act_dt
 !if (single_cell) then
 !    write(*,'(a,2i4,4f8.4)') 'kcell,iph,ATR,ATM: ',kcell_now,iph,ATR_act,ATM_act
 !    write(nflog,'(a,2i4,4f8.4)') 'kcell,iph,ATR,ATM: ',kcell_now,iph,ATR_act,ATM_act
@@ -1416,7 +1415,6 @@ if (dth >= 0) then
     do it = 1,Nt
         N = N*exp(-repRate(path)*dt*repRateFactor(path))
     enddo
-!    if (kcell_now == 1) write(nflog,'(a,i4,5e12.3)') 'repair: ',path,N0,repRate(path)*dth*repRateFactor(path),N
 else
     N = 0
 endif
@@ -1511,6 +1509,8 @@ logical :: use_G1_tdelay = .false.
 logical :: do_G1_Jaiswal
 logical :: use_constant_V = .false.
 
+dbug = (kcell_now == 39 .and. istep == 109)
+
 if (cp%state == DIVIDED) return
 dth = dt/3600   ! hours
 use_ATM = .not.use_fixed_CP
@@ -1559,7 +1559,7 @@ totDSB0 = sum(DSB0)
 !    write(nflog,*) 'totDSB0 = 0'
 !    return
 !endif
-!if (kcell_now == 1) write(*,'(a,2i6,3f8.2)') 'updateRepair: kcell, phase, DSB0: ',kcell_now,cp%phase,cp%DSB(1:3)
+!if (kcell_now == 1) write(nflog,'(a,2i6,4f8.2)') 'updateRepair: kcell, phase, progress,totDSB0: ',kcell_now,cp%phase,cp%progress,totDSB0
 !if (Ncells == 1) write(nfres,'(a,i4,9f8.2)') 'phase,t,DSB0: ',phase,t_simulation/3600,DSB0
 ATM_DSB = sum(DSB(NHEJslow,:)) + sum(DSB(HR,:))   ! complex DSB
 ATR_DSB = sum(DSB(HR,:))
@@ -1613,6 +1613,7 @@ do jpp = 1,2
 !   if (dbug .and. DSB0(k) > 0) write(*,*) 'pathwayRepair: k,DSB0(k): ',kcell_now,k,DSB0(k)
     call pathwayRepair(k, dth, DSB0(k,jpp), DSB(k,jpp))
     if (DSB(k,jpp) < DSB_min) DSB(k,jpp) = 0
+!    if (dbug .and.k == 1 .and. jpp == 1) write(nfres,'(a,3f8.3)') 'DSB0,DSB,repratefactor: ',DSB0(k,jpp),DSB(k,jpp),repratefactor(1)
 enddo
 enddo
 ! DSB0(k) is the count before repair, DSB(k) is the count after repair
@@ -1826,14 +1827,14 @@ if (cp%phase0 < M_phase) then   ! G1, S, G2
     Paber(2) = exp(-Klethal*Nmis(2))
     cp%Psurvive = Pmit(1)*Pmit(2)*Paber(1)*Paber(2)  
     cp%Psurvive_nodouble = Pmit(1)*Pmit(2)*Paber1_nodouble*Paber(2)
-!    write(nfres,'(a,3e12.3,6f8.3)') 'Psurvive, Pmit(2), Paber(2), totDSB(2), Nmis(2): ',cp%Psurvive, Pmit(2), Paber(2),totDSB(2),Nmis(2),cp%kt2cc,cp%ke2cc,cp%divide_time/3600,tnow/3600
     if (single_cell) then
         write(nfres,'(a,6e12.3)') 'totNmisjoins,totNDSB: ', &
         2*totNmisjoins(1),totNmisjoins(2),2*totNmisjoins(1)+totNmisjoins(2),totNDSB,sum(totNDSB)
 !        write(nflog,'(a,9f8.3,e12.3)') 'totDSB,Pmit,Nmis,totNmis,Paber,SF: ', &
 !        totDSB,Pmit,2*Nmis(1),Nmis(2),2*Nmis(1)+Nmis(2),Paber,cp%Psurvive  
-        write(nflog,'(a,3f8.1,4x,3f8.1)') 'mitosis: DSB, Nmis: ',totDSB,sum(totDSB),2*Nmis(1),Nmis(2),2*Nmis(1)+Nmis(2)
+!        write(nflog,'(a,3f8.1,4x,3f8.1)') 'mitosis: DSB, Nmis: ',totDSB,sum(totDSB),2*Nmis(1),Nmis(2),2*Nmis(1)+Nmis(2)
      endif
+!    write(nfres,'(a,i6,4f8.3,e12.3)') 'kcell,totDSB,Nmis,Psurvive: ', kcell_now,totDSB,Nmis,cp%Psurvive
     !if (cp%Psurvive < 1.0E-30) then
     !    write(nflog,'(a,5e12.3)') 'Psurvive: ',cp%Psurvive,Pmit(1:2),Paber(1:2)
     !    write(nflog,'(a,4f8.2)') 'totDSB, Nmis: ',totDSB(1:2),Nmis(1:2)
@@ -1885,6 +1886,7 @@ tottotDSB = tottotDSB + sum(totDSB)
 !totNlethal = totNlethal + Nlethal
 
 Nlethal_sum = Klethal*(2*Nmis(1) + Nmis(2))
+#if 0
 if (Nlethal_sum > NMDIST*ddist_Nlethal) then
     count_Nlethal(NMDIST) = count_Nlethal(NMDIST) + 1
 else
@@ -1897,6 +1899,7 @@ else
     k = sum(totDSB)/ddist_totDSB + 1
     count_totDSB(k) = count_totDSB(k) + 1
 endif
+#endif
 
 if (single_cell) then
     Nmistot = 2*Nmis(1) + Nmis(2)

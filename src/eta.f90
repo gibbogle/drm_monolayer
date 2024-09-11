@@ -37,6 +37,15 @@ end function
 !--------------------------------------------------------------------------
 ! From Eq 15 in McMahon2021
 ! S is sigma
+! in cellcharacteriser.py:
+!	# Theta is the integral of recombination probability for a single random DSB, 
+!	# in a cell with radius = Radius.
+!	# Can be defined in a sub-volume of radius r, or whole cell (2*Radius, assumed if r not given).
+!	def theta(self,Radius=1.0,r=float('nan')):
+!		if(np.isnan(r)) : r=2*Radius
+!
+! should this be using 2R instead of R?
+! Note that Eq 15 is  a bit different from the Python code.
 !--------------------------------------------------------------------------
 function theta15(R, S) result(thetaVal)
 real(8) :: R, S

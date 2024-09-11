@@ -83,17 +83,17 @@ call logger('did ArrayInitialisation')
 
 
 use_cell_cycle = .true.
-if (use_metabolism) then
+!if (use_metabolism) then
 	chemo(OXYGEN)%controls_growth = .false.     
 	chemo(OXYGEN)%controls_death = .false.
 	chemo(GLUCOSE)%controls_growth = .false.
 	chemo(GLUCOSE)%controls_death = .false.
-else
-	chemo(OXYGEN)%controls_growth = .true.     
-	chemo(OXYGEN)%controls_death = .true.
-	chemo(GLUCOSE)%controls_growth = .true.
-	chemo(GLUCOSE)%controls_death = .true.
-endif
+!else
+!	chemo(OXYGEN)%controls_growth = .true.     
+!	chemo(OXYGEN)%controls_death = .true.
+!	chemo(GLUCOSE)%controls_growth = .true.
+!	chemo(GLUCOSE)%controls_death = .true.
+!endif
 
 call SetupChemo
 
@@ -119,14 +119,16 @@ if (.not.ok) stop
 !synch_phase = G1_phase
 !synch_fraction = 0.0    !0.7    ! 2.3/3.3
 
+!write(nflog,*) 'before PlaceCells: npar_uni, npar_rnor = ',npar_uni,npar_rnor
+
 call PlaceCells(ok)
+
+!write(nflog,*) 'after PlaceCells: npar_uni, npar_rnor = ',npar_uni,npar_rnor
 
 !call checkInitialPhaseDistribution
 !write(*,*) 'stopping after PlaceCells'
 !stop
 
-write(logmsg,*) 'did PlaceCells: Ncells: ',Ncells
-call logger(logmsg)
 if (.not.ok) return
 
 call CreateMastercell
@@ -180,8 +182,8 @@ rad_count = 0
 phase_exit_time_sum = 0
 npet = 0
 !call counter
-count_Nlethal = 0
-count_totDSB = 0
+!count_Nlethal = 0
+!count_totDSB = 0
 end subroutine
 
 !----------------------------------------------------------------------------------------- 
@@ -1024,7 +1026,10 @@ do itime = 1,ntimes
                 CA_time_h = dt
             endif
 		    Eflush%etype = MEDIUM_EVENT
-		    Eflush%time = t + dt
+! assuming DRUG_EVENT is at time 0, and RADIATION_EVENT is at time > 0
+! because RADIATION_EVENT t > 0 implies a delay of one time step (DELTA_T) before IR
+! Must add an increment slightly less than DELTA_T to ensure washout is at the right time step.
+            Eflush%time = 0.999*DELTA_T/3600 + dt        
 		    Eflush%ichemo = 0
 !		    event(kevent)%volume = medium_volume0
 		    Eflush%volume = total_volume
@@ -1135,7 +1140,7 @@ do kevent = 1,Nevents
 	event(kevent)%time = event(kevent)%time*60*60
 !	event(kevent)%volume = event(kevent)%volume*1.0e-3
 	E = event(kevent)
-!	write(*,'(a,i3,f8.0,2i3,3f8.4)') 'event: ',kevent,E%time,E%etype,E%ichemo,E%volume,E%conc,E%dose
+	write(nflog,'(a,i3,f8.3,2i3,3f8.4)') 'event: ',kevent,E%time/3600,E%etype,E%ichemo,E%volume,E%conc,E%dose
 enddo
 ! Check that events are sequential
 do kevent = 1,Nevents-1
@@ -1190,7 +1195,7 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine PlaceCells(ok)
 logical :: ok
-integer :: kcell, k, ichemo, ityp, site(3), phase
+integer :: kcell, k, ichemo, ityp, site(3), phase, kpar = 0
 real(REAL_KIND) :: rsite(3)
 real(REAL_KIND) :: fract(0:8), total
 real(REAL_KIND) :: kt2cc_min, kt2cc_max, kcc2a_sum
@@ -1207,29 +1212,18 @@ lastID = 0
 kcell = 0
 Ncells_type = 0
 t_irradiation = -1
-!if (kcell > initial_count) then
-!	write(logmsg,*) 'Cell count already exceeds specified number: ',kcell,initial_count
-!	call logger(logmsg)
-!	ok = .false.
-!	return
-!endif
-!! Now add cells to make the count up to the specified initial_count
-!if (kcell < initial_count) then
-!	call AddBdryCells(kcell)
-!	kcell = initial_count
-!endif
-write(*,*) '!!!!!!!!!!!!!!!!! use_synchronise: ',use_synchronise
 rsite = [0.,0.,0.]
 kt2cc_min = 9999
 kt2cc_max = 0
-!if (use_cell_kcc2a_dependence) then
-!     Kcc2a_ave = get_Kcc2a(kmccp,CC_tot,CC_threshold_factor,ccp%T_G2/3600)
-!endif
 kcc2a_sum = 0
+!do k = 1,20
+!    write(nflog,*) 'k,par_uni: ',k,par_uni(kpar)
+!enddo
 do kcell = 1,initial_count
 !    write(*,*) 'PlaceCells: kcell: ',kcell,initial_count
 	call AddCell(kcell,rsite)
 !	write(*,*) 'Added kcell: ',kcell
+!    write(nflog,*) 'kcell,par_uni,npar-rnor: ',kcell,par_uni(kpar),npar_rnor
     cp => cell_list(kcell)
 	kt2cc_min = min(kt2cc_min,cp%kt2cc)
 	kt2cc_max = max(kt2cc_max,cp%kt2cc)
@@ -1253,8 +1247,6 @@ write(nflog,'(a,5i6)') 'Initial phase counts: ',counts
 write(nflog,'(a,5f7.2)') 'Initial phase %ages: ',100.0*real(counts)/sum(counts)
 phdist0 = 100.0*real(counts)/sum(counts)
 write(nflog,*) 'Ncells_Mphase: ',Ncells_Mphase
-!write(*,*) 'stopping...'
-!stop
 nlist = kcell-1
 Ncells = nlist
 Ncells0 = Ncells
@@ -1283,7 +1275,7 @@ cp%state = ALIVE
 cp%generation = 1
 cp%birthtime = 0
 cp%rad_state = 0
-cp%celltype = random_choice(celltype_fraction,Ncelltypes,kpar)
+cp%celltype = 1     !random_choice(celltype_fraction,Ncelltypes,kpar)
 ityp = cp%celltype
 ccp => cc_parameters(ityp)
 Ncells_type(ityp) = Ncells_type(ityp) + 1
@@ -1393,7 +1385,7 @@ cp%p_rad_death = 0
 !cp%t_anoxia = 0
 !cp%t_aglucosia = 0
 
-call get_random_vector3(v)	! set initial axis direction
+!call get_random_vector3(v)	! set initial axis direction
 !cp%d = 0.1*small_d
 !c = cp%centre(:,1)
 !cp%centre(:,1) = c + (cp%d/2)*v
@@ -1406,8 +1398,8 @@ cp%Cin(GLUCOSE) = chemo(GLUCOSE)%bdry_conc
 cp%Cin(LACTATE) = chemo(LACTATE)%bdry_conc
 cp%Cin(GLUTAMINE) = chemo(GLUTAMINE)%bdry_conc
 cp%Cin(OTHERNUTRIENT) = chemo(OTHERNUTRIENT)%bdry_conc
-#endif
 cp%CFSE = generate_CFSE(1.d0)
+#endif
 
 !cp%growth_rate_factor = get_growth_rate_factor()
 !cp%ATP_rate_factor = get_ATP_rate_factor()
@@ -1733,6 +1725,8 @@ real(REAL_KIND) :: V, C(MAX_CHEMO), radiation_dose
 type(event_type) :: E
 logical :: full
 logical :: is_event
+integer :: kcell
+type(cell_type), pointer :: cp
 
 !write(logmsg,*) 'ProcessEvent:'
 !call logger(logmsg)
@@ -1750,14 +1744,21 @@ do kevent = 1,Nevents
             is_radiation = .true.
             is_event = .true.
 		elseif (E%etype == MEDIUM_EVENT) then
-			write(logmsg,'(a,f8.0,f8.3,2f8.4)') 'MEDIUM_EVENT: time, volume, O2medium: ',t_simulation,E%volume,E%O2medium
+			write(logmsg,'(a,i6,2f8.3,f8.3,2f8.4)') 'MEDIUM_EVENT: E%time, time, volume, O2medium: ',istep,E%time/3600,t_simulation/3600,E%volume,E%O2medium
 			call logger(logmsg)
-            call washoutSF
+            write(nflog,'(a,f8.3)') 'drug exposure time: ',(t_simulation - t_irradiation)/3600
+            write(nflog,*) 'npar_uni, npar_rnor = ',npar_uni,npar_rnor
+!            write(nfres,'(a,i6,f8.3)') 'washout: ',istep,t_simulation/3600
+!            call washoutSF
 			C = 0
 			C(OXYGEN) = E%O2medium
 			C(GLUCOSE) = E%glumedium
 			C(DRUG_A:DRUG_A+1) = 0
             drug_conc0 = 0      ! for decay calc in grower() 
+            do kcell = 1,10
+                cp => cell_list(kcell)
+                write(nflog,'(a,2i4,4f8.3)') 'kcell,phase,progress,DSB: ',kcell,cp%phase,cp%progress,cp%DSB(1:3,1)
+            enddo
 			V = E%volume
 			full = E%full
 			call MediumChange(V,C,full)
@@ -2015,15 +2016,25 @@ logical :: PEST_OK
 logical :: ok = .true.
 logical :: dbug
 
+!write(nflog,*) 'istep,npar_uni,npar_rnor: ',istep,npar_uni,npar_rnor
+
 cp => cell_list(1)
 !call test_Jaiswal
 !res = 1
 !return
+
+!kcell = 8
+!cp=>cell_list(kcell)
+!write(nflog,'(a,2i6,7f8.3)') 'cell phase,progress,DSB: ',kcell,cp%phase,cp%progress,cp%DSB(1:3,:)
+
 if (istep < 2) call counter
 mp => master_cell%metab
 
 t_simulation = istep*DELTA_T	! seconds
 !write(nfout,'(2i4,12f10.3)') istep,cp%phase,cp%progress,t_simulation/3600,cp%DSB(1:3,1),cp%Nmis
+
+cp => cell_list(39)
+!write(nfres,'(a,2i6,8f8.3)') 'cell 39: DSB: ',istep,cp%phase,cp%progress,t_simulation/3600,cp%DSB(1:2,:),cp%Nmis
 
 !if (single_cell) write(nflog,*) 'Ncells_type: ',Ncells_type
 
@@ -2062,6 +2073,7 @@ endif
 
 drug_gt_cthreshold = .false.
 
+#if 0
 !if (medium_change_step .or. (chemo(DRUG_A)%present .and..not.DRUG_A_inhibiter)) then
 !if (medium_change_step .or. (chemo(DRUG_A)%present .and..not.use_inhibiter)) then
 !    ndiv = 6
@@ -2088,29 +2100,27 @@ do idiv = 0,ndiv-1
 	    endif
     enddo	! end it_solve loop
     if (dbug) write(nflog,*) 'did Solver'
-#if 0
-	if (use_metabolism) then
-		do ityp = 1,Ncelltypes
-			HIF1 = mp%HIF1
-			C_O2 = chemo(OXYGEN)%cmedium(1)
-!			write(*,'(a,2e12.3)') 'before: HIF1,C_O2: ',HIF1,C_O2 
-			call analyticSetHIF1(C_O2,HIF1,DELTA_T)
-!			write(*,'(a,e12.3)') 'after: HIF1: ',HIF1
-			mp%HIF1 = HIF1
-			PDK1 = mp%PDK1
-			call analyticSetPDK1(HIF1,PDK1,dt)
-			mp%PDK1 = PDK1
-		enddo
-!	endif
-	!write(nflog,*) 'did Solver'
-    call GlutamineDecay
-#endif
+!	if (use_metabolism) then
+!		do ityp = 1,Ncelltypes
+!			HIF1 = mp%HIF1
+!			C_O2 = chemo(OXYGEN)%cmedium(1)
+!!			write(*,'(a,2e12.3)') 'before: HIF1,C_O2: ',HIF1,C_O2 
+!			call analyticSetHIF1(C_O2,HIF1,DELTA_T)
+!!			write(*,'(a,e12.3)') 'after: HIF1: ',HIF1
+!			mp%HIF1 = HIF1
+!			PDK1 = mp%PDK1
+!			call analyticSetPDK1(HIF1,PDK1,dt)
+!			mp%PDK1 = PDK1
+!		enddo
+!!	endif
+!	!write(nflog,*) 'did Solver'
+!    call GlutamineDecay
     if (Ndrugs_used > 0) then
         call CheckDrugConcs
         call CheckDrugPresence
     endif
     
-    if (t_irradiation >= 0) call GrowCells(DELTA_T,t_simulation,ok)
+!    if (t_irradiation >= 0) call GrowCells(DELTA_T,t_simulation,ok)
 
     if (.not.ok) then
 	    res = 3
@@ -2118,14 +2128,9 @@ do idiv = 0,ndiv-1
     endif
 enddo	! end idiv loop
 DELTA_T = DELTA_T_save
+#endif
+
 medium_change_step = .false.
-!else
-!	call GrowCells(DELTA_T,t_simulation,ok)
-!	if (.not.ok) then
-!		res = 3
-!		return
-!	endif
-!endif
 
 radiation_dose = 0
 if (use_treatment) then     ! now we use events
@@ -2139,12 +2144,14 @@ if (radiation_dose >= 0) then
 	call logger(logmsg)
 ! could make calls to set_divide_volume and SetInitialCellCycleStatus here
 ! before Irradiation
+!    write(nflog,*) 'before npar_uni, npar_rnor = ',npar_uni,npar_rnor
     do kcell = 1,Ncells
         cp => cell_list(kcell)
         V0 = Vdivide0/2
         call set_divide_volume(cp,V0)
         call SetInitialCellCycleStatus(kcell,cp)
     enddo
+!    write(nflog,*) 'after npar_uni, npar_rnor = ',npar_uni,npar_rnor
 	call Irradiation(radiation_dose, ok)
 	if (.not.ok) then
 		res = 3
@@ -2152,12 +2159,16 @@ if (radiation_dose >= 0) then
     endif
 endif
 
-res = 0
+if (t_irradiation >= 0) call GrowCells(DELTA_T,t_simulation,ok)
 
-!call test_CellDivision
-!if (.not.use_TCP .and. (mod(istep,6) == 0)) then
-!	call get_concdata(nvars, ns, dxc, ex_conc)
-!endif
+tottotDSB = 0
+do kcell = 1,nlist
+    cp => cell_list(kcell)
+    tottotDSB = tottotDSB + sum(cp%DSB)
+enddo
+tottotDSB = 0
+    
+res = 0
 
 call getNviable
 
@@ -2202,6 +2213,8 @@ if (compute_cycle) then
     total = sum(phase_count)
     phase_dist = 100*phase_count/total
     tadjust = event(1)%time/3600    ! if the RADIATION event is #1
+!    write(nflog,'(a,i6,5f8.2)') 'phase distribution: ',istep,phase_dist
+!    write(nflog,'(a,6i6,f10.0)') 'phase_count: ',istep,phase_count,total
 !    write(*,'(a,f8.3,4i8,4f8.3)') 'hour,count, phase_dist: ',real(istep)/nthour,phase_count(1:4),phase_dist(1:4)
 !    write(nflog,'(a,f8.3,i8,f8.3)') 'hour, count, M%: ',real(istep)/nthour - tadjust,phase_count(M_phase),phase_dist(M_phase)
 endif
@@ -2214,7 +2227,7 @@ if (compute_cycle .or. output_DNA_rate) then
                 write(nflog,*) 'Reached phase hour: ',next_phase_hour,phase_hour(next_phase_hour)
                 write(nflog,'(a,4i8)') 'count: ',phase_count(1:4)
                 write(nflog,'(a,4f8.3)') 'dist: ',phase_dist(1:4)
-                write(nflog,'(a,4f8.3)') '%dist: ',100*phase_dist(1:4)/sum(phase_dist(1:4))
+!                write(nflog,'(a,4f8.3)') '%dist: ',100*phase_dist(1:4)/sum(phase_dist(1:4))
             endif
 	        if (compute_cycle) then
 !	            call get_phase_distribution(phase_count)
@@ -2252,7 +2265,6 @@ endif
 !        write(nfphase,'(2i4,2f6.1,2f6.3)') hour,cp%phase,tnow/3600,cp%G2_time/3600,cp%V/Vdivide0,cp%divide_volume/Vdivide0
     endif
 
-
 if (dbug .or. mod(istep,nthour) == 0) then
     hour = istep/nthour
     nphaseh = 0
@@ -2266,6 +2278,7 @@ if (dbug .or. mod(istep,nthour) == 0) then
 !	write(nflog,*)
 	write(nflog,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells   !, ' N reached mitosis: ',NPsurvive    ,' Napop: ',Napop    !, &
 	if (.not. single_cell) write(*,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells   !, ' N reached mitosis: ',NPsurvive    ,' Napop: ',Napop    !, &
+!    write(nflog,*) 'npar_uni,npar_rnor: ',npar_uni,npar_rnor
     call get_phase_distribution(phase_count)
     total = sum(phase_count(1:4))
     phase_dist = 100*phase_count/total
@@ -2301,6 +2314,7 @@ endif
 !cp => cell_list(kcell)
 !write(nflog,'(a,3i8)') 'cell, state, phase: ',kcell,cp%state,cp%phase
 !write(*,'(a,3i8)') 'cell, state, phase: ',kcell,cp%state,cp%phase
+
 istep = istep + 1
 overstepped = (istep == maxhours*nthour)
 if (overstepped) then
@@ -2311,6 +2325,7 @@ if (overstepped) then
     res = 1
     return
 endif
+
 !write(*,*) 'end simulate_step: t_simulation: ',t_simulation
 !call averages
 ! Need the phase_dist check in case NPsurvive = Nirradiated before phase_hours
