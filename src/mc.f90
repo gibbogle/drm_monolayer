@@ -99,7 +99,7 @@ real(8) :: G1_tdelay = 4            ! delay before ATM_act updated (hours)
 logical :: use_Jaiswal = .true.
 logical :: vary_km10 = .true.
 real(8) :: jaiswal_std = 0.6
-logical :: use_ATR_S    ! = .false.
+!logical :: use_ATR_S    ! = .false.
 
 real(8) :: ATMsum, ATRsum, Sthsum, G2thsum(2)
 integer :: NSth, NG2th
@@ -293,7 +293,9 @@ if (use_Jaiswal) then
     endif
 endif
 
-call make_eta_table(sigma_NHEJ, sigma_TMEJ, Kcoh)
+!call make_eta_table(sigma_NHEJ, sigma_TMEJ, Kcoh)
+!call test_eta(sigma_NHEJ, 1.d0)
+!stop
 
 ATMsum = 0  ! to investigate ATM dependence on parameters
 ATRsum = 0  ! to investigate ATR dependence on parameters
@@ -1988,7 +1990,8 @@ do kcell = 1,nlist
         else
             fATM = max(0.01,1 - k3m*atm/(k4m + atm))
         endif
-        if (use_ATR_S) then
+!        if (use_ATR_S) then
+        if (ATR_in_S == 2) then
             atr = cp%ATR_act
             fATR = max(0.01,1 - k3r*atr/(k4r + atr))
         endif

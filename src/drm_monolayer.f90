@@ -52,6 +52,7 @@ call logger("ReadCellParams new")
 call ReadCellParams(ok)
 if (.not.ok) return
 call logger("did ReadCellParams")
+!write(nflog,*) 'after ReadCellParameters,npar_uni,npar_rnor: ',npar_uni,npar_rnor
 write(*,*) 'seed: ',seed 
 
 !open(nfphase, file='phase.log',status='replace')
@@ -513,7 +514,9 @@ use_cell_cycle = .true.
 read(nfcell,*) isynchronise
 synchronise = (isynchronise == 1)
 call ReadCellCycleParameters(nfcell)
+!write(nflog,*) 'after ReadCellCycleParameters,npar_uni,npar_rnor: ',npar_uni,npar_rnor
 call ReadMcParameters(nfcell)
+!write(nflog,*) 'after ReadMcParameters,npar_uni,npar_rnor: ',npar_uni,npar_rnor
 use_metabolism = .false.
 read(nfcell,*) O2cutoff(1)
 read(nfcell,*) O2cutoff(2)
@@ -1747,7 +1750,7 @@ do kevent = 1,Nevents
 			write(logmsg,'(a,i6,2f8.3,f8.3,2f8.4)') 'MEDIUM_EVENT: E%time, time, volume, O2medium: ',istep,E%time/3600,t_simulation/3600,E%volume,E%O2medium
 			call logger(logmsg)
             write(nflog,'(a,f8.3)') 'drug exposure time: ',(t_simulation - t_irradiation)/3600
-            write(nflog,*) 'npar_uni, npar_rnor = ',npar_uni,npar_rnor
+!            write(nflog,*) 'npar_uni, npar_rnor = ',npar_uni,npar_rnor
 !            write(nfres,'(a,i6,f8.3)') 'washout: ',istep,t_simulation/3600
 !            call washoutSF
 			C = 0
@@ -3004,6 +3007,7 @@ if (ok) then
 else
 	call logger('=== Setup failed ===')
 endif
+!write(nflog,*) 'after Setup,npar_uni,npar_rnor: ',npar_uni,npar_rnor
 if (ok) then
 	res = 0
 else

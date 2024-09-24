@@ -231,10 +231,37 @@ end function
 !--------------------------------------------------------------------------
 subroutine test_eta(S_NHEJ, fsmin)
 real(8) :: S_NHEJ, fsmin
-real(8) :: f_S, tIR, dt, t, fsigma, V, eta, S, R
+real(8) :: Reffmin, dSdt, f_S, tIR, dt, t, fsigma, V, eta, S, R
 real(8) :: St(2,100), Rt(2,100), etat(2,100), eta_array(11)
 real(8), parameter :: T_G1 = 6.35, T_S = 9.0, T_G2 = 3.2
-integer :: phase, nt, it, k, NHEJfast, iR, iS
+integer :: phase, nt, it, k, j,  NHEJfast, iR, iS
+
+! Evaluate effect of R_Arnould (Reffmin)
+write(*,*)
+do j = 1,2
+    if (j == 1) then
+        dSdt = dsigma_dt
+    else
+        dSdt = dsigma_dt/2
+    endif
+    do k = 1,2
+        if (k == 1) then
+            Reffmin = 0.7
+        else
+            Reffmin = 1.0
+        endif
+        write(*,'(a,3f8.4)') 'test_eta: S_NHEJ, dsigma_dt, Reffmin: ',S_NHEJ, dSdt, Reffmin
+        do it = 0,10
+            tIR = it
+            f_S = tIR/10
+            R = (1 - f_S)*((1 - Reffmin)*exp(-Kclus*tIR) + Reffmin) + f_S*1.26
+            S = S_NHEJ + tIR*dSdt
+            eta = etafun(R,S)
+            write(*,'(a,5e12.3)') 'tIR, f_S, R, S, eta: ',tIR, f_S, R, S, eta
+        enddo
+    enddo
+enddo
+return
 
 ! Evaluate eta_Arnould
 write(*,*) 'sigma_nhej: ',S_NHEJ
