@@ -40,11 +40,10 @@ integer, parameter :: TMEJ = 4   ! this is really alt-EJ (was MDR)
 !real(8) :: eta = 0.0006506
 real(8) :: Pcomplex = 0.4337    ! fraction of created DSBs that are complex (McMahon: complexFrac)
 real(8) :: pJeggo = 0.9         ! fraction of post-replication DSBs that are fast. (NOT USED)
-real(8) :: Kcoh     != 1.0       ! cohesin effect (read in input file)
-!real(8) :: PHR = 0.8      ! fraction of post-replication simple DSBs that are repaired by HR (slow) rather than NHEJ (fast)
-real(8) :: pHRs_max, pHRc_max, pHRs_G2, pHRc_G2
+real(8) :: Kcoh                ! cohesin effect (read in input file)
+real(8) :: pHR_max, f_S_decay
 logical :: use_sigmoid = .true.
-real(8) :: rmin = 0.1, kdecay = 0.1, ksig = 1, csig = 8.56    ! decay function parameters
+real(8) :: rmin, ksig, csig, kdecay    ! decay function parameters
 character*(2) :: phaseName(4) = ['G1','S ','G2','M ']
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.008462]   ! by pathway
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.2604, 0.008462]   ! by pathway  with HR simple
@@ -63,9 +62,9 @@ real(8) :: mitRate(2)   !  = 0.0141    ! (McMahon: mitoticRate)
 real(8) :: Msurvival = 1.0
 real(8) :: Kaber = 1.0          ! now fixed, McMahon has 1.  
 real(8) :: Klethal = 0.4
-real(8) :: K_ATM(3,4) ! = [0.076, 0.3, 1.0, 1.0]    ! (1) and (2) are the parameters of kinase kinetics, (3) and (4) are CP slowdown parameters
+real(8) :: K_ATM(3,4) ! = [0.076, 0.3, 1.0, 1.0]    ! now (1) and (2) are the parameters of CP slowdown, (3) and (4) are unused
 real(8) :: K_ATR(3,4) ! = [0.005, 0.3, 1.0, 1.0]
-real(8) :: KATM3G1M, KATM4G1M   ! KATM parameters for post-mitosis G1 CP slowdown
+real(8) :: KATM1G1D, KATM2G1D   ! KATM parameters for post-mitosis G1 CP slowdown
 real(8) :: Ztime = 0    ! hours
 
 real(8) :: sigma_NHEJ = 0.04187
@@ -93,7 +92,7 @@ real(8) :: Km1, Km10, Km10t
 real(8) :: kmmp, kmmd               ! ATM production, decay
 real(8) :: kmrp, kmrd               ! ATR production, decay
 real(8) :: kmccp, kmccrd, kmccmd    ! CC production, ATR-driven decay, ATM-driven decay
-real(8) :: CC_tot, ATR_tot, ATM_tot, CC_act0, CC_threshold, CC_threshold_factor, norm_factor
+real(8) :: CC_tot, ATR_tot, ATM_tot, CC_act0, CC_threshold, CC_threshold_factor
 real(8) :: km10_alfa, km10_beta     ! for G2 only
 real(8) :: G1_tdelay = 4            ! delay before ATM_act updated (hours)
 logical :: use_Jaiswal = .true.
@@ -185,85 +184,74 @@ real(8) :: pHR_S, pfc_S, pHR_G2, pfc_G2, k3, k4
 write(*,*) 'ReadMcParameters:'
 read(nfin,*) iphase_hours
 write(*,*) 'iphase_hours: ',iphase_hours
-read(nfin,*) CA_time_h
-write(*,*) 'CA_time_h: ',CA_time_h
-read(nfin,*) baseRate
-write(*,*) 'baseRate: ',baseRate
+!read(nfin,*) CA_time_h
+CA_time_h = 18  ! default time, overridden by CDTD input data
+!read(nfin,*) baseRate
+baseRate = 0
 read(nfin,*) mitRate(1)
+write(*,*) 'mitrate(1): ',mitrate(1)
 read(nfin,*) mitRate(2)
-if (use_equal_mitrates) mitrate(2) = mitrate(1)
-read(nfin,*) Msurvival
+!read(nfin,*) Msurvival
+Msurvival = 0.1  ! used?
 read(nfin,*) Klethal
-!read(nfin,*) nCPparams
-!if (nCPparams == 1) then
-!    iph = 1
-!    use_phase_dependent_CP_parameters = .false.
-!    read(nfin,*) K_ATM(iph,1)
-!    read(nfin,*) K_ATM(iph,2)
-!    read(nfin,*) K_ATM(iph,3)
-!    read(nfin,*) K_ATM(iph,4)
-!    read(nfin,*) K_ATR(iph,1)
-!    read(nfin,*) K_ATR(iph,2)
-!    read(nfin,*) K_ATR(iph,3)
-!    read(nfin,*) K_ATR(iph,4)
-!    do iph = 2,3        ! Note: doing this actually makes it unnecessary to set iph = 1 when .not. use_phase_dependent_CP_parameters
-!        do j = 1,4
-!            K_ATM(iph,j) = K_ATM(1,j)
-!            K_ATR(iph,j) = K_ATR(1,j)
-!        enddo
-!    enddo
-!elseif (nCPparams == 3) then
+write(*,*) 'klethal: ',klethal
     write(nflog,*) 'K_ATM'
-    do j = 1,4
-        do iph = 1,3
+!    do j = 3,4
+    do j = 1,2
+        do iph = 1,2
             read(nfin,*) K_ATM(iph,j)
-!            write(*,*) j,iph,K_ATM(iph,j)
             write(nflog,*) j,iph,K_ATM(iph,j)
         enddo
      enddo
     write(nflog,*) 'K_ATR'
-    do j = 1,4
-        do iph = 2,3
-            read(nfin,*) K_ATR(iph,j)
-!            write(*,*) j,iph,K_ATR(iph,j)
-            write(nflog,*) j,iph,K_ATR(iph,j)
-        enddo
-    enddo
- 
-read(nfin,*) KATM3G1M
-read(nfin,*) KATM4G1M
+!    do j = 3,4
+    !do j = 1,2
+    !    do iph = 2,2
+    !        read(nfin,*) K_ATR(iph,j)
+    !        write(nflog,*) j,iph,K_ATR(iph,j)
+    !    enddo
+    !enddo
 
-k3 = K_ATM(S_phase,3)
-k4 = K_ATM(S_phase,4)
-write(nflog,'(a,2f8.3)') 'k3, k4: ',k3,k4
+read(nfin,*) KATM1G1D
+read(nfin,*) KATM2G1D
 
-! temporary - these need to be input parameters
-!KATM3G1M = K_ATM(G1_phase,3)
-!KATM4G1M = K_ATM(G1_phase,4)
-
-read(nfin,*) repRate(NHEJfast)
-read(nfin,*) repRate(NHEJslow)
-read(nfin,*) repRate(HR)
-read(nfin,*) repRate(TMEJ)
-read(nfin,*) pComplex
-read(nfin,*) Kcoh  !pJeggo was fsmin
-read(nfin,*) pHRs_max
-read(nfin,*) pHRc_max
-read(nfin,*) rmin
+!read(nfin,*) repRate(NHEJfast)
+!read(nfin,*) repRate(NHEJslow)
+!read(nfin,*) repRate(HR)
+!read(nfin,*) repRate(TMEJ)
+!read(nfin,*) pComplex
+!read(nfin,*) Kcoh  !pJeggo was fsmin
+! these values are copied from a recent input file
+repRate(NHEJfast) = 2.081
+repRate(NHEJslow) = 0.2604
+repRate(HR) = 0.13
+repRate(TMEJ) = 0.025
+Pcomplex = 0.43
+Kcoh = 1.0
+!read(nfin,*) pHRs_max
+!read(nfin,*) pHRc_max
+read(nfin,*) pHR_max
+write(*,*) 'pHR_max: ',pHR_max
+read(nfin,*) f_S_decay
+!read(nfin,*) rmin
+rmin = 0
 read(nfin,*) ksig
 read(nfin,*) csig
-read(nfin,*) nIliakis
+!read(nfin,*) nIliakis
+nIliakis = 1
 read(nfin,*) kIliakis
-read(nfin,*) G1_tdelay
+!read(nfin,*) G1_tdelay
+G1_tdelay = 0
 read(nfin,*) Chalf
-read(nfin,*) Preass
+!read(nfin,*) Preass
+Preass = 0
 read(nfin,*) dsigma_dt
 read(nfin,*) sigma_NHEJ
 read(nfin,*) R_Arnould
 !call check_eta(sigma_NHEJ)
 
 if (use_Jaiswal) then
-    read(nfin,*) Kcc2a
+!    read(nfin,*) Kcc2a     ! this is computed for each cell
     read(nfin,*) Kcc2e
     read(nfin,*) Kd2e
     read(nfin,*) Kd2t
@@ -277,13 +265,15 @@ if (use_Jaiswal) then
     read(nfin,*) Kmrd
     read(nfin,*) Kmmp
     read(nfin,*) Kmmd
-    read(nfin,*) CC_tot
+!    read(nfin,*) CC_tot
+    CC_tot = 10
     read(nfin,*) ATR_tot
     read(nfin,*) ATM_tot
-    read(nfin,*) CC_act0
-    read(nfin,*) CC_threshold_factor
-    read(nfin,*) norm_factor
-    write(nflog,*) 'norm_factor: ',norm_factor
+!    read(nfin,*) CC_act0
+    CC_act0 = 0
+!    read(nfin,*) CC_threshold_factor
+    CC_threshold_factor = 0.9
+!    read(nfin,*) norm_factor
     if (CC_threshold_factor < 0.1) then
         use_slope_threshold = .true.
         slope_threshold = CC_threshold_factor
@@ -535,10 +525,10 @@ real(8) :: dose
 integer :: ityp, kpar = 0
 integer :: phase
 real(8) :: DSB0(NP,2)
-real(8) :: totDSB0, baseDSB, fin, T_S, T_G2,f_S, NG1, NNHEJ, pHRs, pHRc, pHR, pNHEJ, NHRs, NHRc
+real(8) :: totDSB0, baseDSB, fin, T_S, T_G2,f_S, NG1, NNHEJ, pHR, pNHEJ, NHRs, NHRc     !, pHRs, pHRc
 real(8) :: Pbase, Pdie, R
 real(8) :: DSB_Gy, L    ! = 35
-real(8) :: th, Npre, Npre_s, Npre_c, Npost, Npost_s, Npost_c, Pc, x, fstart 
+real(8) :: th, Npre, Npre_s, Npre_c, Npost, Npost_s, Npost_c, Pc, x
 integer, parameter :: option = 2
 type(cycle_parameters_type),pointer :: ccp
 logical :: use_Jeggo = .true.
@@ -568,8 +558,8 @@ T_S = ccp%T_S*cp%fg(2)
 T_G2 = ccp%T_G2*cp%fg(3)
 th = 0
 if (use_Jeggo) then     ! using this
-    fstart = 0
-    if (constant_S_pHR) fstart = 0.8
+!    fstart = 0
+!    if (constant_S_pHR) fstart = 0.8
     If (phase == G1_phase) Then
         f_S = 0
     ElseIf (phase == S_phase) Then
@@ -580,7 +570,7 @@ if (use_Jeggo) then     ! using this
 !        else
 !            th = cp%progress*ccp%T_S/3600
 !        endif
-        th = max(0.0d0,(cp%progress - fstart)*T_S/3600)
+        th = max(0.0d0,(cp%progress - f_S_decay)*T_S/3600)
     ElseIf (phase >= G2_phase) Then
         f_S = 1
 !        th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
@@ -590,7 +580,7 @@ if (use_Jeggo) then     ! using this
 !            th = (ccp%T_S + cp%progress*ccp%T_G2)/3600
 !        endif
 !        write(*,'(a,2f8.2)') 'T_S, T_G2: ',T_S/3600,T_G2/3600
-        th = ((1.0 - fstart)*T_S + cp%progress*T_G2)/3600     ! This was an error, had T_S (undefined), changed again to replace ccp%T_S by T_S
+        th = ((1.0 - f_S_decay)*T_S + cp%progress*T_G2)/3600     ! This was an error, had T_S (undefined), changed again to replace ccp%T_S by T_S
     End If
     totDSB0 = (1 + f_S) * NG1
     DSB0(TMEJ,:) = 0
@@ -600,26 +590,31 @@ if (use_Jeggo) then     ! using this
         Npre = NG1 * (1 - f_S)
     End If
     Npost = totDSB0 - Npre
-    If (f_S > 0) Then
-        pHRs = fIliakis*pHRs_max * ((1 - rmin) * fdecay(th) + rmin)
-        pHRc = fIliakis*pHRc_max * ((1 - rmin) * fdecay(th) + rmin)
-        if (single_cell) &
-            write(*,'(a,i2,5f10.3)') 'phase, cp%progress, th, fdecay(th), pHRs, pHRc: ', &
-                                      phase, cp%progress, th, fdecay(th), pHRs, pHRc
+    !If (f_S > 0) Then
+    !    pHRs = fIliakis*pHR_max * ((1 - rmin) * fdecay(th) + rmin)
+    !    pHRc = fIliakis*pHR_max * ((1 - rmin) * fdecay(th) + rmin)
+    !    if (single_cell) &
+    !        write(*,'(a,i2,5f10.3)') 'phase, cp%progress, th, fdecay(th), pHRs, pHRc: ', &
+    !                                  phase, cp%progress, th, fdecay(th), pHRs, pHRc
+    !else
+    !    pHRs = 0
+    !    pHRc = 0
+    !End If
+    !pHR = (1 - pComplex)*pHRs + pComplex*pHRc
+    if (f_S > 0) then
+        pHR = fIliakis*pHR_max * ((1 - rmin) * fdecay(th) + rmin)
     else
-        pHRs = 0
-        pHRc = 0
-    End If
-    pHR = (1 - pComplex)*pHRs + pComplex*pHRc
-!    write(*,'(a,7f8.3)') 'fIliakis, fstart, T_S, th, pHRs, pHRc,pHR: ',fIliakis, fstart, ccp%T_S/3600, th, pHRs, pHRc, pHR
+        pHR = 0
+    endif
+!    write(*,'(a,7f8.3)') 'fIliakis, fstart, T_S, th, pHR: ',fIliakis, fstart, ccp%T_S/3600, th, pHR
     if (kcell_now == 1) then
         write(*,'(a,2f8.3)') 'th, fdecay(th): ',th, fdecay(th)
-        write(*,'(a,3f8.3)') 'fIliakis,pHRs,pHRc: ',fIliakis,pHRs,pHRc
+        write(*,'(a,3f8.3)') 'fIliakis,pHR: ',fIliakis,pHR
     endif
     if (kcell_now <= 10) then
         if (phase == S_phase) then
-            write(*,'(a,2i4,3f8.3)') 'kcell,phase,fIliakis,pHRs,pHRc: ',kcell_now,phase,fIliakis,pHRs,pHRc
-            write(nflog,'(a,2i4,3f8.3)') 'kcell,phase,fIliakis,pHRs,pHRc: ',kcell_now,phase,fIliakis,pHRs,pHRc
+            write(*,'(a,2i4,3f8.3)') 'kcell,phase,fIliakis,pHR: ',kcell_now,phase,fIliakis,pHR
+            write(nflog,'(a,2i4,3f8.3)') 'kcell,phase,fIliakis,pHR: ',kcell_now,phase,fIliakis,pHR
         endif
     endif
     if (option == 1) then
@@ -638,23 +633,23 @@ if (use_Jeggo) then     ! using this
         endif
     elseif (option == 2) then   ! USING THIS
         DSB0(NHEJfast,1) = (1-pComplex)*Npre
-        DSB0(NHEJfast,2) = (1-pComplex)*(1-pHRs)*Npost     ! fast
+        DSB0(NHEJfast,2) = (1-pComplex)*(1-pHR)*Npost     ! fast
         DSB0(NHEJslow,1) = pComplex*Npre
-        DSB0(NHEJslow,2) = pComplex*(1-pHRc)*Npost     ! slow
+        DSB0(NHEJslow,2) = pComplex*(1-pHR)*Npost     ! slow
         DSB0(HR,1) = 0
         DSB0(HR,2) = pHR*Npost
 !        write(*,'(a,5f8.3)') 'Npre,Npost,DSB0(:,2): ',Npre,Npost,DSB0(1:3,2)
         if (kcell_now == 5 .and. test_run) then
             write(*,*) 'cell #: ',kcell_now
             write(nfout,*) 'cell #: ',kcell_now
-            write(*,'(a,5f8.4)') 'fIliakis, decay, pHRs, pHRc, pHR: ', &
-                    fIliakis, ((1 - rmin) * fdecay(th) + rmin), pHRs,pHRc,pHR
+!            write(*,'(a,5f8.4)') 'fIliakis, decay, pHRs, pHRc, pHR: ', &
+!                    fIliakis, ((1 - rmin) * fdecay(th) + rmin), pHRs,pHRc,pHR
             write(*,*) 'Npre, Npost, f_S, pHR: ',Npre,Npost,f_S,pHR
             write(*,'(2(a,3f8.1))') 'pre  DSB at IR: ',DSB0(1:3,1),'  NNHEJ: ',sum(DSB0(1:2,1))
             write(*,'(2(a,3f8.1))') 'post DSB at IR: ',DSB0(1:3,2),'  NNHEJ: ',sum(DSB0(1:2,2))
             write(*,'(a,3f8.1)')    'total DSB at IR: ',sum(DSB0(NHEJfast,:)),sum(DSB0(NHEJslow,:)),sum(DSB0(HR,:))
-            write(nfout,'(a,5f8.4)') 'fIliakis, decay, pHRs, pHRc, pHR: ', &
-                    fIliakis, ((1 - rmin) * fdecay(th) + rmin), pHRs,pHRc,pHR
+!            write(nfout,'(a,5f8.4)') 'fIliakis, decay, pHR: ', &
+!                    fIliakis, ((1 - rmin) * fdecay(th) + rmin), pHR
             write(nfout,'(a,f6.3,4f8.1)') 'f_S, NG1, Npre, Npost, totDSB0: ',f_S,NG1,Npre,Npost,totDSB0
             write(nfout,'(2(a,3f8.1))') 'pre  DSB at IR: ',DSB0(1:3,1),'  NNHEJ: ',sum(DSB0(1:2,1))
             write(nfout,'(2(a,3f8.1))') 'post DSB at IR: ',DSB0(1:3,2),'  NNHEJ: ',sum(DSB0(1:2,2))
@@ -671,16 +666,16 @@ else    ! not using this
         th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
         f_S = cp%progress
         totDSB0 = (1+f_S)*NG1
-        pHRs = pHRs_max*((1-rmin)*fdecay(th) +rmin)
-        pHRc = pHRc_max*((1-rmin)*fdecay(th) +rmin)
+        pHR = pHR_max*((1-rmin)*fdecay(th) +rmin)
+!        pHRc = pHR_max*((1-rmin)*fdecay(th) +rmin)
         Npre = NG1*(1 - f_S)
         Npost = NG1*2*f_S
         Npre_s = Npre*(1 - pComplex)
         Npre_c = Npre*pComplex
         Npost_s = Npost*(1 - pComplex)
         Npost_c = Npost*pComplex
-        NHRs = Npost_s*pHRs
-        NHRc = Npost_c*pHRc
+        NHRs = Npost_s*pHR
+        NHRc = Npost_c*pHR
         DSB0(HR,1) = NHRs + NHRc
         DSB0(NHEJfast,1) = Npre_s + Npost_s - NHRs  ! not correct
         DSB0(NHEJslow,1) = Npre_c + Npost_c - NHRc
@@ -689,9 +684,9 @@ else    ! not using this
         th = (istep*DELTA_T - cp%t_S_phase)/3600  ! time since start of S_phase (h)
         totDSB0 = 2*NG1
         Npost = totDSB0
-        pHRs = pHRs_max*((1-rmin)*fdecay(th)+rmin)
-        DSB0(HR,2) = Npost*pHRs
-        DSB0(NHEJfast,2) = Npost*(1 - pHRs)
+        pHR = pHR_max*((1-rmin)*fdecay(th)+rmin)
+        DSB0(HR,2) = Npost*pHR
+        DSB0(NHEJfast,2) = Npost*(1 - pHR)
         DSB0(NHEJslow,2) = 0
     endif
 endif
@@ -948,6 +943,7 @@ end function
 ! Combined effect of pATM and pATR in G2
 ! Time computed in hours, returned in secs
 ! CP delay is the sum of delays created by pATM and by pATR
+! NOT USED Jaiswal determines G2 duration
 !------------------------------------------------------------------------
 function G2_checkpoint_time(cp) result(t)
 type(cell_type), pointer :: cp
@@ -1017,7 +1013,7 @@ subroutine get_slowdown_factors(cp,fATM,fATR)
 type(cell_type), pointer :: cp
 integer :: iph
 real(REAL_KIND) :: fATM, fATR
-real(REAL_KIND) :: pATM, pATR, k3, k4, N_DSB, atm, atr
+real(REAL_KIND) :: pATM, pATR, k1, k2, N_DSB, atm, atr
 logical :: use_ATR
 logical :: OK
 
@@ -1044,10 +1040,10 @@ atr = 0
 fATR = 1
 if (use_DSB_CP) then    ! currently false
     N_DSB = sum(cp%DSB)
-    k3 = K_ATM(iph,3)
-    k4 = K_ATM(iph,4)
+    k1 = K_ATM(iph,1)
+    k2 = K_ATM(iph,2)
 !    if (kcell_now == 1) write(*,'(a,i6,4f8.3)') 'k3,k4,N_DSB: ',kcell_now,k3,k4,N_DSB,k3*N_DSB/(k4 + N_DSB)
-    fATM = max(0.01,1 - k3*N_DSB/(k4 + N_DSB))
+    fATM = max(0.01,1 - k1*N_DSB/(k2 + N_DSB))
     return
 endif
 if (iph == G1_phase) then
@@ -1068,8 +1064,8 @@ elseif (iph == S_phase) then
         if (use_ATR) atr = cp%ATR_act
     endif
 endif
-k3 = K_ATM(iph,3)
-k4 = K_ATM(iph,4)
+k1 = K_ATM(iph,1)
+k2 = K_ATM(iph,2)
 
 if (iph == G1_phase) then
     if (cp%birthtime > t_irradiation) then      ! post-mitosis
@@ -1083,8 +1079,8 @@ if (iph == G1_phase) then
                 close(nflog)
                 stop
             endif
-            k3 = KATM3G1M
-            k4 = KATM4G1M
+            k1 = KATM1G1D
+            k2 = KATM2G1D
         endif
     endif
 endif
@@ -1095,10 +1091,10 @@ endif
 !endif
 !if (single_cell) write(nflog,'(a,i6,3e12.4)') 'get_slowdown_factors: kcell,k3,k4,atm: ',kcell_now,k3,k4,atm
 if (use_exp_slowdown) then
-    fATM = exp(-k4*atm)
+    fATM = exp(-k2*atm)
 else
-    if ((k4 + atm) > 0) then
-        fATM = max(0.01,1 - k3*atm/(k4 + atm))
+    if ((k2 + atm) > 0) then
+        fATM = max(0.01,1 - k1*atm/(k2 + atm))
     else
         fATM = 1.0
     endif
@@ -1106,9 +1102,9 @@ else
 endif
 !if (kcell_now == 8) write(nflog,'(a,2i6,4e12.3)') 'slowdown: kcell,iph,k3,k4,atm,fATM: ',kcell_now,iph,k3,k4,atm,fATM
 if (iph == S_phase .and. use_ATR) then
-    k3 = K_ATR(iph,3)   !*G2_katr3_factor
-    k4 = K_ATR(iph,4)   !*G2_katr4_factor
-    fATR = max(0.01,1 - k3*atr/(k4 + atr))
+    k1 = K_ATR(iph,1)   !*G2_katr3_factor
+    k2 = K_ATR(iph,2)   !*G2_katr4_factor
+    fATR = max(0.01,1 - k1*atr/(k2 + atr))
 endif
 !write(*,'(a,i3,4f8.4)') 'iph,fATR,fATM: ',iph,atr,atm,fATR,fATM
 !if (iph == 2 .and. kcell_now <= 10) then
@@ -1259,6 +1255,7 @@ real(8) :: dth
 real(8) :: dt = 0.001
 real(8) :: D_ATR, D_ATM, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact, tIR
 real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, t_G2, Kkcc2a, DSB(NP), CC_act0, d(3)
+real(8) :: dATM_plus, dATM_minus
 integer :: iph, it, Nt
 type(cycle_parameters_type),pointer :: ccp
 logical :: use_ATR  ! ATR is used in G2, and computed in S if ATR_in_S >= 1
@@ -1276,21 +1273,21 @@ do it = 1,NP
 enddo
 ATR_act = cp%ATR_act
 CC_act = cp%CC_act
-dbug = (iph == 2 .and. (kcell_now <= 0))
+dbug = (iph == 2 .and. (kcell_now == 3))
 if (iph == G1_phase) then
-    D_ATM = DSB(NHEJslow)*norm_factor
+    D_ATM = DSB(NHEJslow)
     ATM_act = cp%ATM_act
 !    write(*,'(a,i6,2e12.3)') 'Jaiswal_update: D_ATM,ATM_act: ',kcell_now,D_ATM,ATM_act
 elseif (iph == S_phase) then
-    D_ATM = (DSB(HR) + DSB(NHEJslow))*norm_factor
+    D_ATM = (DSB(HR) + DSB(NHEJslow))
     ATM_act = cp%ATM_act
     if (use_ATR) then
-        D_ATR = DSB(HR)*norm_factor
+        D_ATR = DSB(HR)
         ATR_act = cp%ATR_act
     endif
 elseif (iph == G2_phase) then
-    D_ATR = DSB(HR)*norm_factor
-    D_ATM = (DSB(HR) + DSB(NHEJslow))*norm_factor
+    D_ATR = DSB(HR)
+    D_ATM = (DSB(HR) + DSB(NHEJslow))
     CC_act = cp%CC_act
     CC_act0 = CC_act
     ATR_act = cp%ATR_act
@@ -1359,11 +1356,10 @@ do it = 1,Nt
 !        if (single_cell) write(nflog,'(a,i4,4f8.3)') 'iph,D_ATR, Kd2e, ATR_inact, dATR_act_dt: ', &
 !                    iph, D_ATR, Kd2e, ATR_inact, dATR_act_dt
     endif
-!    if (iph == G2_phase) then   ! just testing to see why G2 is so extended with kiliakis = 1
-        dATM_act_dt = Kd2t * D_ATM * ATM_inact / (Kmmp + ATM_inact) - Kti2t * ATM_act / (Kmmd + ATM_act)   
-!    else
-!        dATM_act_dt = 0
-!    endif
+    dATM_plus = Kd2t * D_ATM * ATM_inact / (Kmmp + ATM_inact)
+    dATM_minus = Kti2t * ATM_act / (Kmmd + ATM_act)
+    dATM_act_dt = dATM_plus - dATM_minus   
+!    dATM_act_dt = Kd2t * D_ATM * ATM_inact / (Kmmp + ATM_inact) - Kti2t * ATM_act / (Kmmd + ATM_act)   
     ATM_act = ATM_act + dt*dATM_act_dt
     ATM_act = min(ATM_act, ATM_tot)
 !    ATM_act = min(ATM_act,0.5)
@@ -1373,7 +1369,8 @@ do it = 1,Nt
     t = it*dt
 !    if (t_G2 <= 0.1 .and. it <= 10) write(nflog,'(a,3f8.4)') 'D_ATM,ATM_act,ATM_inact: ',D_ATM,ATM_act,ATM_inact
 enddo
-!if (kcell_now == 8) write(nflog,'(a,5f9.4,e12.3)') 'Jaiswal: ',D_ATM,Kd2t,Kmmp,Kti2t,Kmmd,dATM_act_dt
+tIR = istep*DELTA_T/3600.
+if (dbug) write(nfres,'(a,9f9.4,2e12.3)') 'Jaiswal: ',tIR,D_ATM,ATM_act,ATM_inact,Kd2t,Kmmp,Kti2t,Kmmd,ATM_act,dATM_plus,dATM_minus
 !if (single_cell) then
 !    write(*,'(a,2i4,4f8.4)') 'kcell,iph,ATR,ATM: ',kcell_now,iph,ATR_act,ATM_act
 !    write(nflog,'(a,2i4,4f8.4)') 'kcell,iph,ATR,ATM: ',kcell_now,iph,ATR_act,ATM_act
@@ -1962,17 +1959,18 @@ subroutine get_DNA_synthesis_rate(DNA_rate)
 real(8) :: DNA_rate
 type(cell_type), pointer :: cp
 integer :: kcell, iph, cnt
-real(8) :: atm, k3m, k4m, fATM, atr, k3r, k4r, fATR, rate, rate_sum, atm_ave
+real(8) :: atm, k1m, k2m, fATM, atr, k1r, k2r, fATR, rate, rate_sum, atm_ave
 
 !write(*,'(a)') 'get_DNA_synthesis_rate'
-k3m = K_ATM(S_phase,3)
-k4m = K_ATM(S_phase,4)
-k3r = K_ATR(S_phase,3)
-k4r = K_ATR(S_phase,4)
+k1m = K_ATM(S_phase,1)
+k2m = K_ATM(S_phase,2)
+k1r = K_ATR(S_phase,1)
+k2r = K_ATR(S_phase,2)
 fATR = 1.0
 cnt = 0
 rate_sum = 0
 atm_ave = 0
+atr = 0
 do kcell = 1,nlist
     cp => cell_list(kcell)
     iph = cp%phase
@@ -1986,15 +1984,18 @@ do kcell = 1,nlist
         atm_ave = atm_ave + atm
 !        fATM = max(0.01,1 - k3*atm/(k4 + atm))  ! 0.01 ??
         if (use_exp_slowdown) then
-            fATM = exp(-k4m*atm)
+            fATM = exp(-k2m*atm)
         else
-            fATM = max(0.01,1 - k3m*atm/(k4m + atm))
+            fATM = max(0.01,1 - k1m*atm/(k2m + atm))
         endif
 !        if (use_ATR_S) then
         if (ATR_in_S == 2) then
             atr = cp%ATR_act
-            fATR = max(0.01,1 - k3r*atr/(k4r + atr))
+            fATR = max(0.01,1 - k1r*atr/(k2r + atr))
         endif
+!!! test
+        call get_slowdown_factors(cp,fATM,fATR)
+!!!
         rate = fATM*fATR
 !        if (kcell<= 10) write(*,'(a,i4,5f8.4)') 'DNA_rate: ',kcell, atr, atm, fATR, fATM, rate
         rate_sum = rate_sum + rate

@@ -518,17 +518,17 @@ call ReadCellCycleParameters(nfcell)
 call ReadMcParameters(nfcell)
 !write(nflog,*) 'after ReadMcParameters,npar_uni,npar_rnor: ',npar_uni,npar_rnor
 use_metabolism = .false.
-read(nfcell,*) O2cutoff(1)
-read(nfcell,*) O2cutoff(2)
-read(nfcell,*) O2cutoff(3)
-read(nfcell,*) hypoxia_threshold
-write(nflog,*) 'hypoxia_threshold: ',hypoxia_threshold
-read(nfcell,*) growthcutoff(1)
-read(nfcell,*) growthcutoff(2)
-read(nfcell,*) growthcutoff(3)
-read(nfcell,*) Cthreshold
-read(nfcell,*) Clabel_threshold
-read(nfcell,*) spcrad_value
+!read(nfcell,*) O2cutoff(1)
+!read(nfcell,*) O2cutoff(2)
+!read(nfcell,*) O2cutoff(3)
+!read(nfcell,*) hypoxia_threshold
+!write(nflog,*) 'hypoxia_threshold: ',hypoxia_threshold
+!read(nfcell,*) growthcutoff(1)
+!read(nfcell,*) growthcutoff(2)
+!read(nfcell,*) growthcutoff(3)
+!read(nfcell,*) Cthreshold
+!read(nfcell,*) Clabel_threshold
+!read(nfcell,*) spcrad_value
 read(nfcell,*) Ndrugs_used
 write(nflog,*) 'Ndrugs_used: ',Ndrugs_used
 use_inhibiter = .false.
@@ -876,6 +876,7 @@ if (allocated(drug)) then
 	deallocate(drug)
 endif
 allocate(drug(Ndrugs_used))
+#if 0
 do idrug = 1,Ndrugs_used
 	read(nf,'(a)') drug(idrug)%classname        ! not used
 	if (drug(idrug)%classname == 'TPZ') then
@@ -921,16 +922,17 @@ do idrug = 1,Ndrugs_used
 			drug(idrug)%active_phase(1:6) = .true.
 		endif
     enddo
-    write(nflog,*) 'drug: ',idrug,drug(idrug)%classname,'  ',drug(idrug)%name
-    if (drug(1)%halflife(0) == 0) then
-        Khalflife = 0
-    else
-        Khalflife = 0.693/drug(1)%halflife(0)
-    endif
-    use_drug_halflife = (Khalflife > 0)
-    ! Repair inhibiting drug
-    ! Now assume that any drug used is a DNA-PK inhibiter
-    use_inhibiter = .true.
+    !drug(1)%halflife(0) = 999
+    !write(nflog,*) 'drug: ',idrug,drug(idrug)%classname,'  ',drug(idrug)%name
+    !if (drug(1)%halflife(0) == 0) then
+    !    Khalflife = 0
+    !else
+    !    Khalflife = 0.693/drug(1)%halflife(0)
+    !endif
+    !use_drug_halflife = (Khalflife > 0)
+    !! Repair inhibiting drug
+    !! Now assume that any drug used is a DNA-PK inhibiter
+    !use_inhibiter = .true.
 !    This is not needed now
 !    if (drug(1)%SER_KO2(1,0) < 0) then ! drug 1 is a DNA repair inhibiter
 !        DRUG_A_inhibiter = .true.
@@ -939,6 +941,17 @@ do idrug = 1,Ndrugs_used
 !        use_inhibiter = drug(1)%sensitises(1,0)
 !    endif
 enddo
+#endif
+read(nf,'(a)') drug(1)%name
+drug(1)%use_metabolites = .false.
+drug(1)%halflife(0) = 0       ! will be set to 0
+if (drug(1)%halflife(0) == 0) then
+    Khalflife = 0
+else
+    Khalflife = 0.693/drug(1)%halflife(0)
+endif
+use_drug_halflife = (Khalflife > 0)
+use_inhibiter = .true.
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -2021,7 +2034,8 @@ logical :: dbug
 
 !write(nflog,*) 'istep,npar_uni,npar_rnor: ',istep,npar_uni,npar_rnor
 
-cp => cell_list(1)
+cp => cell_list(3)
+!write(nfres,'(a,3i6,f6.2,e12.3)') 'istep,kcell,phase,f_S,ATM_act: ',istep,3,cp%phase,cp%progress,cp%ATM_act
 !call test_Jaiswal
 !res = 1
 !return
