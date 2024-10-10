@@ -1273,7 +1273,7 @@ do it = 1,NP
 enddo
 ATR_act = cp%ATR_act
 CC_act = cp%CC_act
-dbug = (iph == 2 .and. (kcell_now == 3))
+dbug = (iph == -2 .and. (kcell_now == 3))
 if (iph == G1_phase) then
     D_ATM = DSB(NHEJslow)
     ATM_act = cp%ATM_act
