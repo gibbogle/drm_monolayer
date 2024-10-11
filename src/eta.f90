@@ -90,9 +90,9 @@ end function
 ! fsmin is Kcoh
 ! Note that the new expression for Reff covers the whole cycle - phase not used.
 !--------------------------------------------------------------------------
-function eta_Arnould(phase,f_S, tIR, Reffmin, S_NHEJ, fsmin) result(eta)
+function eta_Arnould(phase,f_S, tIR, S_NHEJ, fsmin) result(eta)
 integer :: phase
-real(8) :: f_S, tIR, Reffmin, S_NHEJ, fsmin, eta
+real(8) :: f_S, tIR, S_NHEJ, fsmin, eta
 real(8) :: Reff, sigma, fsigma
 logical, parameter :: use_old_method = .false.   ! results the same as new method
 
@@ -236,7 +236,7 @@ real(8) :: St(2,100), Rt(2,100), etat(2,100), eta_array(11)
 real(8), parameter :: T_G1 = 6.35, T_S = 9.0, T_G2 = 3.2
 integer :: phase, nt, it, k, j,  NHEJfast, iR, iS
 
-! Evaluate effect of R_Arnould (Reffmin)
+! Evaluate effect of Reffmin)
 write(*,*)
 do j = 1,2
     if (j == 1) then

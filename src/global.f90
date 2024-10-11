@@ -580,7 +580,7 @@ logical, parameter :: constant_S_pHR = .true.
 real(REAL_KIND), parameter :: dose_threshold = 1	! was 1
 integer :: ATR_in_S = 1		! 0 = no ATR signalling in S, 1 = signalling, no CP effect, 2 = signalling and CP effect
 logical, parameter :: use_Arnould = .true.
-real(REAL_KIND) :: R_Arnould = 0.7, Kclus = 0.693	! for DSB clustering
+real(REAL_KIND) :: Reffmin = 0.7, Kclus = 0.693	! for DSB clustering
 logical :: use_equal_mitrates = .false.
 logical :: use_cell_kcc2a_dependence = .true.
 

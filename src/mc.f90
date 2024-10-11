@@ -224,7 +224,6 @@ read(nfin,*) KATM2G1D
 ! these values are copied from a recent input file
 repRate(NHEJfast) = 2.081
 repRate(NHEJslow) = 0.2604
-!repRate(HR) = 0.13
 repRate(TMEJ) = 0.025
 Pcomplex = 0.43
 Kcoh = 1.0
@@ -247,8 +246,9 @@ read(nfin,*) Chalf
 Preass = 0
 read(nfin,*) dsigma_dt
 read(nfin,*) sigma_NHEJ
-read(nfin,*) R_Arnould
+read(nfin,*) Reffmin
 read(nfin,*) reprate(HR)
+read(nfin,*) Kclus
 !call check_eta(sigma_NHEJ)
 
 if (use_Jaiswal) then
@@ -1690,7 +1690,7 @@ if (use_constant_V) then
     eta_NHEJ = etafun(1.d0,sigma)
 else
     if (use_Arnould) then
-        eta_NHEJ = eta_Arnould(phase, f_S, tIR, R_Arnould, sigma_NHEJ, Kcoh)
+        eta_NHEJ = eta_Arnould(phase, f_S, tIR, sigma_NHEJ, Kcoh)
     !    eta_NHEJ = etafun(1.d0,sigma_NHEJ)
     else
         eta_NHEJ = eta_lookup(phase, NHEJfast, f_S, tIR) 
@@ -2051,7 +2051,7 @@ end subroutine
 !------------------------------------------------------------------------
 subroutine test_Pmis
 type(cell_type), pointer :: cp
-real(8) :: dose = 6, dt = 0.1, Reffmin = 0.9, sigma = 0.0413, dsigma_dt = 0.0239, Kcoh = 1.0
+real(8) :: dose = 6, dt = 0.1, sigma = 0.0413, dsigma_dt = 0.0239, Kcoh = 1.0
 real(8) :: r1 = 2.081, r2 = 0.2604, p = 0.43, T_S = 9.04
 real(8) :: t, N(2), dN(2), Ntot0, Ntot, R, S, eta, eta_A
 real(8) :: Pmis(100), Nrep(100), f_S, fsigma, Ptot, Nreptot, Pmis_ave
@@ -2062,6 +2062,7 @@ write(*,*) 'test_Pmis'
 ! Evaluate Pmis at intervals over a period after IR, compute weighted average 
 ! G1, IR at 0.0
 ! Initial DSBs
+Reffmin = 0.9
 kcell_now = 1
 cp => cell_list(1)
 cp%phase = G2_phase
