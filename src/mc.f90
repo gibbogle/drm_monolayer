@@ -224,7 +224,7 @@ read(nfin,*) KATM2G1D
 ! these values are copied from a recent input file
 repRate(NHEJfast) = 2.081
 repRate(NHEJslow) = 0.2604
-repRate(HR) = 0.13
+!repRate(HR) = 0.13
 repRate(TMEJ) = 0.025
 Pcomplex = 0.43
 Kcoh = 1.0
@@ -248,6 +248,7 @@ Preass = 0
 read(nfin,*) dsigma_dt
 read(nfin,*) sigma_NHEJ
 read(nfin,*) R_Arnould
+read(nfin,*) reprate(HR)
 !call check_eta(sigma_NHEJ)
 
 if (use_Jaiswal) then
