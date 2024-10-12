@@ -2611,32 +2611,32 @@ if (compute_cycle) then
                 write(*,*) 'write PEST output'
                 if (G2M_only) then
                     if (expt_tag == "CA-135") then
-                        write(nfres,'(20f8.5)') (normalised_phase_dist(i,3:4),i=1,nphase_hours)
+                        write(nfres,'(20f12.5)') (normalised_phase_dist(i,3:4),i=1,nphase_hours)
                     elseif (expt_tag == "CC-11 ") then
-                        write(nfres,'(20f8.5)') (normalised_phase_dist(i,3:3),i=1,nphase_hours)
+                        write(nfres,'(20f12.5)') (normalised_phase_dist(i,3:3),i=1,nphase_hours)
                     elseif (expt_tag == "CC-13 ") then
-                        write(nfres,'(20f8.5)') (normalised_phase_dist(i,4),i=1,nphase_hours)
+                        write(nfres,'(20f12.5)') (normalised_phase_dist(i,4),i=1,nphase_hours)
                     endif
                 else
                     write(*,'(a,a,i6)') 'expt_tag,nphase_hours: ',expt_tag,nphase_hours
                     if (expt_tag == "CA-135") then
-                        write(nfres,'(20f8.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
-                        write(nflog,'(20f8.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
+                        write(nfres,'(20f12.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
+                        write(nflog,'(20f12.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
                     elseif (expt_tag == "CC-11 ") then
-                        write(nfres,'(20f8.5)') (normalised_phase_dist(i,1:3),i=1,nphase_hours)
-                        write(nflog,'(20f8.5)') (normalised_phase_dist(i,1:3),i=1,nphase_hours)
+                        write(nfres,'(20f12.5)') (normalised_phase_dist(i,1:3),i=1,nphase_hours)
+                        write(nflog,'(20f12.5)') (normalised_phase_dist(i,1:3),i=1,nphase_hours)
                     elseif (expt_tag == "CC-13 ") then
-                        write(nfres,'(20f8.5)') (normalised_phase_dist(i,4),i=1,nphase_hours)
-                        write(nflog,'(20f8.5)') (normalised_phase_dist(i,4),i=1,nphase_hours)
+                        write(nfres,'(20f12.5)') (normalised_phase_dist(i,4),i=1,nphase_hours)
+                        write(nflog,'(20f12.5)') (normalised_phase_dist(i,4),i=1,nphase_hours)
                     endif
                 endif
                 if (expt_tag == "PDSN0G") then
-                    write(nfres,'(20f8.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
+                    write(nfres,'(20f12.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
                 elseif (expt_tag == "PDSN2G") then
-                    write(nfres,'(20f8.5)') (normalised_phase_dist(i,4),i=1,3), &
+                    write(nfres,'(20f12.5)') (normalised_phase_dist(i,4),i=1,3), &
                                             (normalised_phase_dist(i,1:4),i=4,nphase_hours)
                 elseif (expt_tag == "PDSN6G") then
-                    write(nfres,'(20f8.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
+                    write(nfres,'(20f12.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
                 endif
                 write(nflog,'(20f10.5)') (normalised_phase_dist(i,1:4),i=1,nphase_hours)
                 write(nflog,'(20f10.5)') control_ave(1:4)
