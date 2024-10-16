@@ -2036,7 +2036,7 @@ cp => cell_list(1)
 
 tIR = (istep-1)*DELTA_T/3600.0
 !write(nfres,'(a,3i6,2f6.2,e12.3)') 'istep,kcell,phase,f_S,tIR,ATM_act: ',istep,1,cp%phase,cp%progress,tIR,cp%ATM_act
-write(nfres,'(f6.2,e12.3)') tIR,cp%ATM_act
+!write(nfres,'(f6.2,e12.3)') tIR,cp%ATM_act
 !call test_Jaiswal
 !res = 1
 !return
