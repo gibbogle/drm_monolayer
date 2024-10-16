@@ -180,15 +180,15 @@ counts = 0
         SER = C_O2/(C_O2 + LQ(ityp)%K_ms)
 		if (use_Iliakis) then
 			if (cp%phase >= S_phase) then
-				fIliakis = kIliakis**nIliakis/(kIliakis**nIliakis + (dose-dose_threshold)**nIliakis)
+				fsup = ksup**nIliakis/(ksup**nIliakis + (dose-dose_threshold)**nIliakis)
 			else
-				fIliakis = 1
+				fsup = 1
 			endif
 			if (cp%phase == S_phase .and. no_S_Iliakis) then 
-                fIliakis = 1
+                fsup = 1
             endif
 		else
-			fIliakis = 1.0
+			fsup = 1.0
 		endif
         SER = 1 ! turn off SER - Bill confirmed
         call cellIrradiation(cp,dose)
@@ -1098,8 +1098,8 @@ cp1%t_divide_last = tnow
 cp1%CC_act = 0	! CC_act0
 !cp1%ATR_act = 0	! let daughter cells inherit parent's ATM, ATR
 !cp1%ATM_act = 0
-if (use_cell_kcc2a_dependence) cp1%Kcc2a = get_Kcc2a(kmccp,CC_tot,CC_threshold_factor,cp1%fg(G2_phase)*ccp%T_G2/3600)
-!write(nflog,'(a,i6,f8.3)') 'divider kcell1, Kcc2a: ',kcell1,cp1%kcc2a
+if (use_cell_kcc_dependence) cp1%Kcc = get_Kcc(kmccp,CC_tot,CC_threshold_factor,cp1%fg(G2_phase)*ccp%T_G2/3600)
+!write(nflog,'(a,i6,f8.3)') 'divider kcell1, Kcc: ',kcell1,cp1%kcc
 !cp1%irradiated = .false.
 cp1%irradiated = (tnow > t_irradiation)
 if (is_radiation .and. use_SF) return   ! in this case there is no need to actually have the cell divide
@@ -1183,8 +1183,8 @@ if (cp2%radiation_tag) then
 endif
 !cp2%DSB = 0
 !cp2%totDSB0 = 0
-if (use_cell_kcc2a_dependence) cp2%Kcc2a = get_Kcc2a(kmccp,CC_tot,CC_threshold_factor,cp2%fg(G2_phase)*ccp%T_G2/3600)
-!write(nflog,'(a,i6,f8.3)') 'divider kcell2, Kcc2a: ',kcell2,cp2%kcc2a
+if (use_cell_kcc_dependence) cp2%Kcc = get_Kcc(kmccp,CC_tot,CC_threshold_factor,cp2%fg(G2_phase)*ccp%T_G2/3600)
+!write(nflog,'(a,i6,f8.3)') 'divider kcell2, Kcc: ',kcell2,cp2%kcc
 !cp2%Psurvive = 0
 !if (colony_simulation) write(*,'(a,i6,2e12.3)') 'new cell: ',kcell2,cp2%V,cp2%divide_volume
 if (cp1%rad_state == G1_phase) then

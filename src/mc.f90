@@ -43,7 +43,7 @@ real(8) :: pJeggo = 0.9         ! fraction of post-replication DSBs that are fas
 real(8) :: Kcoh                ! cohesin effect (read in input file)
 real(8) :: pHR_max, f_S_decay
 logical :: use_sigmoid = .true.
-real(8) :: rmin, ksig, csig, kdecay    ! decay function parameters
+real(8) :: rmin, kdecay, cdecay    ! decay function parameters
 character*(2) :: phaseName(4) = ['G1','S ','G2','M ']
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.008462]   ! by pathway
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.2604, 0.008462]   ! by pathway  with HR simple
@@ -87,7 +87,7 @@ real(8) :: Preass   ! rate of reassignment to pathway 4, TMEJ (prob of reass/hou
 !logical :: alt_EJ_suppressed = .false.
 
 ! Jaiswal formulation (26/09/22)
-real(8) :: Kcc2a, Kcc2e, Kd2e, Kd2t, Ke2cc, Kt2cc, Kti2t
+real(8) :: Kcc, Krd, Krp, Kmp1, Kmp2, Kccrd, Kccmd, Kmd
 real(8) :: Km1, Km10, Km10t
 real(8) :: kmmp, kmmd               ! ATM production, decay
 real(8) :: kmrp, kmrd               ! ATR production, decay
@@ -118,7 +118,7 @@ logical :: negligent_G2_CP = .false.
 logical :: use_DSB_CP = .false.
 logical :: use_D_model = .false.
 
-real(8) :: kcc2a_ave
+real(8) :: kcc_ave
 logical :: use_exp_slowdown = .false.
 logical :: use_G1_stop = .false.    ! These flags control use of either CP delay (true) or slowdown (false)
 logical :: use_S_stop = .false.
@@ -148,8 +148,8 @@ real(8) :: pHR_sum, pNHEJslow_sum, fdecay_sum
 
 ! Iliakis
 real(8) :: nIliakis
-real(8) :: kIliakis     ! if kIliakis = 0, fIliakis = 1
-real(8) :: fIliakis
+real(8) :: ksup     ! if ksup = 0, fsup = 1
+real(8) :: fsup
 logical :: use_Iliakis 
 
 ! Distributions of Nlethal, totDSB at mitosis
@@ -234,11 +234,11 @@ write(*,*) 'pHR_max: ',pHR_max
 read(nfin,*) f_S_decay
 !read(nfin,*) rmin
 rmin = 0
-read(nfin,*) ksig
-read(nfin,*) csig
+read(nfin,*) kdecay
+read(nfin,*) cdecay
 !read(nfin,*) nIliakis
 nIliakis = 1
-read(nfin,*) kIliakis
+read(nfin,*) ksup
 !read(nfin,*) G1_tdelay
 G1_tdelay = 0
 read(nfin,*) Chalf
@@ -252,13 +252,14 @@ read(nfin,*) Kclus
 !call check_eta(sigma_NHEJ)
 
 if (use_Jaiswal) then
-!    read(nfin,*) Kcc2a     ! this is computed for each cell
-    read(nfin,*) Kcc2e
-    read(nfin,*) Kd2e
-    read(nfin,*) Kd2t
-    read(nfin,*) Ke2cc
-    read(nfin,*) Kt2cc
-    read(nfin,*) Kti2t
+!    read(nfin,*) Kcc     ! this is computed for each cell
+    read(nfin,*) Krd
+    read(nfin,*) Krp
+    read(nfin,*) Kmp1
+    read(nfin,*) Kmp2
+    read(nfin,*) Kccrd
+    read(nfin,*) Kccmd
+    read(nfin,*) Kmd
     read(nfin,*) Kmccp
     read(nfin,*) Kmccmd
     read(nfin,*) Kmccrd
@@ -297,7 +298,7 @@ NG2th = 0
 ng11 = 0    ! counting cells reaching G1 post-mitosis
 ng12 = 0
 
-use_Iliakis = (kIliakis > 0)
+use_Iliakis = (ksup > 0)
 
 ! For PEST runs, iphase_hours must be -1 (for M runs) or -2 (for C runs) or -3 (for MC runs)
 use_SF = .false.
@@ -592,8 +593,8 @@ if (use_Jeggo) then     ! using this
     End If
     Npost = totDSB0 - Npre
     !If (f_S > 0) Then
-    !    pHRs = fIliakis*pHR_max * ((1 - rmin) * fdecay(th) + rmin)
-    !    pHRc = fIliakis*pHR_max * ((1 - rmin) * fdecay(th) + rmin)
+    !    pHRs = fsup*pHR_max * ((1 - rmin) * fdecay(th) + rmin)
+    !    pHRc = fsup*pHR_max * ((1 - rmin) * fdecay(th) + rmin)
     !    if (single_cell) &
     !        write(*,'(a,i2,5f10.3)') 'phase, cp%progress, th, fdecay(th), pHRs, pHRc: ', &
     !                                  phase, cp%progress, th, fdecay(th), pHRs, pHRc
@@ -603,19 +604,19 @@ if (use_Jeggo) then     ! using this
     !End If
     !pHR = (1 - pComplex)*pHRs + pComplex*pHRc
     if (f_S > 0) then
-        pHR = fIliakis*pHR_max * ((1 - rmin) * fdecay(th) + rmin)
+        pHR = fsup*pHR_max * ((1 - rmin) * fdecay(th) + rmin)
     else
         pHR = 0
     endif
-!    write(*,'(a,7f8.3)') 'fIliakis, fstart, T_S, th, pHR: ',fIliakis, fstart, ccp%T_S/3600, th, pHR
+!    write(*,'(a,7f8.3)') 'fsup, fstart, T_S, th, pHR: ',fsup, fstart, ccp%T_S/3600, th, pHR
     if (kcell_now == 1) then
         write(*,'(a,2f8.3)') 'th, fdecay(th): ',th, fdecay(th)
-        write(*,'(a,3f8.3)') 'fIliakis,pHR: ',fIliakis,pHR
+        write(*,'(a,3f8.3)') 'fsup,pHR: ',fsup,pHR
     endif
     if (kcell_now <= 10) then
         if (phase == S_phase) then
-            write(*,'(a,2i4,3f8.3)') 'kcell,phase,fIliakis,pHR: ',kcell_now,phase,fIliakis,pHR
-            write(nflog,'(a,2i4,3f8.3)') 'kcell,phase,fIliakis,pHR: ',kcell_now,phase,fIliakis,pHR
+            write(*,'(a,2i4,3f8.3)') 'kcell,phase,fsup,pHR: ',kcell_now,phase,fsup,pHR
+            write(nflog,'(a,2i4,3f8.3)') 'kcell,phase,fsup,pHR: ',kcell_now,phase,fsup,pHR
         endif
     endif
     if (option == 1) then
@@ -643,14 +644,14 @@ if (use_Jeggo) then     ! using this
         if (kcell_now == 5 .and. test_run) then
             write(*,*) 'cell #: ',kcell_now
             write(nfout,*) 'cell #: ',kcell_now
-!            write(*,'(a,5f8.4)') 'fIliakis, decay, pHRs, pHRc, pHR: ', &
-!                    fIliakis, ((1 - rmin) * fdecay(th) + rmin), pHRs,pHRc,pHR
+!            write(*,'(a,5f8.4)') 'fsup, decay, pHRs, pHRc, pHR: ', &
+!                    fsup, ((1 - rmin) * fdecay(th) + rmin), pHRs,pHRc,pHR
             write(*,*) 'Npre, Npost, f_S, pHR: ',Npre,Npost,f_S,pHR
             write(*,'(2(a,3f8.1))') 'pre  DSB at IR: ',DSB0(1:3,1),'  NNHEJ: ',sum(DSB0(1:2,1))
             write(*,'(2(a,3f8.1))') 'post DSB at IR: ',DSB0(1:3,2),'  NNHEJ: ',sum(DSB0(1:2,2))
             write(*,'(a,3f8.1)')    'total DSB at IR: ',sum(DSB0(NHEJfast,:)),sum(DSB0(NHEJslow,:)),sum(DSB0(HR,:))
-!            write(nfout,'(a,5f8.4)') 'fIliakis, decay, pHR: ', &
-!                    fIliakis, ((1 - rmin) * fdecay(th) + rmin), pHR
+!            write(nfout,'(a,5f8.4)') 'fsup, decay, pHR: ', &
+!                    fsup, ((1 - rmin) * fdecay(th) + rmin), pHR
             write(nfout,'(a,f6.3,4f8.1)') 'f_S, NG1, Npre, Npost, totDSB0: ',f_S,NG1,Npre,Npost,totDSB0
             write(nfout,'(2(a,3f8.1))') 'pre  DSB at IR: ',DSB0(1:3,1),'  NNHEJ: ',sum(DSB0(1:2,1))
             write(nfout,'(2(a,3f8.1))') 'post DSB at IR: ',DSB0(1:3,2),'  NNHEJ: ',sum(DSB0(1:2,2))
@@ -757,13 +758,13 @@ end function
 
 !--------------------------------------------------------------------------
 ! From Richards's curve
-! t is hours since start of S-phase, csig approx = T_S
+! t is hours since start of S-phase, cdecay approx = T_S
 !--------------------------------------------------------------------------
 function fsigmoid(t) result(f)
 real(8) :: t, f
 
-f = 1.0/(1.0 + exp(ksig*(t - csig)))
-!write(*,'(a,4e12.3)') 'fsigmoid: ksig,csig,t,f: ',ksig,csig,t,f
+f = 1.0/(1.0 + exp(kdecay*(t - cdecay)))
+!write(*,'(a,4e12.3)') 'fsigmoid: kdecay,cdecay,t,f: ',kdecay,cdecay,t,f
 end function
 
 
@@ -790,7 +791,7 @@ end function
 subroutine updateATM(iph,pATM,ATM_DSB,dth)
 integer :: iph
 real(8) :: pATM, ATM_DSB, dth, pATM0
-real(8) :: r, t, fz, kdecay
+real(8) :: r, t, fz, kd
 logical :: OK
 
 !write(*,*) 'updateATM: iph: ',iph
@@ -810,13 +811,13 @@ else
     r = K_ATM(iph,1)*ATM_DSB   ! rate of production of pATM
 endif
 t = (tnow - t_irradiation)/3600
-kdecay = max(1.0e-8,K_ATM(iph,2))  ! decay rate constant
-pATM = r/kdecay + (pATM - r/kdecay)*exp(-kdecay*dth)
+kd = max(1.0e-8,K_ATM(iph,2))  ! decay rate constant
+pATM = r/kd + (pATM - r/kd)*exp(-kd*dth)
 if (isnan(pATM)) then
-    write(*,*) 'NAN in updateATM: ',iph, r, kdecay, r/kdecay
+    write(*,*) 'NAN in updateATM: ',iph, r, kd, r/kd
     stop
 endif
-!if (kcell_now <= 10) write(*,'(a,i4,6f6.2)') 'updateATM: r,k,r/k,ATM_DSB,pATM: ',kcell_now,r,kdecay,r/kdecay,ATM_DSB,pATM
+!if (kcell_now <= 10) write(*,'(a,i4,6f6.2)') 'updateATM: r,k,r/k,ATM_DSB,pATM: ',kcell_now,r,kd,r/kd,ATM_DSB,pATM
 !write(*,'(a,i3,6f8.4)') 'updateATM: ',iph,ATM_DSB,r,k,r/k,pATM
 !if (iph == 2) stop
 end subroutine
@@ -1190,7 +1191,7 @@ end subroutine
 ! No DSB repair
 !------------------------------------------------------------------------
 subroutine test_Jaiswal
-real(8) :: t, dth, tsim, dose, T_G2h, R, kfactor, DSB0(NP,2), kmccp_temp, Kcc2a_temp
+real(8) :: t, dth, tsim, dose, T_G2h, R, kfactor, DSB0(NP,2), kmccp_temp, Kcc_temp
 integer :: it, Nt, i, kpar = 0
 type(cell_type), pointer :: cp
 
@@ -1206,24 +1207,18 @@ cp%progress = 0.9
 cp%t_start_G2 = 0
 do i = 1,8
     kmccp_temp = 4.0 + (i-1)*0.5
-    Kcc2a_temp = get_Kcc2a(kmccp_temp,CC_tot,CC_threshold_factor,T_G2h)    
-    write(*,'(a,2f8.3)') 'kmccp, kcc2a: ',kmccp_temp,kcc2a_temp
+    Kcc_temp = get_Kcc(kmccp_temp,CC_tot,CC_threshold_factor,T_G2h)    
+    write(*,'(a,2f8.3)') 'kmccp, kcc: ',kmccp_temp,kcc_temp
 enddo
-cp%Kcc2a = get_Kcc2a(kmccp,CC_tot,CC_threshold_factor,T_G2h)  
-write(*,*) 'Kcc2a: ',cp%Kcc2a
-!R = par_uni(kpar)
-!kfactor = 1 + (R - 0.5)*jaiswal_std
-!cp%kt2cc = kt2cc*kfactor
-!R = par_uni(kpar)
-!kfactor = 1 + (R - 0.5)*jaiswal_std
-!cp%ke2cc = ke2cc*kfactor
-cp%kt2cc = kt2cc    ! use mean values
-cp%ke2cc = ke2cc
+cp%Kcc = get_Kcc(kmccp,CC_tot,CC_threshold_factor,T_G2h)  
+write(*,*) 'Kcc: ',cp%Kcc
+cp%kccmd = kccmd    ! use mean values
+cp%kccrd = kccrd
 cp%CC_act = 8.05    ! initialised to G2(0.9)
 cp%ATM_act = 0
 cp%ATR_act = 0
 dose = 2
-fIliakis = kIliakis**nIliakis/(kIliakis**nIliakis + (dose-dose_threshold)**nIliakis)    ! normally set in Irradiation()
+fsup = ksup**nIliakis/(ksup**nIliakis + (dose-dose_threshold)**nIliakis)    ! normally set in Irradiation()
 cp%fg = 1
 call cellIrradiation(cp, dose)
 DSB0 = cp%DSB
@@ -1255,7 +1250,7 @@ type(cell_type), pointer :: cp
 real(8) :: dth
 real(8) :: dt = 0.001
 real(8) :: D_ATR, D_ATM, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact, tIR
-real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, t_G2, Kkcc2a, DSB(NP), CC_act0, d(3)
+real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, t_G2, Kkcc, DSB(NP), CC_act0, d(3)
 real(8) :: dATM_plus, dATM_minus
 integer :: iph, it, Nt
 type(cycle_parameters_type),pointer :: ccp
@@ -1276,11 +1271,11 @@ ATR_act = cp%ATR_act
 CC_act = cp%CC_act
 dbug = (iph == -2 .and. (kcell_now == 3))
 if (iph == G1_phase) then
-    D_ATM = DSB(NHEJslow)
+!    D_ATM = DSB(NHEJslow)  !not needed now
     ATM_act = cp%ATM_act
 !    write(*,'(a,i6,2e12.3)') 'Jaiswal_update: D_ATM,ATM_act: ',kcell_now,D_ATM,ATM_act
 elseif (iph == S_phase) then
-    D_ATM = (DSB(HR) + DSB(NHEJslow))
+!    D_ATM = (DSB(HR) + DSB(NHEJslow))
     ATM_act = cp%ATM_act
     if (use_ATR) then
         D_ATR = DSB(HR)
@@ -1288,7 +1283,7 @@ elseif (iph == S_phase) then
     endif
 elseif (iph == G2_phase) then
     D_ATR = DSB(HR)
-    D_ATM = (DSB(HR) + DSB(NHEJslow))
+!    D_ATM = (DSB(HR) + DSB(NHEJslow))
     CC_act = cp%CC_act
     CC_act0 = CC_act
     ATR_act = cp%ATR_act
@@ -1309,14 +1304,14 @@ elseif (iph == G2_phase) then
 else
     return
 endif
-if (use_cell_kcc2a_dependence) then
-    Kkcc2a = cp%Kcc2a
-!    write(nflog,*) 'from use_cell_kcc2a_dependence: ',Kkcc2a
+if (use_cell_kcc_dependence) then
+    Kkcc = cp%Kcc
+!    write(nflog,*) 'from use_cell_kcc_dependence: ',Kkcc
 else
-    Kkcc2a = Kcc2a
-!    write(nflog,*) 'from NOT use_cell_kcc2a_dependence: ',Kkcc2a
+    Kkcc = Kcc
+!    write(nflog,*) 'from NOT use_cell_kcc_dependence: ',Kkcc
 endif
-!write(nflog,'(a,6e12.3)') 'Jaiswal params: ',Kkcc2a,Kmccp,cp%Kt2cc,Kmccmd,cp%Ke2cc,Kmccrd
+!write(nflog,'(a,6e12.3)') 'Jaiswal params: ',Kkcc,Kmccp,cp%Kccmd,Kmccmd,cp%Kccrd,Kmccrd
 !write(nflog,'(a,5f12.4)') 'CC_act,ATM_act,ATM_tot,ATR_act,ATR_tot: ',CC_act,ATM_act,ATM_tot,ATR_act,ATR_tot
 do it = 1,Nt
     
@@ -1329,11 +1324,11 @@ do it = 1,Nt
     if (iph == G2_phase) then
         CC_inact = CC_tot - CC_act
         ATR_inact = ATR_tot - ATR_act
-        dCC_act_dt = (Kkcc2a + CC_act) * CC_inact / (Kmccp + CC_inact) - cp%Kt2cc * ATM_act * CC_act / (Kmccmd + CC_act) - cp%Ke2cc * ATR_act * CC_act / (Kmccrd + CC_act)
-        d(1) = (Kkcc2a + CC_act) * CC_inact / (Kmccp + CC_inact)    ! CC_act effect
-        d(2) = - cp%Kt2cc * ATM_act * CC_act / (Kmccmd + CC_act)    ! ATM_act effect
-        d(3) = - cp%Ke2cc * ATR_act * CC_act / (Kmccrd + CC_act)    ! ATR_act effect
-        dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Kmrp + ATR_inact) - Kcc2e * ATR_act * CC_act / (Kmrd + CC_act)
+        dCC_act_dt = (Kkcc + CC_act) * CC_inact / (Kmccp + CC_inact) - cp%Kccmd * ATM_act * CC_act / (Kmccmd + CC_act) - cp%Kccrd * ATR_act * CC_act / (Kmccrd + CC_act)
+        d(1) = (Kkcc + CC_act) * CC_inact / (Kmccp + CC_inact)    ! CC_act effect
+        d(2) = - cp%Kccmd * ATM_act * CC_act / (Kmccmd + CC_act)    ! ATM_act effect
+        d(3) = - cp%Kccrd * ATR_act * CC_act / (Kmccrd + CC_act)    ! ATR_act effect
+        dATR_act_dt = Krp * D_ATR * ATR_inact / (Kmrp + ATR_inact) - Krd * ATR_act * CC_act / (Kmrd + CC_act)
         
 ! Try this
 !        dCC_act_dt = max(dCC_act_dt,0.0)
@@ -1343,27 +1338,26 @@ do it = 1,Nt
         ATR_act = ATR_act + dt * dATR_act_dt
         ATR_act = min(ATR_act, ATR_tot)
 !        if (single_cell .and. it == Nt) then
-!            write(*,'(a,4e12.3)')  'terms:  ',(Kkcc2a + CC_act) * CC_inact / (Kmccp + CC_inact), &
-!                     - cp%Kt2cc * ATM_act * CC_act / (Kmccmd + CC_act), &
-!                     - cp%Ke2cc * ATR_act * CC_act / (Kmccrd + CC_act), &
+!            write(*,'(a,4e12.3)')  'terms:  ',(Kkcc + CC_act) * CC_inact / (Kmccp + CC_inact), &
+!                     - cp%Kccmd * ATM_act * CC_act / (Kmccmd + CC_act), &
+!                     - cp%Kccrd * ATR_act * CC_act / (Kmccrd + CC_act), &
 !                    dCC_act_dt!
 !
 !            write(*,'(3i6,e12.3)') istep,Nt,it,dCC_act_dt
 !        endif
     elseif (use_ATR .and. D_ATR > 0) then
-        dATR_act_dt = Kd2e * D_ATR * ATR_inact / (Kmrp + ATR_inact)  - Kcc2e * ATR_act * CC_act / (Kmrd + CC_act)
+        dATR_act_dt = Krp * D_ATR * ATR_inact / (Kmrp + ATR_inact)  - Krd * ATR_act * CC_act / (Kmrd + CC_act)
         ATR_act = ATR_act + dt * dATR_act_dt
         ATR_act = min(ATR_act, ATR_tot)
-!        if (single_cell) write(nflog,'(a,i4,4f8.3)') 'iph,D_ATR, Kd2e, ATR_inact, dATR_act_dt: ', &
-!                    iph, D_ATR, Kd2e, ATR_inact, dATR_act_dt
+!        if (single_cell) write(nflog,'(a,i4,4f8.3)') 'iph,D_ATR, Krp, ATR_inact, dATR_act_dt: ', &
+!                    iph, D_ATR, Krp, ATR_inact, dATR_act_dt
     endif
-    dATM_plus = Kd2t * D_ATM * ATM_inact / (Kmmp + ATM_inact)
-    dATM_minus = Kti2t * ATM_act / (Kmmd + ATM_act)
+!    dATM_plus = Kd2t * D_ATM * ATM_inact / (Kmmp + ATM_inact)
+    dATM_plus = (Kmp1*DSB(NHEJslow) + Kmp2*DSB(HR)) * ATM_inact / (Kmmp + ATM_inact)
+    dATM_minus = Kmd * ATM_act / (Kmmd + ATM_act)
     dATM_act_dt = dATM_plus - dATM_minus   
-!    dATM_act_dt = Kd2t * D_ATM * ATM_inact / (Kmmp + ATM_inact) - Kti2t * ATM_act / (Kmmd + ATM_act)   
     ATM_act = ATM_act + dt*dATM_act_dt
     ATM_act = min(ATM_act, ATM_tot)
-!    ATM_act = min(ATM_act,0.5)
     !if (single_cell .and. iph == G2_phase .and. t_simulation < 3.2*3600) then
     !    write(*,'(a,4f8.4,e12.3)') 'Jaiswal: dt,D_ATR,ATR_inact,ATR_act,dATRdt: ',dt,D_ATR,ATR_inact,ATR_act,dATR_act_dt
     !endif
@@ -1371,7 +1365,7 @@ do it = 1,Nt
 !    if (t_G2 <= 0.1 .and. it <= 10) write(nflog,'(a,3f8.4)') 'D_ATM,ATM_act,ATM_inact: ',D_ATM,ATM_act,ATM_inact
 enddo
 tIR = istep*DELTA_T/3600.
-if (dbug) write(nfres,'(a,9f9.4,2e12.3)') 'Jaiswal: ',tIR,D_ATM,ATM_act,ATM_inact,Kd2t,Kmmp,Kti2t,Kmmd,ATM_act,dATM_plus,dATM_minus
+if (dbug) write(nfres,'(a,10f9.4,2e12.3)') 'Jaiswal: ',tIR,D_ATM,ATM_act,ATM_inact,Kmp1,Kmp2,Kmmp,Kmd,Kmmd,ATM_act,dATM_plus,dATM_minus
 !if (single_cell) then
 !    write(*,'(a,2i4,4f8.4)') 'kcell,iph,ATR,ATM: ',kcell_now,iph,ATR_act,ATM_act
 !    write(nflog,'(a,2i4,4f8.4)') 'kcell,iph,ATR,ATM: ',kcell_now,iph,ATR_act,ATM_act
@@ -2069,15 +2063,15 @@ cp%phase = G2_phase
 cp%progress = 0.3
 if (use_Iliakis) then
 	if (cp%phase >= S_phase) then
-		fIliakis = kIliakis**nIliakis/(kIliakis**nIliakis + (dose-dose_threshold)**nIliakis)
+		fsup = ksup**nIliakis/(ksup**nIliakis + (dose-dose_threshold)**nIliakis)
 	else
-		fIliakis = 1
+		fsup = 1
 	endif
 	if (cp%phase == S_phase .and. no_S_Iliakis) then 
-        fIliakis = 1
+        fsup = 1
     endif
 else
-	fIliakis = 1.0
+	fsup = 1.0
 endif
 call cellIrradiation(cp,dose)
 write(nflog,*)

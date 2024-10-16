@@ -553,9 +553,9 @@ write(nflog,'(a,f6.1)') 'dose_threshold: ',dose_threshold
 !call checkPD
 !stop
 
-! Try setting this for each cell unless use_cell_kcc2a_dependence
-Kcc2a = get_Kcc2a(kmccp,CC_tot,CC_threshold_factor,cc_parameters(1)%T_G2/3600)
-write(nflog,*) 'did get_Kcc2a: ',Kcc2a
+! Try setting this for each cell unless use_cell_kcc_dependence
+Kcc = get_Kcc(kmccp,CC_tot,CC_threshold_factor,cc_parameters(1)%T_G2/3600)
+write(nflog,*) 'did get_Kcc: ',Kcc
 single_cell = (initial_count==1)
 write(nflog,*) 'single_cell: ',single_cell
 
@@ -1214,7 +1214,7 @@ logical :: ok
 integer :: kcell, k, ichemo, ityp, site(3), phase, kpar = 0
 real(REAL_KIND) :: rsite(3)
 real(REAL_KIND) :: fract(0:8), total
-real(REAL_KIND) :: kt2cc_min, kt2cc_max, kcc2a_sum
+real(REAL_KIND) :: kccmd_min, kccmd_max, kcc_sum
 !integer :: phase_count(0:8), hour
 integer :: counts(NP)
 type(cell_type), pointer :: cp
@@ -1229,9 +1229,9 @@ kcell = 0
 Ncells_type = 0
 t_irradiation = -1
 rsite = [0.,0.,0.]
-kt2cc_min = 9999
-kt2cc_max = 0
-kcc2a_sum = 0
+kccmd_min = 9999
+kccmd_max = 0
+kcc_sum = 0
 !do k = 1,20
 !    write(nflog,*) 'k,par_uni: ',k,par_uni(kpar)
 !enddo
@@ -1241,20 +1241,18 @@ do kcell = 1,initial_count
 !	write(*,*) 'Added kcell: ',kcell
 !    write(nflog,*) 'kcell,par_uni,npar-rnor: ',kcell,par_uni(kpar),npar_rnor
     cp => cell_list(kcell)
-	kt2cc_min = min(kt2cc_min,cp%kt2cc)
-	kt2cc_max = max(kt2cc_max,cp%kt2cc)
+	kccmd_min = min(kccmd_min,cp%kccmd)
+	kccmd_max = max(kccmd_max,cp%kccmd)
 	phase = cp%phase
 	phase = min(phase,M_phase)
 	counts(phase) = counts(phase) + 1
 	if (phase == G2_phase) then
 	    cp%t_start_G2 = 0
 	endif
-	kcc2a_sum = kcc2a_sum + cp%kcc2a
-!    write(*,*) 'Kcc2a: ',cp%Kcc2a
+	kcc_sum = kcc_sum + cp%kcc
+!    write(*,*) 'Kcc: ',cp%Kcc
 enddo
-!write(nflog,'(a,2f8.3)') 'kcc2a_ave, calc: ',kcc2a_ave,kcc2a_sum/initial_count
-!write(*,'(a,2f10.4)') 'kt2cc min, max: ',kt2cc_min,kt2cc_max
-!write(nflog,'(a,2f10.4)') 'kt2cc min, max: ',kt2cc_min,kt2cc_max
+!write(nflog,'(a,2f8.3)') 'kcc_ave, calc: ',kcc_ave,kcc_sum/initial_count
 !write(*,*)
 write(*,'(a,5i6)') 'Initial phase counts: ',counts
 write(*,'(a,5f8.3)') 'Initial phase %ages: ',100.0*real(counts)/sum(counts)
@@ -1281,7 +1279,7 @@ integer :: kcell
 real(REAL_KIND) :: rsite(3)
 integer :: ityp, k, kpar = 0
 real(REAL_KIND) :: v(3), c(3), R1, R2, V0, Tdiv, Vdiv, p(3), R, gfactor, kfactor
-real(8) :: kcc2a_std = 0.7
+real(8) :: kcc_std = 0.7
 type(cell_type), pointer :: cp
 type(cycle_parameters_type),pointer :: ccp
 	
@@ -1318,13 +1316,13 @@ cp%metab%C_GlnEx_prev = 0
 R = par_uni(kpar)
 kfactor = 1 + (R - 0.5)*jaiswal_std
 if (single_cell .or. test_run .OR. use_no_random) kfactor = 1
-cp%kt2cc = kt2cc*kfactor
+cp%kccmd = kccmd*kfactor
 R = par_uni(kpar)
 kfactor = 1 + (R - 0.5)*jaiswal_std
 if (single_cell .or. test_run .OR. use_no_random) kfactor = 1
-cp%ke2cc = ke2cc*kfactor
+cp%kccrd = kccrd*kfactor
 
-!if (kcell <= 100) write(nflog,'(a,5f10.4)') 'Jaiswal R: ',R,kfactor,cp%kt2cc
+!if (kcell <= 100) write(nflog,'(a,5f10.4)') 'Jaiswal R: ',R,kfactor,cp%kccmd
 cp%CC_act = 0   ! CC_act0
 !R = par_uni(kpar)
 !cp%CC_act = CC_act0 + R*(CC_threshold - CC_act0)
@@ -1352,14 +1350,14 @@ cp%G2_time = 0
 !    cp%N_Ch2 = 0
 !    cp%irrepairable = .false.
     ! Need to assign phase, volume to complete phase, current volume
-!    if (use_cell_kcc2a_dependence) then
-!        cp%Kcc2a = get_Kcc2a(kmccp,CC_tot,CC_threshold_factor,cp%fg(3)*ccp%T_G2/3600)
+!    if (use_cell_kcc_dependence) then
+!        cp%Kcc = get_Kcc(kmccp,CC_tot,CC_threshold_factor,cp%fg(3)*ccp%T_G2/3600)
 !        R = par_rnor(kpar)
 !        if (abs(R) > 2) R = R/2
-!        kfactor = max(0.5,1 + R*kcc2a_std)
+!        kfactor = max(0.5,1 + R*kcc_std)
 !        kfactor = 0.9*kfactor
-!        cp%Kcc2a = kfactor*Kcc2a_ave
-!        if (kcell <= 100) write(nflog,'(a,5f10.4)') 'Kcc2a R: ',R,kfactor,cp%kcc2a
+!        cp%Kcc = kfactor*Kcc_ave
+!        if (kcell <= 100) write(nflog,'(a,5f10.4)') 'Kcc R: ',R,kfactor,cp%kcc
 !    endif
 
 !!!    call SetInitialCellCycleStatus(kcell,cp)
@@ -1479,10 +1477,10 @@ if (test_run) then
 else
     T_M = cp%mitosis_duration
 endif
-if (use_cell_kcc2a_dependence) then
-    cp%Kcc2a = get_Kcc2a(kmccp,CC_tot,CC_threshold_factor,T_G2/3600)
-    cp%Kcc2a = min(cp%kcc2a, 0.9*CC_threshold)
-!    write(nflog,*) 'T_G2, cp%Kcc2a: ',T_G2/3600,cp%Kcc2a
+if (use_cell_kcc_dependence) then
+    cp%Kcc = get_Kcc(kmccp,CC_tot,CC_threshold_factor,T_G2/3600)
+    cp%Kcc = min(cp%kcc, 0.9*CC_threshold)
+!    write(nflog,*) 'T_G2, cp%Kcc: ',T_G2/3600,cp%Kcc
 endif
 
 if (use_synchronise) then
@@ -2026,7 +2024,7 @@ type(cell_type), pointer :: cp
 integer :: phase_count(0:4), nG2
 real(REAL_KIND) :: total, tadjust
 real(REAL_KIND) :: fATM, fATR, fCP, dtCPdelay, dtATMdelay, dtATRdelay, ATM_DSB, DNA_rate
-real(REAL_KIND) :: pATM_sum, pATR_sum, DSB_sum
+real(REAL_KIND) :: pATM_sum, pATR_sum, DSB_sum, tIR
 real(REAL_KIND) :: SFtot, Pp, Pd, newSFtot, total_mitosis_time, V0
 logical :: PEST_OK
 logical :: ok = .true.
@@ -2034,8 +2032,11 @@ logical :: dbug
 
 !write(nflog,*) 'istep,npar_uni,npar_rnor: ',istep,npar_uni,npar_rnor
 
-cp => cell_list(3)
-!write(nfres,'(a,3i6,f6.2,e12.3)') 'istep,kcell,phase,f_S,ATM_act: ',istep,3,cp%phase,cp%progress,cp%ATM_act
+cp => cell_list(1)
+
+tIR = (istep-1)*DELTA_T/3600.0
+!write(nfres,'(a,3i6,2f6.2,e12.3)') 'istep,kcell,phase,f_S,tIR,ATM_act: ',istep,1,cp%phase,cp%progress,tIR,cp%ATM_act
+write(nfres,'(f6.2,e12.3)') tIR,cp%ATM_act
 !call test_Jaiswal
 !res = 1
 !return
@@ -2460,9 +2461,9 @@ do kcell = 1,nlist
     cp => cell_list(kcell)
     if (cp%state /= DEAD .and. cp%psurvive < 0) then
         n = n+1
-        write(*,'(a,i6,i3,3f8.4)') 'nondivided: kcell, phase, kt2cc,ke2cc,kcc2a: ',kcell, cp%phase,cp%kt2cc,cp%ke2cc,cp%kcc2a
+        write(*,'(a,i6,i3,3f8.4)') 'nondivided: kcell, phase, kccmd,kccrd,kcc: ',kcell, cp%phase,cp%kccmd,cp%kccrd,cp%kcc
         write(*,*) 'fg: ',cp%fg
-        write(nflog,'(a,i6,i3,3f8.4)') 'nondivided: kcell, phase, kt2cc,ke2cc,kcc2a: ',kcell, cp%phase,cp%kt2cc,cp%ke2cc,cp%kcc2a
+        write(nflog,'(a,i6,i3,3f8.4)') 'nondivided: kcell, phase, kccmd,kccrd,kcc: ',kcell, cp%phase,cp%kccmd,cp%kccrd,cp%kcc
         write(nflog,*) 'fg: ',cp%fg
     endif
 enddo

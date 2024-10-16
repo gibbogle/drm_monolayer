@@ -237,7 +237,7 @@ type cell_type
 	real(8) :: Nmis(2)		!, Nlethal(2)
 	
 	! Jaiswal section (26/09/22)
-	real(REAL_KIND) :: CC_act, ATR_act, ATM_act, dCC_act_dt, kt2cc, ke2cc, kcc2a
+	real(REAL_KIND) :: CC_act, ATR_act, ATM_act, dCC_act_dt, kccmd, kccrd, kcc
     
     ! Greens section (01/07/2023)
     real(8) :: gconc(3)		! oxygen, glucose, drug
@@ -582,7 +582,7 @@ integer :: ATR_in_S = 1		! 0 = no ATR signalling in S, 1 = signalling, no CP eff
 logical, parameter :: use_Arnould = .true.
 real(REAL_KIND) :: Reffmin = 0.7, Kclus = 0.693	! for DSB clustering
 logical :: use_equal_mitrates = .false.
-logical :: use_cell_kcc2a_dependence = .true.
+logical :: use_cell_kcc_dependence = .true.
 
 ! Greens function section
 logical :: greens = .false.
