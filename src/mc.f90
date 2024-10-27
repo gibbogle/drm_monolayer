@@ -5,6 +5,7 @@ use global
 use chemokine   ! is this OK?
 use eta_module
 use km10_mod
+use omp_rkf45
 
 !use greens_mod
 
@@ -167,6 +168,10 @@ real(8) :: next_write_time,save_fslow
 
 logical, parameter :: drop_mitotic_cells = .true.
 logical, parameter :: write_nfres = .false.
+
+! RK4 variables
+type(cell_type), pointer :: cpnow
+real(8) :: damage(3)
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
@@ -342,6 +347,13 @@ elseif (iphase_hours == 1) then
     use_SF = .true.     ! in this case SFave only is recorded
     compute_cycle = .false.
 
+elseif (mod(iphase_hours,10) == 1) then    ! this is the compute_cycle case for KASTAN data
+    expt_tag = "KASTAN"
+    compute_cycle = .true.
+    use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
+    nphase_hours = 4
+    next_phase_hour = 1
+    phase_hour(1:4) = [0.5, 1.0, 1.5, 2.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 elseif (mod(iphase_hours,10) == 2) then    ! this is the compute_cycle case for CA-135
     expt_tag = "CA-135"
     compute_cycle = .true.
@@ -608,7 +620,7 @@ if (use_Jeggo) then     ! using this
     else
         pHR = 0
     endif
-!    write(*,'(a,7f8.3)') 'fsup, fstart, T_S, th, pHR: ',fsup, fstart, ccp%T_S/3600, th, pHR
+    write(nflog,'(a,7f8.3)') 'fsup, f_s_decay, T_S, th, pHR: ',fsup, f_s_decay, ccp%T_S/3600, th, pHR
     if (kcell_now == 1) then
         write(*,'(a,2f8.3)') 'th, fdecay(th): ',th, fdecay(th)
         write(*,'(a,3f8.3)') 'fsup,pHR: ',fsup,pHR
@@ -640,7 +652,7 @@ if (use_Jeggo) then     ! using this
         DSB0(NHEJslow,2) = pComplex*(1-pHR)*Npost     ! slow
         DSB0(HR,1) = 0
         DSB0(HR,2) = pHR*Npost
-!        write(*,'(a,5f8.3)') 'Npre,Npost,DSB0(:,2): ',Npre,Npost,DSB0(1:3,2)
+        write(nflog,'(a,5f8.3)') 'Npre,Npost,DSB0(:,2): ',Npre,Npost,DSB0(1:3,2)
         if (kcell_now == 5 .and. test_run) then
             write(*,*) 'cell #: ',kcell_now
             write(nfout,*) 'cell #: ',kcell_now
@@ -1248,34 +1260,42 @@ end subroutine
 subroutine Jaiswal_update(cp, dth)
 type(cell_type), pointer :: cp
 real(8) :: dth
-real(8) :: dt = 0.001
+real(8) :: dt = 0.0001
 real(8) :: D_ATR, D_ATM, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact, tIR
-real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, t_G2, Kkcc, DSB(NP), CC_act0, d(3)
+real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, t_G2, Kkcc, DSB(NP), CC_act0, d(3),datr(2)
 real(8) :: dATM_plus, dATM_minus
 integer :: iph, it, Nt
 type(cycle_parameters_type),pointer :: ccp
 logical :: use_ATR  ! ATR is used in G2, and computed in S if ATR_in_S >= 1
 logical :: dbug
+logical :: first = .true.
+
+real(8) :: v(3), dv(3), abserr, relerr, tstart, tend
+integer :: nvars, k, flag
+logical :: use_RK = .false.
+integer :: NRK = 20
 
 iph = cp%phase
 if (iph >= 7) iph = iph - 6     ! checkpoint phase numbers --> phase number, to continue ATM and ATR processes through checkpoints
 if (iph > G2_phase) then
     return
 endif
+D_ATR = 0
 use_ATR = (iph == 3) .or. ((iph == 2) .and. (ATR_in_S >= 1))
 Nt = int(dth/dt + 0.5)
+!write(nflog,'(a,8f8.1)') 'DSB: ',cp%DSB(:,2)
 do it = 1,NP
-    DSB(it) = sum(cp%DSB(it,:))     ! add pre and post
+    DSB(it) = sum(cp%DSB(it,:))     ! add pre and post!
 enddo
 ATR_act = cp%ATR_act
 CC_act = cp%CC_act
 dbug = (iph == -2 .and. (kcell_now == 3))
 if (iph == G1_phase) then
-!    D_ATM = DSB(NHEJslow)  !not needed now
+    D_ATM = DSB(NHEJslow)  !not needed now
     ATM_act = cp%ATM_act
 !    write(*,'(a,i6,2e12.3)') 'Jaiswal_update: D_ATM,ATM_act: ',kcell_now,D_ATM,ATM_act
 elseif (iph == S_phase) then
-!    D_ATM = (DSB(HR) + DSB(NHEJslow))
+    D_ATM = (DSB(HR) + DSB(NHEJslow))
     ATM_act = cp%ATM_act
     if (use_ATR) then
         D_ATR = DSB(HR)
@@ -1295,12 +1315,6 @@ elseif (iph == G2_phase) then
         ATR_act = ATR_act*(40 - t_G2)/(40 - 30) ! fixed (was (t_G2 - 30)/(40 - 30))
 !        write(nflog,'(a,f8.3,e12.3)') 't_G2, ATR_act: ',t_G2,ATR_act
     endif
-
-!    write(*,'(5f12.3)') ATR_act, CC_act, t_G2, D_ATR, D_ATM
-!    write(nflog,'(a,2i6,5f10.3)') 'G2: kcell, Nt,ATR_act, D_ATM, D_ATR, CC_act, tnow: ',kcell_now,Nt,ATR_act, D_ATM, D_ATR, CC_act, tnow/3600
-!    if (kcell_now == 1) write(*,*) '**** G2 D_ATM = D_ATR = 0 in jaiswal_update ****'
-!    D_ATR = 0
-!    D_ATM = 0
 else
     return
 endif
@@ -1313,12 +1327,51 @@ else
 endif
 !write(nflog,'(a,6e12.3)') 'Jaiswal params: ',Kkcc,Kmccp,cp%Kccmd,Kmccmd,cp%Kccrd,Kmccrd
 !write(nflog,'(a,5f12.4)') 'CC_act,ATM_act,ATM_tot,ATR_act,ATR_tot: ',CC_act,ATM_act,ATM_tot,ATR_act,ATR_tot
-do it = 1,Nt
-    
-    ! TEST!!!!
-    !ATM_act = 0
-    !ATR_act = 0
-    
+if (use_RK) then
+    cpnow => cp
+    damage(1) = DSB(NHEJslow)
+    damage(2) = DSB(HR)
+    damage(3) = D_ATR
+    nvars = 3
+    tstart = 0
+    v(1) = ATM_act
+    v(2) = ATR_act
+    v(3) = CC_act
+!    call deriv(tstart, v, dv)    !iph, cp, D_ATM, D_ATR)
+!    write(nflog,'(a,3e12.3)') 'v: ',v
+!    write(nflog,'(a,3e12.3)') 'dv: ',dv
+    abserr = sqrt ( epsilon ( abserr ) )
+    relerr = sqrt ( epsilon ( relerr ) )
+
+    flag = 1
+    do k = 1,NRK
+	    tstart = (k-1)*dth/NRK
+	    tend = tstart + dth/NRK
+!	    if (REAL_KIND == 4) then	
+!		    call r4_rkf45 ( deriv, nvars, state, statep, tstart, tend, relerr, abserr, flag )
+!	    else
+    		call r8_rkf45 ( deriv, nvars, v, dv, tstart, tend, relerr, abserr, flag )
+!	    endif
+	    if (flag /= 2) then
+!		    write(*,*) 'Bad flag: ',k,flag
+!            stop
+	    endif
+    enddo
+    ATM_act = v(1)
+    ATR_act = v(2)
+    CC_act = v(3)
+    dATM_act_dt = dv(1)
+    dATR_act_dt = dv(2)
+    dCC_act_dt = dv(3)
+    d = 0
+!    write(nflog,'(a,3e12.3)') 'v: ',v
+!    write(nflog,'(a,3e12.3)') 'dv: ',dv
+!    stop
+else
+dCC_act_dt = 0
+dATR_act_dt = 0
+dATM_act_dt = 0
+do it = 1,Nt  
     ATM_inact = ATM_tot - ATM_act
     ATR_inact = ATR_tot - ATR_act
     if (iph == G2_phase) then
@@ -1328,29 +1381,26 @@ do it = 1,Nt
         d(1) = (Kkcc + CC_act) * CC_inact / (Kmccp + CC_inact)    ! CC_act effect
         d(2) = - cp%Kccmd * ATM_act * CC_act / (Kmccmd + CC_act)    ! ATM_act effect
         d(3) = - cp%Kccrd * ATR_act * CC_act / (Kmccrd + CC_act)    ! ATR_act effect
+!VBA    dATR_act_dt = krp * D_ATR * ATR_inact / (Kmrp + ATR_inact) - krd * ATR_act * CC_act / (Kmrd + CC_act)
         dATR_act_dt = Krp * D_ATR * ATR_inact / (Kmrp + ATR_inact) - Krd * ATR_act * CC_act / (Kmrd + CC_act)
-        
+        datr(1) = Krp * D_ATR * ATR_inact / (Kmrp + ATR_inact)
+        datr(2) = - Krd * ATR_act * CC_act / (Kmrd + CC_act)
+        if (istep == -1 .and. it <= 100) write(nflog,'(a,i6,7e12.3)') 'it,D_ATR,CC_act,ATR_act,ATR_inact,datr(1:2),dATR_act_dt: ',it,D_ATR,CC_act,ATR_act,ATR_inact,datr(1:2),dATR_act_dt
 ! Try this
 !        dCC_act_dt = max(dCC_act_dt,0.0)
         CC_act = CC_act + dt * dCC_act_dt
-!        write(nflog,'(a,i6,4f8.3)') 'it,CC_act,dCC_act_dt,d(1:2): ',it,CC_act,dCC_act_dt, d(1:2)
         CC_act = max(CC_act, 0.0)
         ATR_act = ATR_act + dt * dATR_act_dt
-        ATR_act = min(ATR_act, ATR_tot)
-!        if (single_cell .and. it == Nt) then
-!            write(*,'(a,4e12.3)')  'terms:  ',(Kkcc + CC_act) * CC_inact / (Kmccp + CC_inact), &
-!                     - cp%Kccmd * ATM_act * CC_act / (Kmccmd + CC_act), &
-!                     - cp%Kccrd * ATR_act * CC_act / (Kmccrd + CC_act), &
-!                    dCC_act_dt!
-!
-!            write(*,'(3i6,e12.3)') istep,Nt,it,dCC_act_dt
-!        endif
+!        ATR_act = min(ATR_act, ATR_tot)
     elseif (use_ATR .and. D_ATR > 0) then
         dATR_act_dt = Krp * D_ATR * ATR_inact / (Kmrp + ATR_inact)  - Krd * ATR_act * CC_act / (Kmrd + CC_act)
+        datr(1) = Krp * D_ATR * ATR_inact / (Kmrp + ATR_inact)
+        datr(2) = - Krd * ATR_act * CC_act / (Kmrd + CC_act)
         ATR_act = ATR_act + dt * dATR_act_dt
-        ATR_act = min(ATR_act, ATR_tot)
+!        ATR_act = min(ATR_act, ATR_tot)
 !        if (single_cell) write(nflog,'(a,i4,4f8.3)') 'iph,D_ATR, Krp, ATR_inact, dATR_act_dt: ', &
 !                    iph, D_ATR, Krp, ATR_inact, dATR_act_dt
+!        write(nflog,'(a,i6,7e12.3)') 'it,D_ATR,CC_act,ATR_act,ATR_inact,datr(1:2),dATR_act_dt: ',it,D_ATR,CC_act,ATR_act,ATR_inact,datr(1:2),dATR_act_dt
     endif
 !    dATM_plus = Kd2t * D_ATM * ATM_inact / (Kmmp + ATM_inact)
     dATM_plus = (Kmp1*DSB(NHEJslow) + Kmp2*DSB(HR)) * ATM_inact / (Kmmp + ATM_inact)
@@ -1364,6 +1414,8 @@ do it = 1,Nt
     t = it*dt
 !    if (t_G2 <= 0.1 .and. it <= 10) write(nflog,'(a,3f8.4)') 'D_ATM,ATM_act,ATM_inact: ',D_ATM,ATM_act,ATM_inact
 enddo
+endif
+
 tIR = istep*DELTA_T/3600.
 if (dbug) write(nfres,'(a,10f9.4,2e12.3)') 'Jaiswal: ',tIR,D_ATM,ATM_act,ATM_inact,Kmp1,Kmp2,Kmmp,Kmd,Kmmd,ATM_act,dATM_plus,dATM_minus
 !if (single_cell) then
@@ -1374,12 +1426,18 @@ cp%ATM_act = ATM_act
 if (iph == G2_phase) then
     cp%CC_act = CC_act
     cp%ATR_act = ATR_act
-    cp%dCC_act_dt = dCC_act_dt
+!    cp%dCC_act_dt = dCC_act_dt
 !    write(nflog,'(a,i8,2e12.3)') 'Jaiswal_update: ',kcell_now,CC_act0,CC_act
 !    write(*,'(a,6f8.3)') 't_simulation, ATM_act, ATR_act, CC_act, D_ATM, D_ATR: ',t_simulation/3600,ATM_act, ATR_act, CC_act,D_ATM,D_ATR
 elseif (iph == S_phase .and. use_ATR) then
     cp%ATR_act = ATR_act
 endif
+!write(nflog,'(a,i3,9e12.3)') 'iph,dATR,ATR_act,dATM,ATM_act,d(1:3),dCC,CC_act: ',iph,dATR_act_dt,ATR_act,dATM_act_dt,ATM_act,d(1:3),dCC_act_dt,CC_act
+if (first) then
+    first = .false.
+    write(nflog,'(11a12)') '       phase','       D_ATR',' dATR_act_dt','     ATR_act',' dATM_act_dt','     ATM_act','        d(1)','        d(2)','        d(3)','  dCC_act_dt','      CC_act'
+endif
+!write(nflog,'(i12,11e12.3)') iph,D_ATR,dATR_act_dt,ATR_act,dATM_act_dt,ATM_act,d(1:3),dCC_act_dt,CC_act
 t = t_simulation/3600.
 tIR = (tnow - t_irradiation)/3600
 !if (test_run .and. (kcell_now==3 .or. kcell_now==6)) then
@@ -1390,7 +1448,39 @@ tIR = (tnow - t_irradiation)/3600
 !write(nflog,'(a,4f8.3,e12.3)') 'tIR, D_ATM, ATR_act, ATM_act,dCC_act_dt: ',tIR,D_ATM, ATR_act, ATM_act,dCC_act_dt
 end subroutine
 
+!--------------------------------------------------------------------------
+!--------------------------------------------------------------------------
+subroutine deriv(t, v, dv)
+real(8) :: t, v(3), dv(3)
+real(8) :: ATM_act, ATR_act, CC_act, ATM_inact, ATR_inact, CC_inact
+real(8) :: D_ATR, Kkcc
+integer :: iph
+logical :: use_ATR
 
+iph = cpnow%phase
+use_ATR = (iph == 3) .or. ((iph == 2) .and. (ATR_in_S >= 1))
+ATM_act = v(1)
+ATR_act = v(2)
+CC_act = v(3)
+D_ATR = damage(3)
+if (use_cell_kcc_dependence) then
+    Kkcc = cpnow%Kcc
+else
+    Kkcc = Kcc
+endif
+ATM_inact = ATM_tot - ATM_act
+ATR_inact = ATR_tot - ATR_act
+dv = 0
+if (iph == G2_phase) then
+    CC_inact = CC_tot - CC_act
+    ATR_inact = ATR_tot - ATR_act
+    dv(3) = (Kkcc + CC_act) * CC_inact / (Kmccp + CC_inact) - cpnow%Kccmd * ATM_act * CC_act / (Kmccmd + CC_act) - cpnow%Kccrd * ATR_act * CC_act / (Kmccrd + CC_act)
+    dv(2) = Krp * D_ATR * ATR_inact / (Kmrp + ATR_inact) - Krd * ATR_act * CC_act / (Kmrd + CC_act)
+elseif (use_ATR .and. D_ATR > 0) then
+    dv(2) = Krp * D_ATR * ATR_inact / (Kmrp + ATR_inact)  - Krd * ATR_act * CC_act / (Kmrd + CC_act)
+endif
+dv(1) = (Kmp1*damage(1) + Kmp2*damage(2)) * ATM_inact / (Kmmp + ATM_inact) - Kmd * ATM_act / (Kmmd + ATM_act)
+end subroutine
 
 !--------------------------------------------------------------------------
 ! To determine repair on a given pathway
@@ -1822,8 +1912,8 @@ if (cp%phase0 < M_phase) then   ! G1, S, G2
     cp%Psurvive = Pmit(1)*Pmit(2)*Paber(1)*Paber(2)  
     cp%Psurvive_nodouble = Pmit(1)*Pmit(2)*Paber1_nodouble*Paber(2)
     if (single_cell) then
-        write(nfres,'(a,6e12.3)') 'totNmisjoins,totNDSB: ', &
-        2*totNmisjoins(1),totNmisjoins(2),2*totNmisjoins(1)+totNmisjoins(2),totNDSB,sum(totNDSB)
+!        write(nfres,'(a,6e12.3)') 'totNmisjoins,totNDSB: ', &
+!        2*totNmisjoins(1),totNmisjoins(2),2*totNmisjoins(1)+totNmisjoins(2),totNDSB,sum(totNDSB)
 !        write(nflog,'(a,9f8.3,e12.3)') 'totDSB,Pmit,Nmis,totNmis,Paber,SF: ', &
 !        totDSB,Pmit,2*Nmis(1),Nmis(2),2*Nmis(1)+Nmis(2),Paber,cp%Psurvive  
 !        write(nflog,'(a,3f8.1,4x,3f8.1)') 'mitosis: DSB, Nmis: ',totDSB,sum(totDSB),2*Nmis(1),Nmis(2),2*Nmis(1)+Nmis(2)

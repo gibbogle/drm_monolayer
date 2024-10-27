@@ -996,7 +996,8 @@ do itime = 1,ntimes
 		read(nf,'(a)') line
 		write(nflog,'(a)') line
 		drugname = trim(line)
-		write(nflog,*) 'ndrugs_used: ',ndrugs_used
+        idrug = 1
+		write(nflog,*) 'ndrugs_used, name: ',ndrugs_used,'  ',drugname,'  ',drug(idrug)%name
 		do idrug = 1,ndrugs_used
 			if (drugname == drug(idrug)%name) then
 				ichemo = DRUG_A + 2*(idrug-1)
@@ -1480,7 +1481,7 @@ endif
 if (use_cell_kcc_dependence) then
     cp%Kcc = get_Kcc(kmccp,CC_tot,CC_threshold_factor,T_G2/3600)
     cp%Kcc = min(cp%kcc, 0.9*CC_threshold)
-!    write(nflog,*) 'T_G2, cp%Kcc: ',T_G2/3600,cp%Kcc
+    if (single_cell) write(nflog,*) 'fg,T_G2, cp%Kcc: ',cp%fg(G2_phase),T_G2/3600,cp%Kcc
 endif
 
 if (use_synchronise) then
@@ -2033,10 +2034,9 @@ logical :: dbug
 !write(nflog,*) 'istep,npar_uni,npar_rnor: ',istep,npar_uni,npar_rnor
 
 cp => cell_list(1)
-
 tIR = (istep-1)*DELTA_T/3600.0
 !write(nfres,'(a,3i6,2f6.2,e12.3)') 'istep,kcell,phase,f_S,tIR,ATM_act: ',istep,1,cp%phase,cp%progress,tIR,cp%ATM_act
-!write(nfres,'(f6.2,e12.3)') tIR,cp%ATM_act
+!write(nfres,'(2i6,2f12.2,3e12.3)') istep,cp%phase,cp%progress,tIR,cp%ATR_act,cp%ATM_act,cp%CC_act
 !call test_Jaiswal
 !res = 1
 !return
@@ -2627,6 +2627,9 @@ if (compute_cycle) then
                         write(nfres,'(20f12.5)') (normalised_phase_dist(i,1:3),i=1,nphase_hours)
                         write(nflog,'(20f12.5)') (normalised_phase_dist(i,1:3),i=1,nphase_hours)
                     elseif (expt_tag == "CC-13 ") then
+                        write(nfres,'(20f12.5)') (normalised_phase_dist(i,4),i=1,nphase_hours)
+                        write(nflog,'(20f12.5)') (normalised_phase_dist(i,4),i=1,nphase_hours)
+                    elseif (expt_tag == "KASTAN") then
                         write(nfres,'(20f12.5)') (normalised_phase_dist(i,4),i=1,nphase_hours)
                         write(nflog,'(20f12.5)') (normalised_phase_dist(i,4),i=1,nphase_hours)
                     endif
