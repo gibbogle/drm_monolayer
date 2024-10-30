@@ -813,10 +813,11 @@ Tc = divide_time_mean(ityp)/3600    ! seconds -> hours
 b = log(2.0)/Tc
 ccp%T_G1 = -(log(1-ccp%f_G1/2))/b
 ccp%T_S = -(log(1-(ccp%f_G1+ccp%f_S)/2))/b - ccp%T_G1
-ccp%T_M = log(1 + ccp%f_M)/b     ! Smith & Dendy
-ccp%T_G2 = Tc - ccp%T_G1 - ccp%T_S - ccp%T_M
-!ccp%T_G2 = -(log(1-(ccp%f_G1+ccp%f_S+ccp%f_G2)/2))/b - ccp%T_G1 - ccp%T_S
-!ccp%T_M = Tc - ccp%T_G1 - ccp%T_S - ccp%T_G2
+!ccp%T_M = log(1 + ccp%f_M)/b     ! Smith & Dendy
+!ccp%T_G2 = Tc - ccp%T_G1 - ccp%T_S - ccp%T_M
+ccp%T_G2 = -(log(1-(ccp%f_G1+ccp%f_S+ccp%f_G2)/2))/b - ccp%T_G1 - ccp%T_S
+ccp%T_M = Tc - ccp%T_G1 - ccp%T_S - ccp%T_G2
+write(nflog,'(a,5f7.3)') 'modified SteelMethod mean T G1,S,G2,M, total: ',ccp%T_G1,ccp%T_S,ccp%T_G2,ccp%T_M,ccp%T_G1+ccp%T_S+ccp%T_G2+ccp%T_M
 
 end subroutine
 
@@ -1281,6 +1282,7 @@ real(REAL_KIND) :: rsite(3)
 integer :: ityp, k, kpar = 0
 real(REAL_KIND) :: v(3), c(3), R1, R2, V0, Tdiv, Vdiv, p(3), R, gfactor, kfactor
 real(8) :: kcc_std = 0.7
+real(8) :: fcorrect = 1.0   ! to reduce mitosis duration, to get M% = 2
 type(cell_type), pointer :: cp
 type(cycle_parameters_type),pointer :: ccp
 	
@@ -1301,7 +1303,10 @@ cp%totMis = 0
 !R = par_rnor(kpar)	! N(0,1)
 !cp%mitosis_duration = (1 + mitosis_std*R)*ccp%T_M
 cp%mitosis_duration = get_mitosis_duration()
-!write(nflog,'(a,i6,2f6.3)') 'mitosis_duration: ',kcell,ccp%T_M/3600,cp%mitosis_duration/3600
+
+cp%mitosis_duration = fcorrect*cp%mitosis_duration
+
+if (kcell <= -100) write(nflog,'(a,i6,2f6.3)') 'mitosis_duration: ',kcell,ccp%T_M/3600,cp%mitosis_duration/3600
 V0 = Vdivide0/2
 kcell_now = kcell
 !!!call set_divide_volume(cp, V0)  ! sets %divide_volume and %divide_time

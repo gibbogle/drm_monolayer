@@ -99,7 +99,7 @@ real(8) :: G1_tdelay = 4            ! delay before ATM_act updated (hours)
 logical :: use_Jaiswal = .true.
 logical :: vary_km10 = .true.
 real(8) :: jaiswal_std = 0.6
-!logical :: use_ATR_S    ! = .false.
+real(8) :: G2_D_ATM_max = 30
 
 real(8) :: ATMsum, ATRsum, Sthsum, G2thsum(2)
 integer :: NSth, NG2th
@@ -178,17 +178,17 @@ real(8) :: damage(3)
 contains
 
 !--------------------------------------------------------------------------
-! Note: decision about PEST output is based on iphase_hours. 
+! Note: decision about PEST output is based on expt_ID. 
 !--------------------------------------------------------------------------
 subroutine ReadMcParameters(nfin)
 integer :: nfin
-integer :: iuse_baserate, iuse_exp, iphase_hours, icase, nCPparams, iph, j
+integer :: iuse_baserate, iuse_exp, icase, nCPparams, iph, j
 real(8) :: TMEJrep, TMEJfid, SSArep, SSAfid
 real(8) :: pHR_S, pfc_S, pHR_G2, pfc_G2, k3, k4
 
 write(*,*) 'ReadMcParameters:'
-read(nfin,*) iphase_hours
-write(*,*) 'iphase_hours: ',iphase_hours
+read(nfin,*) expt_ID
+write(*,*) 'expt_ID: ',expt_ID
 !read(nfin,*) CA_time_h
 CA_time_h = 18  ! default time, overridden by CDTD input data
 !read(nfin,*) baseRate
@@ -305,7 +305,7 @@ ng12 = 0
 
 use_Iliakis = (ksup > 0)
 
-! For PEST runs, iphase_hours must be -1 (for M runs) or -2 (for C runs) or -3 (for MC runs)
+! For PEST runs, expt_ID must be -1 (for M runs) or -2 (for C runs) or -3 (for MC runs)
 use_SF = .false.
 nphase_hours = 0
 next_phase_hour = 0
@@ -313,7 +313,7 @@ phase_hour(:) = 0
 output_DNA_rate = .false.
 normalise = .false.
 M_only = .false.
-if (iphase_hours == -1) then    ! PDSN dose = 0
+if (expt_ID == -1) then    ! PDSN dose = 0
     expt_tag = "PDSN0G"
     compute_cycle = .true.
     normalise = .true.
@@ -322,7 +322,7 @@ if (iphase_hours == -1) then    ! PDSN dose = 0
     next_phase_hour = 1
     phase_hour(1:2) = [5.0, 11.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
     ! Note: output G1, S, G2, M
-elseif (iphase_hours == -2) then    ! PDSN dose = 2
+elseif (expt_ID == -2) then    ! PDSN dose = 2
     expt_tag = "PDSN2G"
     compute_cycle = .true.
     normalise = .true.
@@ -335,7 +335,7 @@ elseif (iphase_hours == -2) then    ! PDSN dose = 2
         phase_hour(j) = j
     enddo
 !    phase_hour(1:5) = [5.0, 8.5, 11.5, 18.0, 25.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
-elseif (iphase_hours == -3) then    ! PDSN dose = 6
+elseif (expt_ID == -3) then    ! PDSN dose = 6
     expt_tag = "PDSN6G"
     compute_cycle = .true.
     normalise = .true.
@@ -343,18 +343,18 @@ elseif (iphase_hours == -3) then    ! PDSN dose = 6
     nphase_hours = 3
     next_phase_hour = 1
     phase_hour(1:3) = [5.0, 8.5, 11.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
-elseif (iphase_hours == 1) then
+elseif (expt_ID == 1) then
     use_SF = .true.     ! in this case SFave only is recorded
     compute_cycle = .false.
 
-elseif (mod(iphase_hours,10) == 1) then    ! this is the compute_cycle case for KASTAN data
+elseif (mod(expt_ID,10) == 1) then    ! this is the compute_cycle case for KASTAN data
     expt_tag = "KASTAN"
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 4
     next_phase_hour = 1
     phase_hour(1:4) = [0.5, 1.0, 1.5, 2.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
-elseif (mod(iphase_hours,10) == 2) then    ! this is the compute_cycle case for CA-135
+elseif (mod(expt_ID,10) == 2) then    ! this is the compute_cycle case for CA-135
     expt_tag = "CA-135"
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
@@ -362,7 +362,7 @@ elseif (mod(iphase_hours,10) == 2) then    ! this is the compute_cycle case for 
     next_phase_hour = 1
     phase_hour(1:5) = [5.0, 8.5, 11.5, 18.5, 24.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
     ! Note: output G1, S, G2, M
-elseif (mod(iphase_hours,10) == 9) then    ! this is the compute_cycle case for CC-13
+elseif (mod(expt_ID,10) == 9) then    ! this is the compute_cycle case for CC-13
     expt_tag = "CC-13"
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
@@ -370,7 +370,7 @@ elseif (mod(iphase_hours,10) == 9) then    ! this is the compute_cycle case for 
     next_phase_hour = 1
     phase_hour(1:8) = [1, 2, 3, 5, 8, 12, 18, 24]   
     ! Note: output M
-elseif (mod(iphase_hours,10) == 5) then    ! this is the compute_cycle case for CC-11
+elseif (mod(expt_ID,10) == 5) then    ! this is the compute_cycle case for CC-11
     expt_tag = "CC-11"
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
@@ -379,7 +379,7 @@ elseif (mod(iphase_hours,10) == 5) then    ! this is the compute_cycle case for 
     phase_hour(1:5) = [1.0, 1.5, 2.5, 3.5, 4.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
     ! Note: output G1, S, G2
 
-elseif (iphase_hours == 6) then    ! this is the output_DNA_rate case (EDU)
+elseif (expt_ID == 6) then    ! this is the output_DNA_rate case (EDU)
     compute_cycle = .false.
     output_DNA_rate = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
@@ -394,18 +394,18 @@ elseif (iphase_hours == 6) then    ! this is the output_DNA_rate case (EDU)
     !    phase_hour(j) = j*0.25
     !enddo
     next_phase_hour = 1
-elseif (iphase_hours == 3) then
+elseif (expt_ID == 3) then
     use_SF = .true.     ! in this case SFave is recorded and there are multiple phase distribution recording times
     nphase_hours = 4
     next_phase_hour = 1
     phase_hour(1:4) = [8, 12, 18, 24]
-elseif (iphase_hours == 4) then    ! this is the synchronised IR case
+elseif (expt_ID == 4) then    ! this is the synchronised IR case
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 1
     next_phase_hour = 1
     phase_hour(1:5) = [40, 0, 0, 0, 0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
-elseif (mod(iphase_hours,10) == 7) then    ! this is the compute_cycle case for multiple times, no PEST
+elseif (mod(expt_ID,10) == 7) then    ! this is the compute_cycle case for multiple times, no PEST
     compute_cycle = .true.
     normalise = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
@@ -415,7 +415,7 @@ elseif (mod(iphase_hours,10) == 7) then    ! this is the compute_cycle case for 
         phase_hour(j) = (j-1)*0.5
     enddo
 !    phase_hour(1:25) = [0.5,1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5,7.0,7.5,8.0,8.5,9.0,9.5,10.0,10.5,11.0,11.5,12.0,24.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)   
-elseif (mod(iphase_hours,10) == 8) then    ! this is the compute_cycle case for M%-only experiments
+elseif (mod(expt_ID,10) == 8) then    ! this is the compute_cycle case for M%-only experiments
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 5
@@ -423,19 +423,19 @@ elseif (mod(iphase_hours,10) == 8) then    ! this is the compute_cycle case for 
     phase_hour(1:5) = [1.0, 1.5, 2.5, 3.5, 4.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 else
     if (use_PEST) then
-        write(*,*) 'Error: ReadMcParameters: with PEST iphase_hours must be 1 - 8'
-        write(nflog,*) 'Error: ReadMcParameters: with PEST iphase_hours must be 1 - 8'
+        write(*,*) 'Error: ReadMcParameters: with PEST expt_ID must be 1 - 8'
+        write(nflog,*) 'Error: ReadMcParameters: with PEST expt_ID must be 1 - 8'
         stop
     endif
 endif
-icase = iphase_hours/10
+icase = expt_ID/10
 if (icase == 10) normalise = .true.
 if (icase == 11) M_only = .true.
 if (icase == 12) then
     normalise = .true.
     M_only = .true.
 endif
-write(*,*) 'iphase_hours: ',iphase_hours,'    normalise: ',normalise, '    M_only: ',M_only
+write(*,*) 'expt_ID: ',expt_ID,'    normalise: ',normalise, '    M_only: ',M_only
 write(*,*) 'nphase_hours: ',nphase_hours
 write(*,*) 'phase_hour:'
 write(*,'(10f6.2)') phase_hour(1:nphase_hours)
@@ -552,6 +552,10 @@ integer :: kcell
 
 if (use_Poisson_DSB .AND. use_no_random) use_Poisson_DSB = .false.
 cp%irradiated = .true.
+if (dose == 0) then
+    cp%DSB0 = 0
+    return
+endif
 next_write_time = 0
 ccp => cc_parameters(1)
 phase = cp%phase
@@ -620,7 +624,7 @@ if (use_Jeggo) then     ! using this
     else
         pHR = 0
     endif
-    write(nflog,'(a,7f8.3)') 'fsup, f_s_decay, T_S, th, pHR: ',fsup, f_s_decay, ccp%T_S/3600, th, pHR
+!    write(nflog,'(a,7f8.3)') 'fsup, f_s_decay, T_S, th, pHR: ',fsup, f_s_decay, ccp%T_S/3600, th, pHR
     if (kcell_now == 1) then
         write(*,'(a,2f8.3)') 'th, fdecay(th): ',th, fdecay(th)
         write(*,'(a,3f8.3)') 'fsup,pHR: ',fsup,pHR
@@ -652,7 +656,7 @@ if (use_Jeggo) then     ! using this
         DSB0(NHEJslow,2) = pComplex*(1-pHR)*Npost     ! slow
         DSB0(HR,1) = 0
         DSB0(HR,2) = pHR*Npost
-        write(nflog,'(a,5f8.3)') 'Npre,Npost,DSB0(:,2): ',Npre,Npost,DSB0(1:3,2)
+!        write(nflog,'(a,5f8.3)') 'Npre,Npost,DSB0(:,2): ',Npre,Npost,DSB0(1:3,2)
         if (kcell_now == 5 .and. test_run) then
             write(*,*) 'cell #: ',kcell_now
             write(nfout,*) 'cell #: ',kcell_now
@@ -1232,7 +1236,7 @@ cp%ATR_act = 0
 dose = 2
 fsup = ksup**nIliakis/(ksup**nIliakis + (dose-dose_threshold)**nIliakis)    ! normally set in Irradiation()
 cp%fg = 1
-call cellIrradiation(cp, dose)
+if (dose > 0) call cellIrradiation(cp, dose)
 DSB0 = cp%DSB
 write(*,'(a,3f8.1)') 'DSB0(1:3,1): ',DSB0(1:3,1)
 write(*,'(a,3f8.1)') 'DSB0(1:3,2): ',DSB0(1:3,2)
@@ -1260,19 +1264,20 @@ end subroutine
 subroutine Jaiswal_update(cp, dth)
 type(cell_type), pointer :: cp
 real(8) :: dth
-real(8) :: dt = 0.0001
+real(8) :: dt = 0.001
 real(8) :: D_ATR, D_ATM, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact, tIR
 real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, t_G2, Kkcc, DSB(NP), CC_act0, d(3),datr(2)
-real(8) :: dATM_plus, dATM_minus
+real(8) :: dATM_plus, dATM_minus, D_NHEJ, D_HR
+!real(8) :: D_NHEJmax = 100.6, D_HRmax = 45.3
 integer :: iph, it, Nt
 type(cycle_parameters_type),pointer :: ccp
 logical :: use_ATR  ! ATR is used in G2, and computed in S if ATR_in_S >= 1
 logical :: dbug
-logical :: first = .true.
+logical :: first = .false.
 
 real(8) :: v(3), dv(3), abserr, relerr, tstart, tend
 integer :: nvars, k, flag
-logical :: use_RK = .false.
+logical :: use_RK = .true.
 integer :: NRK = 20
 
 iph = cp%phase
@@ -1291,11 +1296,15 @@ ATR_act = cp%ATR_act
 CC_act = cp%CC_act
 dbug = (iph == -2 .and. (kcell_now == 3))
 if (iph == G1_phase) then
-    D_ATM = DSB(NHEJslow)  !not needed now
+    D_ATM = DSB(NHEJslow)  
+ !   D_NHEJ = DSB(NHEJslow)
+    D_HR = 0
     ATM_act = cp%ATM_act
 !    write(*,'(a,i6,2e12.3)') 'Jaiswal_update: D_ATM,ATM_act: ',kcell_now,D_ATM,ATM_act
 elseif (iph == S_phase) then
     D_ATM = (DSB(HR) + DSB(NHEJslow))
+!    D_NHEJ = DSB(NHEJslow)
+!    D_HR = DSB(HR)
     ATM_act = cp%ATM_act
     if (use_ATR) then
         D_ATR = DSB(HR)
@@ -1303,7 +1312,9 @@ elseif (iph == S_phase) then
     endif
 elseif (iph == G2_phase) then
     D_ATR = DSB(HR)
-!    D_ATM = (DSB(HR) + DSB(NHEJslow))
+    D_ATM = (DSB(HR) + DSB(NHEJslow))
+    D_ATM = min(D_ATM,G2_D_ATM_max)
+    if (single_cell) write(nflog,'(a,2f8.1)') 'G2 DSB(NHEJslow), DSB(HR): ', DSB(NHEJslow), DSB(HR)
     CC_act = cp%CC_act
     CC_act0 = CC_act
     ATR_act = cp%ATR_act
@@ -1315,6 +1326,10 @@ elseif (iph == G2_phase) then
         ATR_act = ATR_act*(40 - t_G2)/(40 - 30) ! fixed (was (t_G2 - 30)/(40 - 30))
 !        write(nflog,'(a,f8.3,e12.3)') 't_G2, ATR_act: ',t_G2,ATR_act
     endif
+    D_NHEJ = DSB(NHEJslow)
+    D_HR = DSB(HR)
+!    D_NHEJ = min(D_NHEJ, D_NHEJmax)
+!    D_HR = min(D_HR, D_HRmax)
 else
     return
 endif
@@ -1329,9 +1344,15 @@ endif
 !write(nflog,'(a,5f12.4)') 'CC_act,ATM_act,ATM_tot,ATR_act,ATR_tot: ',CC_act,ATM_act,ATM_tot,ATR_act,ATR_tot
 if (use_RK) then
     cpnow => cp
-    damage(1) = DSB(NHEJslow)
-    damage(2) = DSB(HR)
+!    damage(1) = DSB(NHEJslow)
+!    damage(2) = DSB(HR)
     damage(3) = D_ATR
+    if (cp%phase == G2_phase) then
+!        damage(1) = min(damage(1),D_NHEJmax)
+!        damage(2) = min(damage(2),D_HRmax)
+        damage(1) = D_ATM
+        damage(2) = 0       ! using only kmp1
+    endif
     nvars = 3
     tstart = 0
     v(1) = ATM_act
@@ -1356,6 +1377,7 @@ if (use_RK) then
 !		    write(*,*) 'Bad flag: ',k,flag
 !            stop
 	    endif
+        v(3) = min(v(3), CC_tot)
     enddo
     ATM_act = v(1)
     ATR_act = v(2)
@@ -1390,6 +1412,7 @@ do it = 1,Nt
 !        dCC_act_dt = max(dCC_act_dt,0.0)
         CC_act = CC_act + dt * dCC_act_dt
         CC_act = max(CC_act, 0.0)
+        CC_act = min(CC_act, CC_tot)    ! testing this with dt = 0.001 31/10/24
         ATR_act = ATR_act + dt * dATR_act_dt
 !        ATR_act = min(ATR_act, ATR_tot)
     elseif (use_ATR .and. D_ATR > 0) then
@@ -1403,7 +1426,9 @@ do it = 1,Nt
 !        write(nflog,'(a,i6,7e12.3)') 'it,D_ATR,CC_act,ATR_act,ATR_inact,datr(1:2),dATR_act_dt: ',it,D_ATR,CC_act,ATR_act,ATR_inact,datr(1:2),dATR_act_dt
     endif
 !    dATM_plus = Kd2t * D_ATM * ATM_inact / (Kmmp + ATM_inact)
-    dATM_plus = (Kmp1*DSB(NHEJslow) + Kmp2*DSB(HR)) * ATM_inact / (Kmmp + ATM_inact)
+!    dATM_plus = (Kmp1*DSB(NHEJslow) + Kmp2*DSB(HR)) * ATM_inact / (Kmmp + ATM_inact)
+!    dATM_plus = (Kmp1*D_NHEJ + Kmp2*D_HR) * ATM_inact / (Kmmp + ATM_inact)
+    dATM_plus = Kmp1 * D_ATM * ATM_inact / (Kmmp + ATM_inact)   ! not using kmp2, effectively kmp2 = kmp1
     dATM_minus = Kmd * ATM_act / (Kmmd + ATM_act)
     dATM_act_dt = dATM_plus - dATM_minus   
     ATM_act = ATM_act + dt*dATM_act_dt

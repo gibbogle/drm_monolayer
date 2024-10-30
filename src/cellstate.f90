@@ -749,7 +749,7 @@ do kcell = 1,nlist0
 		ncells_mphase = ncells_mphase + 1
 		! Need to record clonogenic SP at first mitosis
         cp%phase = dividing
-!        if (kcell_now <= 10) write(*,'(a,i6,f6.3)') 'grower: ',kcell_now, mitosis_duration/3600
+!        if (kcell_now <= 10) write(nflog,'(a,i6,f10.1)') 'grower: start mitosis counter',kcell_now, tnow
     endif
 	
     if (cp%phase == dividing) then
@@ -763,9 +763,10 @@ do kcell = 1,nlist0
 		enddo
 		if (drugkilled) cycle
 		cp%mitosis = (tnow - cp%t_start_mitosis)/mitosis_duration
-        if (test_run) write(nflog,'(a,i6,3f10.1,f8.3)') 'grower: kcell, mitosis: ',kcell, tnow, cp%t_start_mitosis,mitosis_duration,cp%mitosis
+!        if (kcell <= 10) write(nflog,'(a,i6,2f10.1,2f8.3)') 'grower: kcell, mitosis: ',kcell, tnow, cp%t_start_mitosis,mitosis_duration/3600,cp%mitosis
 		
         if (cp%mitosis >= 1) then
+!			if (kcell <= 10) write(nflog,'(a,i6,f10.1,f8.3)') 'end mitosis: ',kcell,tnow,(tnow - cp%t_start_mitosis)/3600
 			cp%G2_time = tnow - cp%t_start_G2
 !            if (kcell <= 10) write(nflog,'(a,2i6,f8.3)') 'grower: divide cell, time: ',istep,kcell,cp%G2_time/3600
 ! if use_SF (i.e. we are computing SF_ave) then only cells not satisfying (is_radiation .and. cp%Psurvive < 0) need to divide
@@ -787,7 +788,8 @@ do kcell = 1,nlist0
     ! end cell simulation---------------------------------------------------------------------
     
 	if (divide) then
-        if (cp%generation == 2) cycle		! we do simulate cell division for PDJ, not for SFALL
+		cp%phase = G1_phase
+        if (expt_ID == 1) cycle		! we do simulate cell division for PDJ, not for SFALL
 		ndivide = ndivide + 1
 		if (ndivide > MAX_DIVIDE_LIST) then
 		    write(logmsg,*) 'Error: growcells: MAX_DIVIDE_LIST exceeded: ',MAX_DIVIDE_LIST

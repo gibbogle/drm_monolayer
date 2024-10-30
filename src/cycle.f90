@@ -116,7 +116,6 @@ elseif (cp%phase == G2_phase) then
         endif
 
         if (switch) then
-!            write(nflog,*) 'cell enters M: kcell, CC_act: ',kcell_now, cp%CC_act
             cp%phase = M_phase
             cp%progress = 0
             cp%V = cp%divide_volume     ! set volume here, to maintain correct cell volume at cell division
@@ -305,12 +304,14 @@ elseif (phase == G2_phase) then
             cp%M_time = tnow + cp%mitosis_duration   
             goto 10
         endif
-        cp%phase = G2_checkpoint
+!        cp%phase = G2_checkpoint
+        cp%phase = M_phase
         cp%G2_flag = .false.
         cp%G2M_time = tnow + G2_checkpoint_time(cp)
         N_checkpoint = N_checkpoint + 1
         goto 10
     endif
+#ifdef 0    ! removed because it increases time in M_phase by one time step
 elseif (phase == G2_checkpoint) then ! this checkpoint combines the release from G2 delay and the G2M repair check
     cp%G2_flag = .true.
     cp%G2M_flag = (tnow > cp%G2M_time)
@@ -322,6 +323,7 @@ elseif (phase == G2_checkpoint) then ! this checkpoint combines the release from
         N_checkpoint = N_checkpoint - 1
         goto 10
     endif
+#endif
 elseif (phase == M_phase) then
     ! do nothing - in new_growcells the phase is immediately changed to cp%dividing, and the mitosis timer starts
 endif
