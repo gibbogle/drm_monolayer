@@ -1273,11 +1273,11 @@ integer :: iph, it, Nt
 type(cycle_parameters_type),pointer :: ccp
 logical :: use_ATR  ! ATR is used in G2, and computed in S if ATR_in_S >= 1
 logical :: dbug
-logical :: first = .false.
+logical :: first = .true.
 
 real(8) :: v(3), dv(3), abserr, relerr, tstart, tend
 integer :: nvars, k, flag
-logical :: use_RK = .true.
+logical :: use_RK = .false.
 integer :: NRK = 20
 
 iph = cp%phase
