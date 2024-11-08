@@ -1314,7 +1314,7 @@ elseif (iph == G2_phase) then
     D_ATR = DSB(HR)
     D_ATM = (DSB(HR) + DSB(NHEJslow))
     D_ATM = min(D_ATM,G2_D_ATM_max)
-    if (single_cell) write(nflog,'(a,2f8.1)') 'G2 DSB(NHEJslow), DSB(HR): ', DSB(NHEJslow), DSB(HR)
+!    if (single_cell) write(nflog,'(a,3f8.4)') 'G2 D_ATR, ATR_act, CC_act: ', D_ATR,cp%ATR_act,cp%CC_act
     CC_act = cp%CC_act
     CC_act0 = CC_act
     ATR_act = cp%ATR_act
@@ -1414,7 +1414,7 @@ do it = 1,Nt
         CC_act = max(CC_act, 0.0)
         CC_act = min(CC_act, CC_tot)    ! testing this with dt = 0.001 31/10/24
         ATR_act = ATR_act + dt * dATR_act_dt
-!        ATR_act = min(ATR_act, ATR_tot)
+        ATR_act = min(ATR_act, ATR_tot)
     elseif (use_ATR .and. D_ATR > 0) then
         dATR_act_dt = Krp * D_ATR * ATR_inact / (Kmrp + ATR_inact)  - Krd * ATR_act * CC_act / (Kmrd + CC_act)
         datr(1) = Krp * D_ATR * ATR_inact / (Kmrp + ATR_inact)

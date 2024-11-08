@@ -1507,7 +1507,7 @@ if (use_synchronise) then
         stop
     endif
     cp%progress = synch_fraction
-    write(nflog,'(a,i4,f6.2,5f8.0)') 'synchronise: kcell,synch_fraction,T_G1,T_S,T_G2,T_M,t: ',kcell,synch_fraction,T_G1,T_S,T_G2,T_M,t
+!    write(nflog,'(a,i4,f6.2,5f8.0)') 'synchronise: kcell,synch_fraction,T_G1,T_S,T_G2,T_M,t: ',kcell,synch_fraction,T_G1,T_S,T_G2,T_M,t
     if (write_nfres) write(nfres,'(a,i4,2f10.2)') 'use_synchronise: synch_phase, synch_fraction, t: ',synch_phase, synch_fraction, t
 else
     b = log(2.0)/Tc
