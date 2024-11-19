@@ -309,9 +309,9 @@ if (expt_ID == -1) then    ! PDSN dose = 0
     compute_cycle = .true.
     normalise = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
-    nphase_hours = 2
+    nphase_hours = 4
     next_phase_hour = 1
-    phase_hour(1:2) = [5.0, 11.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+    phase_hour(1:4) = [5.0, 11.5, 18.5, 24.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
     ! Note: output G1, S, G2, M
 elseif (expt_ID == -2) then    ! PDSN dose = 2
     expt_tag = "PDSN2G"
