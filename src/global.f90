@@ -808,7 +808,7 @@ subroutine set_divide_volume(cp,V0)
 type(cell_type), pointer :: cp
 real(REAL_KIND) :: V0
 real(REAL_KIND) :: Tdiv, fg(4), Tfixed, Tgrowth0, Tgrowth, rVmax, V
-real(REAL_KIND) :: T_G1, T_S, T_G2, T_M
+real(REAL_KIND) :: T_G1, T_S, T_G2, T_M, scale
 integer :: ityp, kpar=0
 type(cycle_parameters_type), pointer :: ccp
 
@@ -855,14 +855,16 @@ Tgrowth = Tdiv - Tfixed
 T_G1 = Tgrowth*ccp%T_G1/(ccp%T_G1 + ccp%T_S + ccp%T_G2)
 T_S = Tgrowth*ccp%T_S/(ccp%T_G1 + ccp%T_S + ccp%T_G2)
 T_G2 = Tgrowth*ccp%T_G2/(ccp%T_G1 + ccp%T_S + ccp%T_G2)
+scale = Tgrowth/(ccp%T_G1 + ccp%T_S + ccp%T_G2)
 fg(G1_phase) = T_G1/ccp%T_G1
 fg(S_phase) = T_S/ccp%T_S
 fg(G2_phase) = T_G2/ccp%T_G2
-if (single_cell) fg = 1.0
+if (single_cell) fg = 1.0	! mean phase times
 V = V0 + rVmax*(T_G1/fg(G1_phase) + T_S/fg(S_phase) + T_G2/fg(G2_phase))
 cp%divide_volume = V
 cp%divide_time = Tdiv   ! cycle time, varies with cell
 cp%fg = fg
+if (single_cell) write(nflog,'(a,4f8.4)') 'cp%fg: ',cp%fg
 endif
 !if (kcell_now <= 20) then
 !    write(*,*)

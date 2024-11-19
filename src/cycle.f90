@@ -52,10 +52,10 @@ logical :: switch
 tIR = (tnow - t_irradiation)/3600
 10 continue
 if (cp%phase == G1_phase) then
-!    if (single_cell) then
-!        write(*,'(a,5e12.3)') 'G1: progress,fp,dt,T_G1, inc: ',cp%progress,cp%fp,dt,ccp%T_G1,cp%fp*dt/ccp%T_G1
-!        write(nflog,'(a,5e12.3)') 'G1: progress,fp,dt,T_G1, inc: ',cp%progress,cp%fp,dt,ccp%T_G1,cp%fp*dt/ccp%T_G1
-!    endif
+    !if (single_cell) then
+    !    write(*,'(a,5e12.3)') 'G1: progress,fp,dt,T_G1, inc: ',cp%progress,cp%fp,dt,ccp%T_G1,cp%fp*dt/ccp%T_G1
+    !    write(nflog,'(a,5e12.3)') 'G1: progress,fp,dt,T_G1, inc: ',cp%progress,cp%fp,dt,ccp%T_G1,cp%fp*dt/ccp%T_G1
+    !endif
     cp%progress = cp%progress + cp%fp*dt/ccp%T_G1
     if (cp%progress >= 1) then
         if (use_G1_stop) then
@@ -94,9 +94,9 @@ elseif (cp%phase == S_phase) then
             do jpp = 1,2
                 totDSB(jpp) = sum(cp%DSB(:,jpp))
             enddo
-            write(*,'(a,2f6.2)') 'G2 entry: tnow, N_DSB: ',tnow/3600,sum(cp%DSB(1:3,:))
-            write(nflog,'(a,4f8.3,4x,3f8.1)') 'G2 entry: tIR,DSB, Nmis: ',tIR,totDSB,sum(totDSB),2*cp%Nmis(1),cp%Nmis(2),2*cp%Nmis(1)+cp%Nmis(2)
-            write(nflog,'(a,2f8.3)') 'tnow, t_irradiation: ',tnow/3600, t_irradiation/3600
+            write(*,'(a,8f9.1)') 'G2 entry: tnow, N_DSB: ',tnow/3600,cp%DSB(1:3,:),sum(cp%DSB(1:3,:))
+            write(nflog,'(a,4f10.3,4x,3f8.1)') 'G2 entry: tIR,DSB, Nmis: ',tIR,totDSB,sum(totDSB),2*cp%Nmis(1),cp%Nmis(2),2*cp%Nmis(1)+cp%Nmis(2)
+            write(nflog,'(a,2f10.3)') 'tnow, t_irradiation: ',tnow/3600, t_irradiation/3600
 ! Try this
 !            cp%ATM_act = 0
 !            cp%ATR_act = 0
@@ -114,7 +114,6 @@ elseif (cp%phase == G2_phase) then
         else
             switch = (cp%CC_act >= CC_threshold)
         endif
-
         if (switch) then
             cp%phase = M_phase
             cp%progress = 0
@@ -124,14 +123,7 @@ elseif (cp%phase == G2_phase) then
                 write(*,*) 'Reached start of mitosis at (since IR): ',tIR
                 write(nflog,*) 'kcell,reached start of mitosis at tIR,CC_act: ',kcell_now,tIR,cp%CC_act
             endif
-            !write(*,*) 'stopping on mitosis'
-            !write(nflog,*) 'stopping on mitosis: ',kcell_now
-            !stop
-!            if (istep == 0) write(nflog,'(a,i4,3f8.3)') 'Exit G2: CC_act, threshold, t: ',kcell_now,cp%CC_act,CC_threshold,t_simulation/3600
-!            if (cp%generation == 1) then
-!                npet = npet+1
-!                phase_exit_time_sum = t_simulation + phase_exit_time_sum + dt
-!            endif
+        
         endif
     else
         cp%progress = cp%progress + cp%fp*dt/ccp%T_G2

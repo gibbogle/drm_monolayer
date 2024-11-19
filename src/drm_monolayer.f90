@@ -945,6 +945,7 @@ enddo
 #endif
 read(nf,'(a)') drug(1)%name
 drug(1)%use_metabolites = .false.
+drug(1)%nmetabolites = 1
 drug(1)%halflife(0) = 0       ! will be set to 0
 if (drug(1)%halflife(0) == 0) then
     Khalflife = 0
@@ -1476,6 +1477,7 @@ metab = 1.0
 f_CP = 1.0
 fp(:) = metab*f_CP/fg(:)
 T_G1 = ccp%T_G1/fp(1)
+if (single_cell) write(nflog,'(a,6e12.3)') 'fg, ccp%T_G1, T_G1: ',fg, ccp%T_G1, T_G1
 T_S = ccp%T_S/fp(2)
 T_G2 = ccp%T_G2/fp(3)
 if (test_run) then
@@ -1514,7 +1516,7 @@ else
     R = par_uni(kpar)
     t = -(1/b)*log(1 - R/2)     ! cycle progression, log-normal r.v. (t/Tc = fractional progression)
 endif
-!if (kcell <= 10) write(*,*) 'kcell, t/Tc: ',kcell,t/Tc
+!if (single_cell) write(nflog,'(a,i4,4e12.3)') 'kcell, R, t, t/Tc, T_G1: ',kcell,R,t,t/Tc,T_G1
 tswitch(1) = T_G1 
 tswitch(2) = tswitch(1) + T_S
 tswitch(3) = tswitch(2) + T_G2
@@ -1797,6 +1799,7 @@ do kevent = 1,Nevents
 			chemo(ichemo)%present = .true.
 			chemo(ichemo)%bdry_conc = 0
 			nmetab = drug(idrug)%nmetabolites
+!write(*,*) 'ichemo, nmetab: ',ichemo,nmetab
 			do im = 1,nmetab
 				if (chemo(ichemo + im)%used) then
 					chemo(ichemo + im)%present = .true.
@@ -2040,6 +2043,7 @@ logical :: dbug
 
 cp => cell_list(1)
 tIR = (istep-1)*DELTA_T/3600.0
+!if (mod(istep,10) == 0) write(nflog,'(a,2i4,f8.2,3e12.3)') 'kcell,istep,tIR,ATM_act,ATR_act,CC_act: ', kcell_now,istep,tIR,cp%ATM_act,cp%ATR_act,cp%CC_act
 !write(nfres,'(a,3i6,2f6.2,e12.3)') 'istep,kcell,phase,f_S,tIR,ATM_act: ',istep,1,cp%phase,cp%progress,tIR,cp%ATM_act
 !write(nfres,'(2i6,2f12.2,3e12.3)') istep,cp%phase,cp%progress,tIR,cp%ATR_act,cp%ATM_act,cp%CC_act
 !call test_Jaiswal
@@ -2299,7 +2303,6 @@ if (dbug .or. mod(istep,nthour) == 0) then
     nphase(hour,:) = nphaseh
 	ntphase = nphaseh + ntphase
 !	write(nflog,*)
-	write(nflog,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells   !, ' N reached mitosis: ',NPsurvive    ,' Napop: ',Napop    !, &
 	if (.not. single_cell) write(*,'(a,i6,i4,4(a,i8))') 'istep, hour: ',istep,hour,' Nlive: ',Ncells   !, ' N reached mitosis: ',NPsurvive    ,' Napop: ',Napop    !, &
 !    write(nflog,*) 'npar_uni,npar_rnor: ',npar_uni,npar_rnor
     call get_phase_distribution(phase_count)
@@ -2779,7 +2782,7 @@ endif
 !enddo
 
 99 continue
-if (use_synchronise) call G2_time_distribution()
+!if (use_synchronise) call G2_time_distribution()
 if (use_PEST) then
     if (use_SF) then
         write(nfres,'(e15.6)') log10(SFave)

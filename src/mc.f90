@@ -197,7 +197,7 @@ read(nfin,*) mitRate(1)
 write(*,*) 'mitrate(1): ',mitrate(1)
 read(nfin,*) mitRate(2)
 !read(nfin,*) Msurvival
-Msurvival = 0.1  ! used?
+!Msurvival = 0.1  ! not used
 read(nfin,*) Klethal
 write(*,*) 'klethal: ',klethal
     write(nflog,*) 'K_ATM'
@@ -276,18 +276,9 @@ if (use_Jaiswal) then
     CC_tot = 10
     read(nfin,*) ATR_tot
     read(nfin,*) ATM_tot
-!    read(nfin,*) CC_act0
     CC_act0 = 0
-!    read(nfin,*) CC_threshold_factor
     CC_threshold_factor = 0.9
-!    read(nfin,*) norm_factor
-    if (CC_threshold_factor < 0.1) then
-        use_slope_threshold = .true.
-        slope_threshold = CC_threshold_factor
-    else
-        use_slope_threshold = .false.
-        CC_threshold = CC_threshold_factor*CC_tot
-    endif
+    CC_threshold = CC_threshold_factor*CC_tot
 endif
 
 !call make_eta_table(sigma_NHEJ, sigma_TMEJ, Kcoh)
@@ -330,19 +321,22 @@ elseif (expt_ID == -2) then    ! PDSN dose = 2
     next_phase_hour = 1
 !    nphase_hours = 6
 !    phase_hour(1:6) = [1.0, 2.0, 3.0, 5.0, 8.5, 11.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
-    nphase_hours = 25
-    do j = 1,25
-        phase_hour(j) = j
-    enddo
-!    phase_hour(1:5) = [5.0, 8.5, 11.5, 18.0, 25.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+!    nphase_hours = 25
+!    do j = 1,25
+!        phase_hour(j) = j
+!    enddo
+    nphase_hours = 8
+    phase_hour(1:8) = [1.0, 2.0, 3.0, 5.0, 8.5, 11.5, 18.5, 24.5]   ! Note: for 1, 2, 3 only M (P4) is written
 elseif (expt_ID == -3) then    ! PDSN dose = 6
     expt_tag = "PDSN6G"
     compute_cycle = .true.
     normalise = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
-    nphase_hours = 3
     next_phase_hour = 1
-    phase_hour(1:3) = [5.0, 8.5, 11.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+!    nphase_hours = 3
+!    phase_hour(1:3) = [5.0, 8.5, 11.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+    nphase_hours = 5
+    phase_hour(1:5) = [5.0, 8.5, 11.5, 18.5, 24.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 elseif (expt_ID == 1) then
     use_SF = .true.     ! in this case SFave only is recorded
     compute_cycle = .false.
@@ -1292,6 +1286,7 @@ Nt = int(dth/dt + 0.5)
 do it = 1,NP
     DSB(it) = sum(cp%DSB(it,:))     ! add pre and post!
 enddo
+if (single_cell) write(*,'(a,3f8.1)') 'DSB: ',DSB(1:3)
 ATR_act = cp%ATR_act
 CC_act = cp%CC_act
 dbug = (iph == -2 .and. (kcell_now == 3))
@@ -1314,7 +1309,6 @@ elseif (iph == G2_phase) then
     D_ATR = DSB(HR)
     D_ATM = (DSB(HR) + DSB(NHEJslow))
     D_ATM = min(D_ATM,G2_D_ATM_max)
-!    if (single_cell) write(nflog,'(a,3f8.4)') 'G2 D_ATR, ATR_act, CC_act: ', D_ATR,cp%ATR_act,cp%CC_act
     CC_act = cp%CC_act
     CC_act0 = CC_act
     ATR_act = cp%ATR_act
@@ -1326,6 +1320,7 @@ elseif (iph == G2_phase) then
         ATR_act = ATR_act*(40 - t_G2)/(40 - 30) ! fixed (was (t_G2 - 30)/(40 - 30))
 !        write(nflog,'(a,f8.3,e12.3)') 't_G2, ATR_act: ',t_G2,ATR_act
     endif
+    if (single_cell) write(nfres,'(a,i6,6f8.2,2f8.3)') 'istep,t, N_NHEJ, N_HR,D_ATR, D_ATM, ATR_act, ATM_act, CC_act: ', istep,t_G2,DSB(NHEJslow),DSB(HR),D_ATR,D_ATM,cp%ATR_act,cp%ATM_act,cp%CC_act
     D_NHEJ = DSB(NHEJslow)
     D_HR = DSB(HR)
 !    D_NHEJ = min(D_NHEJ, D_NHEJmax)
@@ -1333,6 +1328,7 @@ elseif (iph == G2_phase) then
 else
     return
 endif
+d = 0
 if (use_cell_kcc_dependence) then
     Kkcc = cp%Kcc
 !    write(nflog,*) 'from use_cell_kcc_dependence: ',Kkcc
@@ -1462,7 +1458,7 @@ if (first) then
     first = .false.
     write(nflog,'(11a12)') '       phase','       D_ATR',' dATR_act_dt','     ATR_act',' dATM_act_dt','     ATM_act','        d(1)','        d(2)','        d(3)','  dCC_act_dt','      CC_act'
 endif
-!write(nflog,'(i12,11e12.3)') iph,D_ATR,dATR_act_dt,ATR_act,dATM_act_dt,ATM_act,d(1:3),dCC_act_dt,CC_act
+if (single_cell) write(nflog,'(i12,11e12.3)') iph,D_ATR,dATR_act_dt,ATR_act,dATM_act_dt,ATM_act,d(1:3),dCC_act_dt,CC_act
 t = t_simulation/3600.
 tIR = (tnow - t_irradiation)/3600
 !if (test_run .and. (kcell_now==3 .or. kcell_now==6)) then
@@ -1521,6 +1517,7 @@ if (dth >= 0) then
 !    Nt = 10
     Nt = 1
     dt = dth/Nt
+    if (single_cell) write(*,'(a,2i6,2f8.4)') 'istep,path,repRate(path),dt: ',istep,path,repRate(path),dt
     do it = 1,Nt
         N = N*exp(-repRate(path)*dt*repRateFactor(path))
     enddo
@@ -1588,6 +1585,7 @@ if (Chalf == 0) then
 endif
 Cdrug = Caverage(MAX_CHEMO + DRUG_A)
 repRateFactor(1:2) = exp(-0.693*Cdrug/Chalf)    ! what about path = 3, HR? 
+!write(*,'(a,2f8.3,e12.3)') 'Cdrug, Chalf, repRateFactor: ',Cdrug,Chalf,repRateFactor(1)
 end subroutine
 
 !------------------------------------------------------------------------
