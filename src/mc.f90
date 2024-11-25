@@ -99,7 +99,8 @@ real(8) :: G1_tdelay = 4            ! delay before ATM_act updated (hours)
 logical :: use_Jaiswal = .true.
 logical :: vary_km10 = .true.
 real(8) :: jaiswal_std = 0.6
-real(8) :: G2_D_ATM_max = 30
+real(8) :: G2_D_ATM_max     != 30 now input
+real(8) :: t_switch_ATM
 
 real(8) :: ATMsum, ATRsum, Sthsum, G2thsum(2)
 integer :: NSth, NG2th
@@ -254,6 +255,8 @@ read(nfin,*) sigma_NHEJ
 read(nfin,*) Reffmin
 read(nfin,*) reprate(HR)
 read(nfin,*) Kclus
+read(nfin,*) G2_D_ATM_max       ! cap on D_ATM in G2
+read(nfin,*) t_switch_ATM       ! time after IR when ATM_act production goes to 0
 !call check_eta(sigma_NHEJ)
 
 if (use_Jaiswal) then
@@ -1261,12 +1264,13 @@ real(8) :: dth
 real(8) :: dt = 0.001
 real(8) :: D_ATR, D_ATM, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact, tIR
 real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, t_G2, Kkcc, DSB(NP), CC_act0, d(3),datr(2)
-real(8) :: dATM_plus, dATM_minus, D_NHEJ, D_HR
+real(8) :: dATM_plus, dATM_minus, D_NHEJ, D_HR, ATM_fac
 !real(8) :: D_NHEJmax = 100.6, D_HRmax = 45.3
 integer :: iph, it, Nt
 type(cycle_parameters_type),pointer :: ccp
 logical :: use_ATR  ! ATR is used in G2, and computed in S if ATR_in_S >= 1
 logical :: dbug
+logical :: split_kmp
 logical :: first = .true.
 
 real(8) :: v(3), dv(3), abserr, relerr, tstart, tend
@@ -1274,6 +1278,7 @@ integer :: nvars, k, flag
 logical :: use_RK = .false.
 integer :: NRK = 20
 
+tIR = (tnow - t_irradiation)/3600
 iph = cp%phase
 if (iph >= 7) iph = iph - 6     ! checkpoint phase numbers --> phase number, to continue ATM and ATR processes through checkpoints
 if (iph > G2_phase) then
@@ -1283,6 +1288,7 @@ D_ATR = 0
 use_ATR = (iph == 3) .or. ((iph == 2) .and. (ATR_in_S >= 1))
 Nt = int(dth/dt + 0.5)
 !write(nflog,'(a,8f8.1)') 'DSB: ',cp%DSB(:,2)
+split_kmp = (kmp2 > 0)
 do it = 1,NP
     DSB(it) = sum(cp%DSB(it,:))     ! add pre and post!
 enddo
@@ -1291,15 +1297,21 @@ ATR_act = cp%ATR_act
 CC_act = cp%CC_act
 dbug = (iph == -2 .and. (kcell_now == 3))
 if (iph == G1_phase) then
-    D_ATM = DSB(NHEJslow)  
- !   D_NHEJ = DSB(NHEJslow)
-    D_HR = 0
+    if (split_kmp) then
+        D_NHEJ = DSB(NHEJslow)
+        D_HR = 0
+    else
+        D_ATM = DSB(NHEJslow)
+    endif 
     ATM_act = cp%ATM_act
 !    write(*,'(a,i6,2e12.3)') 'Jaiswal_update: D_ATM,ATM_act: ',kcell_now,D_ATM,ATM_act
 elseif (iph == S_phase) then
-    D_ATM = (DSB(HR) + DSB(NHEJslow))
-!    D_NHEJ = DSB(NHEJslow)
-!    D_HR = DSB(HR)
+    if (split_kmp) then
+        D_NHEJ = DSB(NHEJslow)
+        D_HR = DSB(HR)
+    else
+        D_ATM = (DSB(HR) + DSB(NHEJslow))
+    endif 
     ATM_act = cp%ATM_act
     if (use_ATR) then
         D_ATR = DSB(HR)
@@ -1307,8 +1319,19 @@ elseif (iph == S_phase) then
     endif
 elseif (iph == G2_phase) then
     D_ATR = DSB(HR)
-    D_ATM = (DSB(HR) + DSB(NHEJslow))
-    D_ATM = min(D_ATM,G2_D_ATM_max)
+    if (split_kmp) then
+        D_NHEJ = DSB(NHEJslow)
+        D_HR = DSB(HR)
+        D_ATM = (DSB(HR) + DSB(NHEJslow))
+        ATM_fac = G2_D_ATM_max/D_ATM
+        if (ATM_fac < 1.0) then
+            D_NHEJ = ATM_fac*DSB(NHEJslow)
+            D_HR = ATM_fac*DSB(HR)
+        endif
+    else
+        D_ATM = (DSB(HR) + DSB(NHEJslow))
+        D_ATM = min(D_ATM,G2_D_ATM_max)
+    endif 
     CC_act = cp%CC_act
     CC_act0 = CC_act
     ATR_act = cp%ATR_act
@@ -1423,10 +1446,17 @@ do it = 1,Nt
     endif
 !    dATM_plus = Kd2t * D_ATM * ATM_inact / (Kmmp + ATM_inact)
 !    dATM_plus = (Kmp1*DSB(NHEJslow) + Kmp2*DSB(HR)) * ATM_inact / (Kmmp + ATM_inact)
-!    dATM_plus = (Kmp1*D_NHEJ + Kmp2*D_HR) * ATM_inact / (Kmmp + ATM_inact)
-    dATM_plus = Kmp1 * D_ATM * ATM_inact / (Kmmp + ATM_inact)   ! not using kmp2, effectively kmp2 = kmp1
+    if (tIR > t_switch_ATM) then
+        dATM_plus = 0
+    else
+        if (split_kmp) then
+            dATM_plus = (Kmp1*D_NHEJ + Kmp2*D_HR) * ATM_inact / (Kmmp + ATM_inact)
+        else
+            dATM_plus = Kmp1 * D_ATM * ATM_inact / (Kmmp + ATM_inact)   ! not using kmp2, effectively kmp2 = kmp1
+        endif
+    endif
     dATM_minus = Kmd * ATM_act / (Kmmd + ATM_act)
-    dATM_act_dt = dATM_plus - dATM_minus   
+    dATM_act_dt = dATM_plus - dATM_minus
     ATM_act = ATM_act + dt*dATM_act_dt
     ATM_act = min(ATM_act, ATM_tot)
     !if (single_cell .and. iph == G2_phase .and. t_simulation < 3.2*3600) then
@@ -1437,7 +1467,6 @@ do it = 1,Nt
 enddo
 endif
 
-tIR = istep*DELTA_T/3600.
 if (dbug) write(nfres,'(a,10f9.4,2e12.3)') 'Jaiswal: ',tIR,D_ATM,ATM_act,ATM_inact,Kmp1,Kmp2,Kmmp,Kmd,Kmmd,ATM_act,dATM_plus,dATM_minus
 !if (single_cell) then
 !    write(*,'(a,2i4,4f8.4)') 'kcell,iph,ATR,ATM: ',kcell_now,iph,ATR_act,ATM_act
@@ -1460,7 +1489,6 @@ if (first) then
 endif
 if (single_cell) write(nflog,'(i12,11e12.3)') iph,D_ATR,dATR_act_dt,ATR_act,dATM_act_dt,ATM_act,d(1:3),dCC_act_dt,CC_act
 t = t_simulation/3600.
-tIR = (tnow - t_irradiation)/3600
 !if (test_run .and. (kcell_now==3 .or. kcell_now==6)) then
 !    write(nflog,'(a,2i4,f8.2,2e12.3,f8.3)') 'Jaiswal_update: kcell,iph,tIR,ATM_act,ATR_act,CC_act: ',kcell_now,iph,tIR,ATM_act,ATR_act,CC_act
 !endif
