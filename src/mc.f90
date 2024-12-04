@@ -1844,6 +1844,7 @@ dmis = Pmis*(totDSB0 - totDSB)
 if (isnan(dmis)) then
     write(nflog,*) 'dmis is NaN'
     write(nflog,'(a,2f8.2,e12.3)') 'totDSB0, totDSB, eta_NHEJ: ',totDSB0, totDSB, eta_NHEJ
+    write(nflog,'(a,i4,4e12.3)') 'phase, f_S, tIR, sigma_NHEJ, Kcoh: ',phase, f_S, tIR, sigma_NHEJ, Kcoh
     stop
 endif
 Nrep = totDSB0 - totDSB
