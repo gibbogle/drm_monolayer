@@ -22,7 +22,10 @@ do
     t = tmitosis(CC_tot,x,kmccp)
     f0 = t - Tph
     dfdx = (tmitosis(CC_tot,x+dx,kmccp) - t)/dx
-    if (dfdx == 0) exit
+    if (dfdx == 0) then
+        write(*,*) 'dfdx = 0'
+        exit
+    endif
     x1 = x - f0/dfdx
     if (abs(x-x1)/x < 0.002) exit
 !    write(*,'(i4,4f8.4)') n,dfdx,x0,x1,f0
@@ -68,11 +71,13 @@ real(8) :: x0, t0
 real(8),parameter :: alfa = -1.0, beta = 0.45
 
 CC_factor = CC_threshold_factor
-x0 = alfa + beta*kmccp      ! initial guess
+!x0 = alfa + beta*kmccp      ! initial guess
+x0 = 0.5
 t0 = tmitosis(CC_tot,x0,kmccp)
-!write(*,*) 't0,T_G2: ',t0,T_G2
+!write(*,*) 'x0, t0, T_G2: ',x0,t0,T_G2
 call newton(x0,t0,CC_tot,kmccp,1.0*T_G2)    ! find x0 = kcc such that tmitosis = T_G2
 kcc = x0
+!write(*,*) 'kcc: ',kcc
 end function
 
 end module

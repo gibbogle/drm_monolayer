@@ -88,7 +88,7 @@ elseif (cp%phase == S_phase) then
         endif
         cp%phase = G2_phase
         cp%progress = 0
-        cp%t_start_G2 = istep*DELTA_T
+        cp%t_start_G2 = istep*DELTA_T/3600
         nSdelay = nSdelay + 1   ! only S doesn't use stops
         if (single_cell) then
             do jpp = 1,2
@@ -119,6 +119,7 @@ elseif (cp%phase == G2_phase) then
             cp%progress = 0
             cp%V = cp%divide_volume     ! set volume here, to maintain correct cell volume at cell division
             cp%t_mitosis = tIR
+            cp%t_start_mitosis = istep*DELTA_T/3600
             if (single_cell .or. test_run) then
                 write(*,*) 'Reached start of mitosis at (since IR): ',tIR
                 write(nflog,*) 'kcell,reached start of mitosis at tIR,CC_act: ',kcell_now,tIR,cp%CC_act

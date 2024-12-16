@@ -1278,6 +1278,10 @@ integer :: nvars, k, flag
 logical :: use_RK = .false.
 integer :: NRK = 20
 
+!if (kcell_now == 744) then
+!    write(nflog,'(a,i6,2f8.3)') 'Jaiswal_update: kcell, tnow, CC_act: ', kcell_now,tnow/3600,cp%CC_act
+!    write(nflog,'(a,i4,3f8.3)') 'phase, progress, ATR_act, ATM_act : ',cp%phase,cp%progress,cp%ATR_act,cp%ATM_act 
+!endif
 tIR = (tnow - t_irradiation)/3600
 iph = cp%phase
 if (iph >= 7) iph = iph - 6     ! checkpoint phase numbers --> phase number, to continue ATM and ATR processes through checkpoints
@@ -1292,7 +1296,7 @@ split_kmp = (kmp2 > 0)
 do it = 1,NP
     DSB(it) = sum(cp%DSB(it,:))     ! add pre and post!
 enddo
-if (single_cell) write(*,'(a,3f8.1)') 'DSB: ',DSB(1:3)
+!if (single_cell) write(*,'(a,3f8.1)') 'DSB: ',DSB(1:3)
 ATR_act = cp%ATR_act
 CC_act = cp%CC_act
 dbug = (iph == -2 .and. (kcell_now == 3))
@@ -1343,7 +1347,7 @@ elseif (iph == G2_phase) then
         ATR_act = ATR_act*(40 - t_G2)/(40 - 30) ! fixed (was (t_G2 - 30)/(40 - 30))
 !        write(nflog,'(a,f8.3,e12.3)') 't_G2, ATR_act: ',t_G2,ATR_act
     endif
-    if (single_cell) write(nfres,'(a,i6,6f8.2,2f8.3)') 'istep,t, N_NHEJ, N_HR,D_ATR, D_ATM, ATR_act, ATM_act, CC_act: ', istep,t_G2,DSB(NHEJslow),DSB(HR),D_ATR,D_ATM,cp%ATR_act,cp%ATM_act,cp%CC_act
+!    if (single_cell) write(nfres,'(a,i6,6f8.2,2f8.3)') 'istep,t, N_NHEJ, N_HR,D_ATR, D_ATM, ATR_act, ATM_act, CC_act: ', istep,t_G2,DSB(NHEJslow),DSB(HR),D_ATR,D_ATM,cp%ATR_act,cp%ATM_act,cp%CC_act
     D_NHEJ = DSB(NHEJslow)
     D_HR = DSB(HR)
 !    D_NHEJ = min(D_NHEJ, D_NHEJmax)
@@ -1412,6 +1416,7 @@ else
 dCC_act_dt = 0
 dATR_act_dt = 0
 dATM_act_dt = 0
+!if (kcell_now == 744) write(nflog,'(a,7f8.3)') 'Kkcc,Kmccp,Kccmd,Kmccmd,Kccrd,Kmccrd: ',Kkcc,Kmccp,Kccmd,Kmccmd,Kccrd,Kmccrd
 do it = 1,Nt  
     ATM_inact = ATM_tot - ATM_act
     ATR_inact = ATR_tot - ATR_act
@@ -1447,6 +1452,7 @@ do it = 1,Nt
 !    dATM_plus = Kd2t * D_ATM * ATM_inact / (Kmmp + ATM_inact)
 !    dATM_plus = (Kmp1*DSB(NHEJslow) + Kmp2*DSB(HR)) * ATM_inact / (Kmmp + ATM_inact)
     if (tIR > t_switch_ATM) then
+        D_ATM = 0
         dATM_plus = 0
     else
         if (split_kmp) then
@@ -1485,9 +1491,9 @@ endif
 !write(nflog,'(a,i3,9e12.3)') 'iph,dATR,ATR_act,dATM,ATM_act,d(1:3),dCC,CC_act: ',iph,dATR_act_dt,ATR_act,dATM_act_dt,ATM_act,d(1:3),dCC_act_dt,CC_act
 if (first) then
     first = .false.
-    write(nflog,'(11a12)') '       phase','       D_ATR',' dATR_act_dt','     ATR_act',' dATM_act_dt','     ATM_act','        d(1)','        d(2)','        d(3)','  dCC_act_dt','      CC_act'
+    write(nflog,'(a6,12a11)') '  t   ','     D_ATR ','dATR_act_dt','    ATR_act','   D_ATM ','dATM_act_dt','    ATM_act','       d(1)','       d(2)','       d(3)',' dCC_act_dt','     CC_act'
 endif
-if (single_cell) write(nflog,'(i12,11e12.3)') iph,D_ATR,dATR_act_dt,ATR_act,dATM_act_dt,ATM_act,d(1:3),dCC_act_dt,CC_act
+if (single_cell) write(nflog,'(f6.2,12f11.4)') tnow/3600,D_ATR,dATR_act_dt,ATR_act,D_ATM,dATM_act_dt,ATM_act,d(1:3),dCC_act_dt,CC_act
 t = t_simulation/3600.
 !if (test_run .and. (kcell_now==3 .or. kcell_now==6)) then
 !    write(nflog,'(a,2i4,f8.2,2e12.3,f8.3)') 'Jaiswal_update: kcell,iph,tIR,ATM_act,ATR_act,CC_act: ',kcell_now,iph,tIR,ATM_act,ATR_act,CC_act
@@ -1545,7 +1551,7 @@ if (dth >= 0) then
 !    Nt = 10
     Nt = 1
     dt = dth/Nt
-    if (single_cell) write(*,'(a,2i6,2f8.4)') 'istep,path,repRate(path),dt: ',istep,path,repRate(path),dt
+!    if (single_cell) write(*,'(a,2i6,2f8.4)') 'istep,path,repRate(path),dt: ',istep,path,repRate(path),dt
     do it = 1,Nt
         N = N*exp(-repRate(path)*dt*repRateFactor(path))
     enddo

@@ -238,7 +238,8 @@ type cell_type
 	
 	! Jaiswal section (26/09/22)
 	real(REAL_KIND) :: CC_act, ATR_act, ATM_act, dCC_act_dt, kccmd, kccrd, kcc
-    
+    real(REAL_KIND) :: G2t0		! initial time in G2
+
     ! Greens section (01/07/2023)
     real(8) :: gconc(3)		! oxygen, glucose, drug
 

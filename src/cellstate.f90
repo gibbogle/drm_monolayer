@@ -749,7 +749,7 @@ do kcell = 1,nlist0
 		ncells_mphase = ncells_mphase + 1
 		! Need to record clonogenic SP at first mitosis
         cp%phase = dividing
-!        if (kcell_now <= 10) write(nflog,'(a,i6,f10.1)') 'grower: start mitosis counter',kcell_now, tnow
+!        if (kcell_now <= 10) write(nflog,'(a,i6,3f8.2)') 'grower: start mitosis counter',kcell_now, tnow/3600, istep*DELTA_T/3600, t_simulation/3600
     endif
 	
     if (cp%phase == dividing) then

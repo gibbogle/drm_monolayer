@@ -1544,6 +1544,7 @@ elseif (t <= tswitch(3)) then
     cp%dVdt = cp%fp*rVmax
     cp%V = Vprev + (t - tswitch(2))*cp%dVdt
     cp%progress = (t - tswitch(2))/T_G2
+    cp%t_start_G2 = 0
     tleft = tswitch(3) - t
     Vleft = cp%dVdt*tleft
     Vphase = rVmax*T_G2*fp(3)
@@ -1561,6 +1562,7 @@ elseif (t <= tswitch(3)) then
     if (use_Jaiswal) then   ! need to initialise CC_act
         cp%DSB = 0
         dth = (t - tswitch(2))/3600
+        cp%G2t0 = dth
         if (single_cell) write(nflog,'(a,3f8.3)') 'SetInitialCellCycleStatus: dth: ',t/3600, tswitch(2)/3600, dth
         call Jaiswal_update(cp,dth)
         cp%CC_act = min(cp%CC_act,0.95*CC_threshold)     ! to prevent premature mitosis
@@ -2030,6 +2032,7 @@ real(REAL_KIND) :: DELTA_T_save, t_sim_0, SFlive
 real(REAL_KIND) :: C_O2, HIF1, PDK1
 type(metabolism_type), pointer :: mp
 type(cell_type), pointer :: cp
+type(cycle_parameters_type), pointer :: ccp
 integer :: phase_count(0:4), nG2
 real(REAL_KIND) :: total, tadjust
 real(REAL_KIND) :: fATM, fATR, fCP, dtCPdelay, dtATMdelay, dtATRdelay, ATM_DSB, DNA_rate
@@ -2257,6 +2260,19 @@ if (compute_cycle .or. output_DNA_rate) then
 !                write(nflog,'(a,4f8.3)') '%dist: ',100*phase_dist(1:4)/sum(phase_dist(1:4))
             endif
 	        if (compute_cycle) then
+
+! testing M%
+    if (next_phase_hour <= 3) then
+        ccp => cc_parameters(1)
+!        write(*,*) 'next_phase_hour: ',next_phase_hour
+        do kcell = 1,nlist
+            cp => cell_list(kcell)
+            !if (cp%phase >= M_phase) then
+            !    write(*,'(a,i6,i4,3f6.2)') 'kcell, phase0, G2t0, T_G2: ',kcell,cp%phase0, cp%G2t0, cp%G2t0+cp%t_start_mitosis/3600
+            !endif
+        enddo
+    endif
+
 !	            call get_phase_distribution(phase_count)
 !	            total = sum(phase_count)
 !	            phase_dist = 100*phase_count/total
