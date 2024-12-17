@@ -1456,6 +1456,7 @@ type(cycle_parameters_type), pointer :: ccp
 integer :: ityp, kpar = 0
 real(REAL_KIND) :: Tc, Tmean, scale, b, t, R, tswitch(3), rVmax, V0, Vprev, fg(4), metab, f_CP, fp(4)
 real(REAL_KIND) :: T_G1, T_S, T_G2, T_M, tleft, Vleft, Vphase, dth
+integer :: isign
 
 if (use_exponential_cycletime) then
     write(*,*) 'SetInitialCellCycleStatus: Must use log-normal cycle time!'
@@ -1486,7 +1487,9 @@ else
     T_M = cp%mitosis_duration
 endif
 if (use_cell_kcc_dependence) then
-    cp%Kcc = get_Kcc(kmccp,CC_tot,CC_threshold_factor,T_G2/3600)
+    isign = 1
+!    if (kcell == 9282) isign = -1
+    cp%Kcc = get_Kcc(kmccp,CC_tot,isign*CC_threshold_factor,T_G2/3600)
     cp%Kcc = min(cp%kcc, 0.9*CC_threshold)
     if (single_cell) write(nflog,*) 'fg,T_G2, cp%Kcc: ',cp%fg(G2_phase),T_G2/3600,cp%Kcc
 endif
