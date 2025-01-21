@@ -1,32 +1,3 @@
-subroutine syncher(Np,phase,progress)
-real(8) :: progress(30), cyc(4), p, h
-integer :: ih, iph, phase(30), Np
-
-cyc(1:4) = [5.36, 9.51, 3.41, 0.43]
-
-ih = 0
-h = 0
-do
-    if (h < cyc(1)) then
-        iph = 1
-        p = h/cyc(1)
-    elseif (h < (cyc(1) + cyc(2))) then
-        iph = 2
-        p = (h - cyc(1))/cyc(2)
-    elseif (h < (cyc(1) + cyc(2) + cyc(3))) then
-        iph = 3
-        p = (h - cyc(1) - cyc(2))/cyc(3)
-    else
-        exit
-    endif
-    phase(ih+1) = iph
-    progress(ih+1) = p
-    ih = ih+1
-    h = h+1
-enddo
-Np = ih
-end subroutine
-        
 !-----------------------------------------------------------------------------------------
 ! Main program
 !-----------------------------------------------------------------------------------------
@@ -35,20 +6,15 @@ use drm_monolayer_mod
 use global
 implicit none
 integer :: ncpu, res
-real(8) :: summarydata(100)
 character*(128) :: infile, outfile, runfile
-character*(64) :: travelfile = 'travel_time_dist.out'
 integer :: status, nlen, cnt, i, inbuflen, outbuflen
-integer :: jstep, hour, ntot, ncog, inflow, irun, i_hypoxia_cutoff,i_growth_cutoff, nsumm_interval
+integer :: jstep, irun
 character*(128) :: b, c, progname
-real :: vasc
 real(8) :: t1, t2
-!logical :: simulate_colony
-integer :: idist, ndist = 40
-real(8) :: PE, colony_days, dist(40), ddist = 50
+real(8) :: colony_days
 
 real(8) :: progress(30)
-integer :: phase(30), Nph
+integer :: Nph
 logical :: use_single
 
 call disableTCP
@@ -91,7 +57,7 @@ do i = 1, cnt
 !        outfile = c(1:nlen)																! --> outfile
 !        write(*,*) 'Output file: ',outfile
         read(c(1:nlen),*) colony_days															! --> ncpu
-        simulate_colony = (colony_days > 0)
+!        simulate_colony = (colony_days > 0)
     endif
     use_PEST = .false.
 end do
@@ -126,28 +92,14 @@ if (use_synchronise) then
             progress(i) = (i-1)*1.0/nph
         enddo
     endif
-!    call syncher(Nph, phase, progress)
-!    do i = 1,Nph
-!        write(*,'(2i6,f6.3)') i-1, phase(i), progress(i)
-!        write(nflog,'(2i6,f6.3)') i-1, phase(i), progress(i)
-!    enddo
 endif
-G2_katm3_factor = 1.0
-G2_katm4_factor = 1.0
-G2_katr3_factor = 1.0
-G2_katr4_factor = 1.0
 
-use_fixed_CP = .false.
-compute_cycle = .true.
-i_hypoxia_cutoff = 3
-i_growth_cutoff = 1
 !do synch_phase = 1,3
-do irun = 1,nph   ! 1,1
+do irun = 1,nph
     if (use_synchronise) then
         synch_fraction = progress(irun)    !(irun-1)*0.2
         write(*,*)
     	write(*,'(a,2i4,f6.3)') 'main: irun, synch_phase, synch_fraction: ',irun,synch_phase,synch_fraction
-!    	write(nflog,'(a,2i4,f6.3)') 'irun, synch_phase, synch_fraction: ',irun,synch_phase,synch_fraction
     endif
 	inbuflen = len(infile)
 	outbuflen = len(outfile)
@@ -155,17 +107,10 @@ do irun = 1,nph   ! 1,1
     res = irun
 	call execute(ncpu,infile,inbuflen,outfile,outbuflen,res)
 	if (res /= 0) stop
-	!call cpu_time(t1)
 	t1 = wtime()
 	write(*,*) 'did execute: nsteps, DELTA_T: ',nsteps, DELTA_T
-	nsumm_interval = (60*60)/DELTA_T   ! number of time steps per hour
-	write(*,*) 'nsumm_interval: ',nsumm_interval
-	call get_summary(summarydata,i_hypoxia_cutoff,i_growth_cutoff)
 	do jstep = 1,Nsteps+1
 		call simulate_step(res)
-		if (mod(jstep,nsumm_interval) == 0) then
-			call get_summary(summarydata,i_hypoxia_cutoff,i_growth_cutoff)
-		endif
 		if (res == 1) then
 		    write(*,*) 'Success'
 		    exit
@@ -179,11 +124,7 @@ do irun = 1,nph   ! 1,1
 	enddo
     write(*,*) 'res: ',res
     if (res == 0) write(*,*) 'Exceeded nsteps, not all cells reached mitosis, increase ndays'
-	if (simulate_colony) then
-	    call make_colony_distribution(colony_days,dist,ddist,ndist,PE)
-	endif
 	call terminate_run(res)
-	!call cpu_time(t2)
 	t2 = wtime()
 	write(*,*) 'time: ',t2-t1
 enddo

@@ -542,7 +542,8 @@ real(REAL_KIND) :: C_G_base = 10.359
 
 integer :: rad_count(6)
 
-logical :: use_synchronise != .false.   ! now set in main
+! These are now set in main
+logical :: use_synchronise 
 integer :: synch_phase
 real(REAL_KIND) :: synch_fraction
 logical :: single_cell
@@ -609,24 +610,10 @@ real(REAL_KIND) :: Khalflife, drug_time, drug_conc0
 logical :: test_run = .false.	! to check Psurvive etc
 LOGICAL :: use_no_random = .false.	! to turn off variation in cycle time, DSB_Gy
 
-! CA and flushing time
-! In Cho1 CDTD, CA starts (trypsinisation) at flushing time,
-! in Cho2 CDTD, CA always starts at 24h
-!logical, parameter :: CA_at_flushing = .false.	! set = .false. to get SF for Cho2 CDTD expts, which used CA at 24h
-
-
-!integer :: icentral !extracellular variable index corresponding to a central site (NX/2,NY/2,NZ/2)
-
-! Off-lattice parameters, in the input file but unused here
-!real(REAL_KIND) :: a_separation
-!real(REAL_KIND) :: a_force, b_force, c_force, x0_force, x1_force, kdrag, frandom
-
-!real(REAL_KIND), allocatable :: omp_x(:), omp_y(:), omp_z(:)
-
-!DEC$ ATTRIBUTES DLLEXPORT :: nsteps, DELTA_T, use_PEST, PEST_outputfile, simulate_colony
-!DEC$ ATTRIBUTES DLLEXPORT :: SFave, S_phase_RR, S_phase_RR_progress, G1_delay, S_delay, G2_delay, use_fixed_CP, compute_cycle
-!DEC$ ATTRIBUTES DLLEXPORT :: use_synchronise, synch_phase, synch_fraction, nfphase
-!DEC$ ATTRIBUTES DLLEXPORT :: G2_katm3_factor, G2_katm4_factor, G2_katr3_factor, G2_katr4_factor
+!DEC$ ATTRIBUTES DLLEXPORT :: nsteps, use_PEST, PEST_outputfile, DELTA_T
+!DEC$ ATTRIBUTES DLLEXPORT :: use_synchronise, synch_phase, synch_fraction	!, nfphase
+!!DEC$ ATTRIBUTES DLLEXPORT :: SFave, S_phase_RR, S_phase_RR_progress, G1_delay, S_delay, G2_delay, compute_cycle, use_fixed_CP
+!!DEC$ ATTRIBUTES DLLEXPORT :: G2_katm3_factor, G2_katm4_factor, G2_katr3_factor, G2_katr4_factor
 contains
 
 !-----------------------------------------------------------------------------------------

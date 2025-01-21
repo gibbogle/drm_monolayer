@@ -153,6 +153,8 @@ real(8) :: nIliakis
 real(8) :: ksup     ! if ksup = 0, fsup = 1
 real(8) :: fsup
 logical :: use_Iliakis 
+logical :: compute_reprate3 = .true.    ! reprate3 = reprate3_2GY/dose
+real(8) :: reprate3_2GY = 0.26
 
 ! Distributions of Nlethal, totDSB at mitosis
 !integer, parameter :: NMDIST = 500
@@ -552,6 +554,9 @@ cp%irradiated = .true.
 if (dose == 0) then
     cp%DSB0 = 0
     return
+endif
+if (compute_reprate3) then
+    reprate(HR) = reprate3_2GY/dose
 endif
 next_write_time = 0
 ccp => cc_parameters(1)
@@ -1452,7 +1457,7 @@ do it = 1,Nt
 !    dATM_plus = Kd2t * D_ATM * ATM_inact / (Kmmp + ATM_inact)
 !    dATM_plus = (Kmp1*DSB(NHEJslow) + Kmp2*DSB(HR)) * ATM_inact / (Kmmp + ATM_inact)
     if (tIR > t_switch_ATM) then
-        D_ATM = 0
+        D_ATM = 0   ! is this correct??  Yes, but unnecessary
         dATM_plus = 0
     else
         if (split_kmp) then
