@@ -556,7 +556,7 @@ if (dose == 0) then
     return
 endif
 if (compute_reprate3) then
-    reprate(HR) = reprate3_2GY/dose
+    reprate(HR) = 2*reprate3_2GY/dose
 endif
 next_write_time = 0
 ccp => cc_parameters(1)
