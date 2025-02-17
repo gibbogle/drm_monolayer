@@ -29,9 +29,9 @@ type(cell_type),pointer :: cp
 tnow = t_simulation		! now = time at the start of the timestep
 ok = .true.
 call grower(dt,changed,ok)
-if (.not.ok) return
-call CellDeath(dt,ok)
-if (.not.ok) return
+!if (.not.ok) return
+!call CellDeath(dt,ok)	! used only in metabolism model
+!if (.not.ok) return
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -71,7 +71,7 @@ real(REAL_KIND) :: C_O2, SER, p_death, p_recovery, R, kill_prob, tmin, Cdrug, to
 real(REAL_KIND) :: SER_OER(2)
 integer :: phase_count(0:4)
 real(REAL_KIND) :: ph_dist(0:4), totDSB(2)
-integer :: counts(8), jpp
+integer :: iph, counts(4), jpp
 type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
 !logical :: dies
@@ -84,6 +84,7 @@ write(nflog,'(a,f8.3,i6)') 'Irradiation: t, Nirradiated: ',t_irradiation/3600,Ni
 call get_phase_distribution(phase_count)
 total = sum(phase_count)
 ph_dist = 100*phase_count/total
+write(nflog,'(a,5i6)') 'phase count: ',phase_count
 write(nflog,'(a,5f8.2)') 'phase distribution: ',ph_dist
 
 if (no_S_Iliakis) then
@@ -149,13 +150,15 @@ counts = 0
     NPsurvive = 0
     Napop = 0
     Nmitotic = 0
+	Nsecond = 0
     tmin = 1.0      ! for now...
     n = 0
     do kcell = 1,nlist
         kcell_now = kcell
         cp => cell_list(kcell)
-        counts(cp%phase) = counts(cp%phase) + 1
-	    if (cp%state == DEAD .or. cp%state == DYING) cycle
+        iph = min(cp%phase, M_phase)
+        counts(iph) = counts(iph) + 1
+!	    if (cp%state == DEAD .or. cp%state == DYING) cycle
 !	    if (cp%phase <= G1_checkpoint) then
 !	        cp%rad_state = 1
 !	    elseif (cp%phase <= S_checkpoint) then
@@ -662,7 +665,7 @@ logical :: ok
 integer :: kcell, kpar=0
 
 kcell = random_int(1,nlist,kpar)
-call divider(kcell,ok)
+call divider(kcell,1,ALIVE,ok)
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -683,6 +686,9 @@ integer :: k, kcell, nlist0, ityp, idrug, prev_phase, kpar=0
 type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
 real(REAL_KIND) :: rr(3), c(3), rad, d_desired, R, rrsum, pdeath, mitosis_duration, f_CP
+real(REAL_KIND) :: PS, Ntot
+integer :: ndone
+logical :: stuck
 real(REAL_KIND) :: fslow(3), Cdrug
 integer :: nslow(3)
 integer, parameter :: MAX_DIVIDE_LIST = 100000
@@ -695,6 +701,8 @@ changed = .false.
 nlist0 = nlist
 ndivide = 0
 
+ndone = 0
+SFdone = .false.
 ! Note that Caverage is used, although it should be used when the drug conc is constant
 ! This is because drug halflife is being shoe-horned into the model quickly
 if (use_drug_halflife) then
@@ -717,13 +725,11 @@ do kcell = 1,nlist0
     	cp => cell_list(kcell)
     endif
 !	if (kcell == 5 .and. cp%psurvive > 0) write(*,'(a,3i6)') 'grower: kcell, phase, state: ',kcell,cp%phase,cp%state
-    if (cp%state == DIVIDED) cycle
-	if (cp%state == DEAD) cycle
-	if (cp%state == DYING) then		! nothing affects a DYING cell (when does it die?)
-		cp%dVdt = 0
-		cycle
-    endif
-    
+!   if (cp%state == DIVIDED) cycle
+!	if (cp%state == DEAD) cycle
+!	if (cp%state == DYING) cycle	
+    if (use_SF .and. cp%state == EVALUATED) cycle
+	ndone = ndone + 1
     ! start cell simulation----------------------------------------------------------
 	ityp = cp%celltype
 	ccp => cc_parameters(ityp)
@@ -738,9 +744,7 @@ do kcell = 1,nlist0
 	        fslow(cp%phase) = fslow(cp%phase) + f_CP
 	    endif
 	endif
-!	if (cp%dVdt > 0) then
-        call log_timestep(cp, ccp, dt)
-!    endif
+    call log_timestep(cp, ccp, dt)
     if (cp%phase == M_phase) then
 !        if (istep == 0) write(nflog,'(a,i6,f6.3)') 'Enter M_phase: kcell, time: ',kcell_now,t_simulation/3600
 !        write(nflog,*)
@@ -751,6 +755,7 @@ do kcell = 1,nlist0
         cp%phase = dividing
 !        if (kcell_now <= 10) write(nflog,'(a,i6,3f8.2)') 'grower: start mitosis counter',kcell_now, tnow/3600, istep*DELTA_T/3600, t_simulation/3600
     endif
+!if (istep > 230) write(*,'(a,4i6,f8.3)') 'left kcell, phase0, phase, state, CC_act: ',kcell,cp%phase0,cp%phase,cp%state,cp%CC_act
 	
     if (cp%phase == dividing) then
 		drugkilled = .false.
@@ -766,30 +771,87 @@ do kcell = 1,nlist0
 !        if (kcell <= 10) write(nflog,'(a,i6,2f10.1,2f8.3)') 'grower: kcell, mitosis: ',kcell, tnow, cp%t_start_mitosis,mitosis_duration/3600,cp%mitosis
 		
         if (cp%mitosis >= 1) then
-!			if (kcell <= 10) write(nflog,'(a,i6,f10.1,f8.3)') 'end mitosis: ',kcell,tnow,(tnow - cp%t_start_mitosis)/3600
 			cp%G2_time = tnow - cp%t_start_G2
-!            if (kcell <= 10) write(nflog,'(a,2i6,f8.3)') 'grower: divide cell, time: ',istep,kcell,cp%G2_time/3600
 ! if use_SF (i.e. we are computing SF_ave) then only cells not satisfying (is_radiation .and. cp%Psurvive < 0) need to divide
+! if allow_second_mitosis = true, need to account for cells with phase0 = M_phase.
 !			write(*,'(a,2L4,f8.3)') 'use_SF, is_radiation, cp%Psurvive: ',use_SF, is_radiation, cp%Psurvive
-            if (use_SF) then
-			    if (is_radiation .and. cp%Psurvive < 0) then
-!                if (cp%generation == 2) then
-			        ! compute survival probability (ala McMahon, mcradio)
-					if (test_run) write(nflog,'(a,i6,f6.3)') 'Exit M_phase, get P_survive: kcell, time: ',kcell,t_simulation/3600
-			        call survivalProbability(cp)
-			    else
-			        divide = .true.
-			    endif
+
+!			if (kcell == 363) write(nflog,'(a,3i6,f8.2)') 'grower: cell ends mitosis: kcell,state,phase0,t_divide_last: ',kcell,cp%state,cp%phase0,cp%t_divide_last/3600
+! New method (14/02/25)
+			if (allow_second_mitosis .and. (cp%phase0 == M_phase)) then		! mitotic cell
+				if (cp%t_divide_last < 0) then
+                    Ntot = sum(cp%DSB)
+					PS = exp(-kmit*Ntot)
+					R = par_uni(kpar)
+					if (R > PS) then	! the cell is fated to die
+!						cp%state = DYING
+!						cp%Psurvive = 0
+!						divide (1 new cell) and set state = DYING for both daughters
+						call divider(kcell, 1, DYING, ok)
+					else
+!						divide (1 new cell) and set state = ALIVE for both daughters
+						call divider(kcell, 1, ALIVE, ok)
+					endif
+				else	! cells at M2
+					if (use_SF) then	! evaluate Psurvive
+						if (cp%state == DYING) then		 
+							cp%Psurvive = 0
+							cp%state = EVALUATED
+!							write(nflog,'(a,2i6,f8.3)') 'was DYING cell: kcell,state,Psurvive: ',kcell,cp%state,cp%Psurvive
+						else	
+!							evaluate Psurvive, set state = EVALUATED
+							call survivalProbability(cp)				
+							cp%state = EVALUATED
+						endif
+					else
+!						divide (1 new cell) and set state = ALIVE for both daughters
+						call divider(kcell, 1, ALIVE, ok)
+					endif
+				endif
+			else		! non-mitotic cell
+				if (use_SF) then
+!					evaluate Psurvive and set state = EVALUATED
+					call survivalProbability(cp)
+					cp%state = EVALUATED
+				else
+!					divide (1 new cell) and set state = ALIVE for both daughters
+					call divider(kcell, 1, ALIVE, ok)
+                endif
+			endif
+		endif
+	endif
+enddo
+SFdone = (ndone == 0)
+
+#if 0
+			if (allow_second_mitosis .and. (cp%phase0 == M_phase)) then
+				write(nflog,*) 'end of mitosis, kcell,t_divide_last: ',kcell,cp%t_divide_last
+				if (use_SF) then
+					if (is_radiation .and. cp%t_divide_last > 0) then
+						call survivalProbability(cp)
+					else
+						divide = .true.
+					endif
+				else
+					divide = .true.
+				endif
 			else
-			    divide = .true.
+				if (use_SF) then
+					if (is_radiation .and. cp%Psurvive < 0) then
+						if (test_run) write(nflog,'(a,i6,f6.3)') 'Exit M_phase, get P_survive: kcell, time: ',kcell,t_simulation/3600
+						call survivalProbability(cp)
+					else
+						divide = .true.
+					endif
+				else
+					divide = .true.
+				endif
 			endif
 		endif
     endif
-    ! end cell simulation---------------------------------------------------------------------
-    
 	if (divide) then
 		cp%phase = G1_phase
-        if (expt_ID == 1) cycle		! we do simulate cell division for PDJ, not for SFALL
+!        if (expt_ID == 1) cycle		! we do simulate cell division for PDJ, not for SFALL
 		ndivide = ndivide + 1
 		if (ndivide > MAX_DIVIDE_LIST) then
 		    write(logmsg,*) 'Error: growcells: MAX_DIVIDE_LIST exceeded: ',MAX_DIVIDE_LIST
@@ -817,6 +879,7 @@ do k = 1,ndivide
 	call divider(kcell, ok)
 	if (.not.ok) return
 enddo
+#endif    
 end subroutine
 
 
@@ -956,10 +1019,10 @@ integer :: ityp
 real(REAL_KIND) :: r_mean, c_rate, mitosis_duration
 type(cycle_parameters_type), pointer :: ccp
 
-if (cp%state == DYING) then
-    dVdt = 0
-    return
-endif
+!if (cp%state == DYING) then
+!    dVdt = 0
+!    return
+!endif
 ityp = cp%celltype
 ccp => cc_parameters(ityp)
 !mitosis_duration = ccp%T_M
@@ -993,19 +1056,31 @@ end function
 
 !-----------------------------------------------------------------------------------------
 ! New version
+! Should one daughter replace the parent cell in cell_list (incrementing Ncells by 1), 
+! or should the two daughters add to the cell_list (incrementing Ncells by 2)?
+! Increment by 1, remove squeezer (we do not want to reuse the slot in cell_list)
 !-----------------------------------------------------------------------------------------
-subroutine divider(kcell1, ok)
-integer :: kcell1
+subroutine divider(kcell0, nnew, newstate, ok)
+integer :: kcell0, nnew, newstate
 logical :: ok
-integer :: kcell2, ityp, nbrs0, im, imax, ipdd
+integer :: kcell1,kcell2, ityp, nbrs0, im, imax, ipdd
 real(REAL_KIND) :: R, c(3), cfse0, cfse2, V0, Tdiv, gfactor, dVdt, fg(4)
 type(cell_type), pointer :: cp1, cp2
 type(cycle_parameters_type), pointer :: ccp
 integer :: kpar = 0
 
-!write(nflog,*) 'divider: ',kcell1 
-!call logger(logmsg)
 ok = .true.
+if (nnew == 1) then
+	kcell1 = kcell0
+elseif (nnew == 2) then
+	nlist = nlist + 1
+	if (nlist > MAX_NLIST) then
+		ok = .false.
+		call logger('Error: Maximum number of cells MAX_NLIST has been exceeded.  Increase and rebuild.')
+		return
+	endif
+	kcell1 = nlist
+endif
 ityp = 1
 ccp => cc_parameters(ityp)
 ndivided = ndivided + 1
@@ -1021,8 +1096,10 @@ else
 !	    stop
 !	endif
 endif
+!if (kcell0 == 363) write(nflog,'(a,i6,L4,2f8.3)') 'divider: kcell0, IRad, tirradiated, tnow: ',kcell0, cp1%irradiated,t_irradiation/3600, tnow/3600
 
-cp1%state = ALIVE
+cp1%phase = G1_phase
+cp1%state = newstate
 cp1%generation = cp1%generation + 1
 cp1%rad_state = 0
 V0 = cp1%V/2
@@ -1069,28 +1146,10 @@ do ipdd = 0,0
 enddo
 
 cp1%drug_tag = .false.
-!cp1%anoxia_tag = .false.
-!cp1%t_anoxia = 0
-!cp1%aglucosia_tag = .false.
-!cp1%t_aglucosia = 0
-
-!if (cp1%growth_delay) then
-!	cp1%N_delayed_cycles_left = cp1%N_delayed_cycles_left - 1
-!	cp1%growth_delay = (cp1%N_delayed_cycles_left > 0)
-!endif
-!if (use_metabolism) then
-!    cp1%G1_time = tnow + (cp1%metab%I_rate_max/cp1%metab%I_rate)*cp1%fg*ccp%T_G1
-!endif
-!cp1%G1_time = tnow + (max_growthrate(ityp)/cp1%dVdt)*cp1%fg*ccp%T_G1    ! time spend in G1 varies inversely with dV/dt
-!cp1%G1_time = tnow + (max_growthrate(ityp)/cp1%dVdt)*cp1%fg*ccp%T_G1    ! time spend in G1 varies inversely with dV/dt
 cp1%G2_M = .false.
 cp1%Iphase = .true.
-cp1%phase = G1_phase
 cp1%progress = 0
 cp1%totMis = 0
-!if (max_growthrate(ityp)/cp1%dVdt > 2) then
-!    write(*,*) 'dVdt: ',kcell1,max_growthrate(ityp)/cp1%dVdt
-!endif
 
 ndoublings = ndoublings + 1
 doubling_time_sum = doubling_time_sum + tnow - cp1%t_divide_last
@@ -1103,22 +1162,18 @@ cp1%CC_act = 0	! CC_act0
 if (use_cell_kcc_dependence) cp1%Kcc = get_Kcc(kmccp,CC_tot,CC_threshold_factor,cp1%fg(G2_phase)*ccp%T_G2/3600)
 !write(nflog,'(a,i6,f8.3)') 'divider kcell1, Kcc: ',kcell1,cp1%kcc
 !cp1%irradiated = .false.
-cp1%irradiated = (tnow > t_irradiation)
-if (is_radiation .and. use_SF) return   ! in this case there is no need to actually have the cell divide
+cp1%irradiated = (tnow >= t_irradiation)
+!if (is_radiation .and. use_SF .and. .not. allow_second_mitosis) return   ! in this case there is no need to actually have the cell divide
 cp1%DSB(NHEJslow,:) = cp1%DSB(NHEJslow,:)/2
 cp1%DSB(NHEJfast,:) = 0
 cp1%DSB(HR,:) = 0
 cp1%DSB(TMEJ,:) = 0
 
-!cp1%state = DEAD
-!Ncells_type(1) = Ncells_type(1) - 1
-!return
-
 ! Second cell
-if (ngaps > 0) then
-    kcell2 = gaplist(ngaps)
-    ngaps = ngaps - 1
-else
+!if (ngaps > 0) then
+!    kcell2 = gaplist(ngaps)
+!    ngaps = ngaps - 1
+!else
 	nlist = nlist + 1
 	if (nlist > MAX_NLIST) then
 		ok = .false.
@@ -1126,16 +1181,13 @@ else
 		return
 	endif
 	kcell2 = nlist
-endif
+!endif
+Nsecond = Nsecond + 1
 if (colony_simulation .and. kcell2 > nColonyMax) then
 	ok = .false.
 	call logger('Error: Maximum number of colony cells nColonyMax has been exceeded.  Increase and rebuild.')
 	return
 endif
-!write(nflog,'(a,2i6,2f8.2,f8.1)') &
-!'Cell division: ',kcell1,kcell2,cp1%divide_time/3600,(tnow-cp1%t_divide_last)/3600,cp1%divide_time-(tnow-cp1%t_divide_last)
-    
-!if (kcell1 < 1000) write(nflog,'(a,2i6,f10.6)') 'divider: ',kcell1, kcell2,t_simulation/3600
 ncells = ncells + 1
 ityp = cp1%celltype
 ccp => cc_parameters(ityp)

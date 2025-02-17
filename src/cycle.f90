@@ -48,8 +48,11 @@ logical :: switch
 !	write(nflog,*) 'dVdt=0, kcell: ',kcell_now,cp%phase
 !	stop
 !endif
-!if (kcell_now <= 10) write(nflog,'(a,2i4,f6.3)') 'kcell_now, phase, progress: ',kcell_now,cp%phase,cp%progress
+!if (kcell_now == 363) write(nflog,'(a,4i4,f6.3,L4)') 'log_timestep: kcell_now, state, phase0, phase, progress,IRad: ',kcell_now,cp%state,cp%phase0,cp%phase,cp%progress,cp%irradiated
 tIR = (tnow - t_irradiation)/3600
+!if (kcell_now == 1024) then
+!    write(nfres,'(a,2i6,2f6.2)') 'kcell,phase,CC_act,t: ',kcell_now,cp%phase,cp%CC_act,tIR
+!endif
 10 continue
 if (cp%phase == G1_phase) then
     !if (single_cell) then
@@ -87,6 +90,7 @@ elseif (cp%phase == S_phase) then
             goto 20
         endif
         cp%phase = G2_phase
+!if (kcell_now == 363) write(nflog,*) 'log_timestep: switch to G2: ',kcell_now
         cp%progress = 0
         cp%t_start_G2 = istep*DELTA_T/3600
         nSdelay = nSdelay + 1   ! only S doesn't use stops

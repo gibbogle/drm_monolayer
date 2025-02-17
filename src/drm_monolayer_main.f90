@@ -80,7 +80,7 @@ endif
 use_synchronise = .false.
 use_single = .true. ! to simulate a cell (or cells) at specified synch_phase and synch_progress
 synch_phase = G2_phase   !G1 is 1 - 6, S is 7 - 15, G2 is 16 - 19
-synch_fraction = 0.75    ! only used if use_single true (also synch_phase)
+synch_fraction = 0.0    ! only used if use_single true (also synch_phase)
 nph = 1
 if (use_synchronise) then
     if (use_single) then

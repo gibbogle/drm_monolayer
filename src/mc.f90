@@ -98,7 +98,7 @@ real(8) :: km10_alfa, km10_beta     ! for G2 only
 real(8) :: G1_tdelay = 4            ! delay before ATM_act updated (hours)
 logical :: use_Jaiswal = .true.
 logical :: vary_km10 = .true.
-real(8) :: jaiswal_std = 0.6
+real(8) :: jaiswal_std = 0.6    !0.6
 real(8) :: G2_D_ATM_max     != 30 now input
 real(8) :: t_switch_ATM
 
@@ -169,7 +169,6 @@ real(8) :: signalling(4,1000)    ! 1 = time since IR, 2 = ATM_act, 3 = ATR_act, 
 
 real(8) :: next_write_time,save_fslow
 
-logical, parameter :: drop_mitotic_cells = .true.
 logical, parameter :: write_nfres = .false.
 
 ! RK4 variables
@@ -562,13 +561,13 @@ next_write_time = 0
 ccp => cc_parameters(1)
 phase = cp%phase
 cp%phase0 = min(phase, M_phase)
+cp%progress0 = cp%progress
 L = exp(-35.d0)
 if (use_Poisson_DSB .and. Ncells > 1) then
     DSB_Gy = poisson_gen(L)
 else
     DSB_Gy = 35
 endif
-if (kcell_now <= 10) write(nflog,'(a,i6,f8.3)') 'cellIrradiation: kcell, DSB_Gy: ',kcell_now,DSB_Gy
 NG1 = DSB_Gy*dose
 DSB0 = 0
 istep_signal = 1
@@ -634,7 +633,6 @@ if (use_Jeggo) then     ! using this
     if (kcell_now <= 10) then
         if (phase == S_phase) then
             write(*,'(a,2i4,3f8.3)') 'kcell,phase,fsup,pHR: ',kcell_now,phase,fsup,pHR
-            write(nflog,'(a,2i4,3f8.3)') 'kcell,phase,fsup,pHR: ',kcell_now,phase,fsup,pHR
         endif
     endif
     if (option == 1) then
@@ -1093,7 +1091,7 @@ if (iph == G1_phase) then
             fATM = 1
             return
         else
-            if (use_SF) then
+            if (use_SF .and. .not. allow_second_mitosis) then
                 write(*,*) 'get_slowdown_factors: should not get here, stopping'
                 write(nflog,'(a,2i6,2f8.3,i6)') 'in get_slowdown_factors: kcell,iph,birthtime,t_irrad,rad_state: ',kcell_now,iph,cp%birthtime/3600,t_irradiation/3600,cp%rad_state
                 close(nflog)
@@ -1283,7 +1281,7 @@ integer :: nvars, k, flag
 logical :: use_RK = .false.
 integer :: NRK = 20
 
-!if (kcell_now == 744) then
+!if (kcell_now == 363) then
 !    write(nflog,'(a,i6,2f8.3)') 'Jaiswal_update: kcell, tnow, CC_act: ', kcell_now,tnow/3600,cp%CC_act
 !    write(nflog,'(a,i4,3f8.3)') 'phase, progress, ATR_act, ATM_act : ',cp%phase,cp%progress,cp%ATR_act,cp%ATM_act 
 !endif
@@ -1655,9 +1653,9 @@ logical :: use_G1_tdelay = .false.
 logical :: do_G1_Jaiswal
 logical :: use_constant_V = .false.
 
-dbug = (kcell_now == 39 .and. istep == 109)
+dbug = (kcell_now == -39 .and. istep == 109)
 
-if (cp%state == DIVIDED) return
+if (cp%state == EVALUATED) return
 dth = dt/3600   ! hours
 use_ATM = .not.use_fixed_CP
 phase = cp%phase
@@ -1744,8 +1742,9 @@ if (iph == G1_phase) then
 endif
 do_G1_Jaiswal = .true.      ! Now do Jaiswal for G1 whether pre- or post-mitosis.  Use special katm parameters for G1 post-mitosis
 if (((iph == G1_phase).and.do_G1_Jaiswal).or.(iph >= S_phase)) then
-!    if (kcell_now == 18) write(nflog,'(a,i4,2f10.4)') 'before Jaiswal_update: iph,ATR_act,CC_act: ',iph,cp%ATR_act,cp%CC_act
-    if (cp%irradiated) call Jaiswal_update(cp,dth)  ! try this
+!    if (kcell_now == 363) write(nflog,'(a,i6,i4,2f10.4,L4)') 'before Jaiswal_update: kcell,iph,ATR_act,CC_act,IRad: ',kcell_now,iph,cp%ATR_act,cp%CC_act,cp%irradiated
+!    if (cp%irradiated) call Jaiswal_update(cp,dth)  ! try this
+    call Jaiswal_update(cp,dth)  ! try this
 !    if (iph == G2_phase) write(*,'(a,2i6,e12.3)') 'did Jaiswal: ',kcell_now, cp%generation, cp%ATM_act
 endif
 
@@ -1949,7 +1948,6 @@ type(cell_type), pointer :: cp
 real(8) :: DSB(NP,2), totDSB(2), Nmis(2), Nlethal(2), Paber(2), Pbase, Papop, Pmit(2), Psurv
 real(8) :: Nlethal_sum, Paber1_nodouble, Nmistot, tIR,totNmis
 integer :: k, jpp, ityp
-real(8), parameter :: kmit = 1.0    !0.033  ! Baide et al., D10 = 0.1
 
 DSB = cp%DSB
 do jpp = 1,2
@@ -1982,27 +1980,21 @@ if (cp%phase0 < M_phase) then   ! G1, S, G2
 !        write(nflog,'(a,3f8.1,4x,3f8.1)') 'mitosis: DSB, Nmis: ',totDSB,sum(totDSB),2*Nmis(1),Nmis(2),2*Nmis(1)+Nmis(2)
      endif
 !    write(nfres,'(a,i6,4f8.3,e12.3)') 'kcell,totDSB,Nmis,Psurvive: ', kcell_now,totDSB,Nmis,cp%Psurvive
-    !if (cp%Psurvive < 1.0E-30) then
-    !    write(nflog,'(a,5e12.3)') 'Psurvive: ',cp%Psurvive,Pmit(1:2),Paber(1:2)
-    !    write(nflog,'(a,4f8.2)') 'totDSB, Nmis: ',totDSB(1:2),Nmis(1:2)
-    !endif
 else    ! M_phase or dividing
-    if (drop_mitotic_cells) then
-        cp%state = DEAD
-        cp%Psurvive = 0
-        Nmitotic = Nmitotic + 1
-        ityp = cp%celltype
-        Ncells_type(ityp) = Ncells_type(ityp) - 1
-        Nviable(ityp) = Ncells_type(ityp)
-        Ndead(ityp) = Ndead(ityp) + 1
-    else
+    !if (drop_mitotic_cells) then
+    !    cp%state = DEAD
+    !    cp%Psurvive = 0
+    !    Nmitotic = Nmitotic + 1
+    !    ityp = cp%celltype
+    !    Ncells_type(ityp) = Ncells_type(ityp) - 1
+    !    Nviable(ityp) = Ncells_type(ityp)
+    !    Ndead(ityp) = Ndead(ityp) + 1
+    !else
         Paber = 1
-!       cp%Psurvive = Pmit(1)*Pmit(2)*Msurvival
         cp%Psurvive = exp(-kmit*sum(totDSB))
-        if (kcell_now == 1) write(*,'(a,2f8.3,6e12.3)') 'totDSB,Pmit,Nmis,Paber: ',&
-                            totDSB,Pmit,Nmis,Paber  
+        if (kcell_now <= 10) write(nflog,'(a,i4,2f8.3,e12.3)') 'kcell,kmit,totDSB,Psurvive: ',kcell_now,kmit,totDSB,cp%Psurvive
         if (single_cell) write(nfres,'(a,2f8.3,6e12.3)') '(2) totDSB,Pmit,Nmis,Paber: ',totDSB,Pmit,Nmis,Paber  
-    endif
+!    endif
 endif
 tIR = (tnow - t_irradiation)/3600
 totNmis = 2*Nmis(1)+Nmis(2)

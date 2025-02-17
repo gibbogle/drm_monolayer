@@ -26,6 +26,7 @@ integer, parameter :: ALIVE = 1
 integer, parameter :: DYING = 2
 integer, parameter :: DEAD = 3
 integer, parameter :: DIVIDED = 4
+integer, parameter :: EVALUATED = 5
 
 integer, parameter :: G1_phase      = 1
 integer, parameter :: G1_checkpoint = 6
@@ -232,6 +233,7 @@ type cell_type
 	
 	! DRM section
 	integer :: phase0
+	real(8) :: progress0
 	real(8) :: pATM, pATR, DSB(NP,2), DSB0(NP,2),totDSB0, totMis
 	real(8) :: Psurvive, psurvive_nodouble, mitosis_time
 	real(8) :: Nmis(2)		!, Nlethal(2)
@@ -553,7 +555,7 @@ logical :: DRM = .true.
 logical, parameter :: use_Napop = .true.   ! use count of apoptosed cells in SFave calculation - true for consistency with CA
 integer :: N_checkpoint     ! number of cells in checkpoint - not growing
 integer :: ntphase(8)
-integer :: NPsurvive, Nirradiated, Napop, Nmitotic
+integer :: NPsurvive, Nirradiated, Napop, Nmitotic, Nsecond
 real(REAL_KIND), allocatable :: Psurvive(:)
 !real(REAL_KIND) :: CA_time = 99*60*60   ! seconds, default value overridden by protocol
 logical :: include_daughters = .true.
@@ -595,10 +597,14 @@ logical :: phase_log = .false.
 logical :: use_inhibiter = .false.
 logical :: use_fixed_CP = .false.
 logical :: compute_cycle
+logical :: SFdone
 logical :: use_constant_drug_conc = .true.   ! This is used in the SN39536 experiments
 
 !real(REAL_KIND) :: mitosis_std = 0.0    ! as a fraction of mean T_M
 real(REAL_KIND) :: mitosis_std = 0.1336*3600     ! Chao 2019, Erlang k=14, L = 28, hours -> seconds
+logical, parameter :: drop_mitotic_cells = .false.
+logical, parameter :: allow_second_mitosis = .true.
+real(8), parameter :: kmit = 0.023  ! Baide et al., dose = 1 in M --> Psurvive = 0.2
 
 real(REAL_KIND) :: phase_exit_time_sum
 integer :: npet
@@ -796,7 +802,7 @@ subroutine set_divide_volume(cp,V0)
 type(cell_type), pointer :: cp
 real(REAL_KIND) :: V0
 real(REAL_KIND) :: Tdiv, fg(4), Tfixed, Tgrowth0, Tgrowth, rVmax, V
-real(REAL_KIND) :: T_G1, T_S, T_G2, T_M, scale
+real(REAL_KIND) :: T_G1, T_S, T_G2, T_M, scale, Tsum
 integer :: ityp, kpar=0
 type(cycle_parameters_type), pointer :: ccp
 
@@ -833,20 +839,28 @@ if (test_run .OR. use_no_random) then
     cp%divide_volume = 2*V0
     cp%divide_time = divide_time_mean(1)
 else
-fg(M_phase) = 1.0
 T_S = ccp%T_S
 T_M = cp%mitosis_duration
-Tfixed = T_M
 Tdiv = DivideTime(ityp)     ! log-normally distributed
 Tdiv = min(Tdiv,1.2*divide_time_median(ityp))
+if (allow_second_mitosis) then
+	Tsum = ccp%T_G1 + ccp%T_S + ccp%T_G2 + ccp%T_M
+	Tfixed = 0	!T_M
+	fg(M_phase) = T_M/ccp%T_M
+else
+	Tsum = ccp%T_G1 + ccp%T_S + ccp%T_G2
+	Tfixed = T_M
+	fg(M_phase) = 1.0
+endif
 Tgrowth = Tdiv - Tfixed
-T_G1 = Tgrowth*ccp%T_G1/(ccp%T_G1 + ccp%T_S + ccp%T_G2)
-T_S = Tgrowth*ccp%T_S/(ccp%T_G1 + ccp%T_S + ccp%T_G2)
-T_G2 = Tgrowth*ccp%T_G2/(ccp%T_G1 + ccp%T_S + ccp%T_G2)
-scale = Tgrowth/(ccp%T_G1 + ccp%T_S + ccp%T_G2)
+T_G1 = Tgrowth*ccp%T_G1/Tsum
+T_S = Tgrowth*ccp%T_S/Tsum
+T_G2 = Tgrowth*ccp%T_G2/Tsum
+scale = Tgrowth/Tsum
 fg(G1_phase) = T_G1/ccp%T_G1
 fg(S_phase) = T_S/ccp%T_S
 fg(G2_phase) = T_G2/ccp%T_G2
+
 if (single_cell) fg = 1.0	! mean phase times
 V = V0 + rVmax*(T_G1/fg(G1_phase) + T_S/fg(S_phase) + T_G2/fg(G2_phase))
 cp%divide_volume = V
@@ -1249,6 +1263,9 @@ do kcell = 1,nlist
         ph = 3
     else
         ph = 4
+!		if (next_phase_hour == 3) then
+!			write(nflog,'(a,4i6,2f6.2)') 'phase_count, kcell, phase, phase0, G2t0, tmit0: ',phase_count(4),kcell,cp%phase, cp%phase0, cp%G2t0, cp%t_start_mitosis/3600
+!		endif
     endif
     phase_count(ph) = phase_count(ph) + 1
 enddo
