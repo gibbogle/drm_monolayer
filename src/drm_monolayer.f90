@@ -1487,7 +1487,6 @@ endif
 if (use_cell_kcc_dependence) then
     isign = 1
     cp%Kcc = get_Kcc(kmccp,CC_tot,isign*CC_threshold_factor,T_G2/3600)
-    if (kcell == 1024) write(nfres,'(a,i6,3e12.3)') 'kcell,kcc,thresh,T_G2: ',kcell,cp%Kcc,0.9*CC_threshold,T_G2/3600
     cp%Kcc = min(cp%kcc, 0.9*CC_threshold)
     if (single_cell) write(nflog,*) 'fg,T_G2, cp%Kcc: ',cp%fg(G2_phase),T_G2/3600,cp%Kcc
 endif
