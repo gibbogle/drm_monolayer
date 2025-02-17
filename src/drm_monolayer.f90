@@ -1324,12 +1324,10 @@ R = par_uni(kpar)
 kfactor = 1 + (R - 0.5)*jaiswal_std
 if (single_cell .or. test_run .OR. use_no_random) kfactor = 1
 cp%kccmd = kccmd*kfactor
-if (kcell == 1024) write(nfres,'(a,i6,3f10.4)') 'kcell,R,kfactor,kccmd: ',kcell,R,kfactor,cp%kccmd
 R = par_uni(kpar)
 kfactor = 1 + (R - 0.5)*jaiswal_std
 if (single_cell .or. test_run .OR. use_no_random) kfactor = 1
 cp%kccrd = kccrd*kfactor
-if (kcell == 1024) write(nfres,'(a,i6,3f10.4)') 'kcell,R,kfactor,kccrd: ',kcell,R,kfactor,cp%kccrd
 cp%CC_act = 0   ! CC_act0
 !R = par_uni(kpar)
 !cp%CC_act = CC_act0 + R*(CC_threshold - CC_act0)
