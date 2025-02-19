@@ -557,7 +557,8 @@ if (dose == 0) then
     return
 endif
 if (compute_reprate3) then
-    reprate(HR) = min(reprate3_max,2*reprate3_2GY/dose)
+!    reprate(HR) = min(reprate3_max,2*reprate3_2GY/dose) ! option 2
+    reprate(HR) = min(reprate3_max,reprate3_max/dose)    ! option 3 (Bill's choice)
 endif
 next_write_time = 0
 ccp => cc_parameters(1)
