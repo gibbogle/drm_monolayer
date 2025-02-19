@@ -154,7 +154,8 @@ real(8) :: ksup     ! if ksup = 0, fsup = 1
 real(8) :: fsup
 logical :: use_Iliakis 
 logical :: compute_reprate3 = .true.    ! reprate3 = reprate3_2GY/dose
-real(8) :: reprate3_2GY = 0.26
+real(8) :: reprate3_2GY = 0.28 ! was 0.26
+real(8) :: reprate3_max
 
 ! Distributions of Nlethal, totDSB at mitosis
 !integer, parameter :: NMDIST = 500
@@ -254,7 +255,8 @@ Preass = 0
 read(nfin,*) dsigma_dt
 read(nfin,*) sigma_NHEJ
 read(nfin,*) Reffmin
-read(nfin,*) reprate(HR)
+!read(nfin,*) reprate(HR)
+read(nfin,*) reprate3_max
 read(nfin,*) Kclus
 read(nfin,*) G2_D_ATM_max       ! cap on D_ATM in G2
 read(nfin,*) t_switch_ATM       ! time after IR when ATM_act production goes to 0
@@ -555,7 +557,7 @@ if (dose == 0) then
     return
 endif
 if (compute_reprate3) then
-    reprate(HR) = 2*reprate3_2GY/dose
+    reprate(HR) = min(reprate3_max,2*reprate3_2GY/dose)
 endif
 next_write_time = 0
 ccp => cc_parameters(1)
