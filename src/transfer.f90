@@ -432,6 +432,7 @@ do kcell = 1,nlist
 	if (cp%state == DYING) cycle
 	Nviable(ityp) = Nviable(ityp) + 1
 enddo
+write(nflog,'(a,6i6)') 'getNviable: ',Nviable(1),Ncells_type(1),nd,Napop,Ndying(1),Nmitotic
 if (Nlive(1) /= Ncells_type(1)) then
 	write(*,'(a,5i8)') 'Error: getNviable: Nlive /= Ncells_type(1), nd, Napop, Nmitotic: ',Nlive(1),Ncells_type(1),nd,Napop, Nmitotic
 	write(nflog,'(a,5i8)') 'Error: getNviable: Nlive /= Ncells_type(1), nd, Napop, Nmitotic: ',Nlive(1),Ncells_type(1),nd,Napop, Nmitotic

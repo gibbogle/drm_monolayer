@@ -182,6 +182,10 @@ rad_count = 0
 ! To compute average phase time
 phase_exit_time_sum = 0
 npet = 0
+
+fDNAPK = 1
+
+SFdone = .false.
 !call counter
 !count_Nlethal = 0
 !count_totDSB = 0
@@ -554,8 +558,9 @@ write(nflog,'(a,f6.1)') 'dose_threshold: ',dose_threshold
 !stop
 
 ! Try setting this for each cell unless use_cell_kcc_dependence
+!write(*,*) 'do get_Kcc: kmccp: ',kmccp
 Kcc = get_Kcc(kmccp,CC_tot,CC_threshold_factor,cc_parameters(1)%T_G2/3600)
-write(nflog,*) 'did get_Kcc: ',Kcc
+!write(nflog,*) 'did get_Kcc: ',Kcc
 single_cell = (initial_count==1)
 write(nflog,*) 'single_cell: ',single_cell
 
@@ -1799,6 +1804,13 @@ do kevent = 1,Nevents
 			V = E%volume
 			write(logmsg,'(a,i4,2f8.3)') 'DRUG_EVENT: ichemo, volume, conc: ',ichemo,E%volume,E%conc
 			call logger(logmsg)
+            ! DNA-PK
+            !call check_logistic
+            !stop
+            C_SN39536 = E%conc
+            !write(*,*) 'call DNAPKinhibition'
+            !fDNAPK = DNAPKinhibition(E%conc)
+
 			! set %present
 			chemo(ichemo)%present = .true.
 			chemo(ichemo)%bdry_conc = 0
@@ -2040,7 +2052,7 @@ real(REAL_KIND) :: total, tadjust
 real(REAL_KIND) :: fATM, fATR, fCP, dtCPdelay, dtATMdelay, dtATRdelay, ATM_DSB, DNA_rate
 real(REAL_KIND) :: pATM_sum, pATR_sum, DSB_sum, tIR
 real(REAL_KIND) :: SFtot, Pp, Pd, newSFtot, total_mitosis_time, V0
-integer :: Ntot, Ndying, Ncont(5)
+integer :: Ntot, Ndying, Ncont(5),Ngen1
 logical :: PEST_OK
 logical :: ok = .true.
 logical :: dbug
@@ -2355,7 +2367,14 @@ if (overstepped) then
     res = 1
     return
 endif
-
+if (istep == 144) then
+    Ngen1 = 0
+    do kcell = 1,nlist
+        cp => cell_list(kcell)
+        if (cp%generation == 1) Ngen1 = Ngen1 + 1
+    enddo
+    write(nflog,*) 'Ngen1 = ',Ngen1
+endif
 !write(*,*) 'end simulate_step: t_simulation: ',t_simulation
 !call averages
 ! Need the phase_dist check in case NPsurvive = Nirradiated before phase_hours
@@ -2768,7 +2787,7 @@ write(nflog,'(a,7f9.3)') 'Ave (pre, post) NDSB, Nmisjoins: ', &
 write(*,'(a,7f9.3)') 'Ave (pre, post) NDSB, Nmisjoins: ', &
     totNDSB/nmitosis,totNmisjoins/nmitosis,sum(totNmisjoins)/nmitosis
 
-if (.false.) then   ! make this true to write BBB lines
+if (.true.) then   ! make this true to write BBB lines - use execution\pHR\bbb-extracter
     ! Averages
     SFMave = 0
     ave = 0
@@ -2785,7 +2804,8 @@ if (.false.) then   ! make this true to write BBB lines
     enddo
     SFMave = SFMave/nlist
     ave = ave/nlist
-    write(*,'(a,2f7.3,10f7.2)') 'BBB: ',log10(SFMave),log10(SFave),totNDSB/nmitosis,sum(totNmisjoins)/nmitosis,ave(1:7)
+    write(*,*) 'nmitosis, pHR_sum = ',nmitosis,pHR_sum
+    write(*,'(a,2f7.3,10f7.2,e12.3)') 'BBB: ',log10(SFMave),log10(SFave),totNDSB/nmitosis,sum(totNmisjoins)/nmitosis,ave(1:7),pHR_sum/nmitosis
 endif
 !write(*,'(a,7f8.2)') 'DSB0,tIR: ',ave(1:7)
 !write(logmsg,'(a,8f8.3)') 'phase_dist:      ',phase_dist(0:3)
@@ -2957,8 +2977,6 @@ character*(1) :: numstr
 logical :: ok, success, isopen
 integer :: i
 
-write(*,*) 'Execute 1: synch_phase, synch_fraction: ', synch_phase,synch_fraction
-
 write(*,*) 'ncpu, inbuflen, outbuflen: ',ncpu, inbuflen, outbuflen
 res = 0
 use_TCP = .false.
@@ -2984,7 +3002,6 @@ write(*,*) 'infile: ',trim(infile)
 write(*,*) 'logfile: ',trim(logfile)
 !open(nflog,file='drm_monolayer.log',status='replace')
 open(nflog,file=logfile,status='replace')
-write(*,*) 'Execute 2: synch_phase, synch_fraction: ', synch_phase,synch_fraction
 
 write(nflog,*) 'irun: ',res
 if (phase_log) then
@@ -3041,7 +3058,6 @@ endif
 DELTA_T = 600
 nsteps = 100
 res=0
-write(*,*) 'Execute 3: synch_phase, synch_fraction: ', synch_phase,synch_fraction
 
 call Setup(ncpu,infile,outfile,ok)
 if (ok) then

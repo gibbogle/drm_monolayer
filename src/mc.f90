@@ -2,7 +2,7 @@ module mc
 use real_kind_mod
 use global
 
-use chemokine   ! is this OK?
+use chemokine   ! is this OK? Needed for Caverage
 use eta_module
 use km10_mod
 use omp_rkf45
@@ -71,8 +71,7 @@ real(8) :: Ztime = 0    ! hours
 real(8) :: sigma_NHEJ = 0.04187
 real(8) :: sigma_TMEJ = 0.08
 
-! DNA-PK inhibition parameters
-real(8) :: Chalf    ! inhibitor concentration that halves repair rate 
+!real(8) :: Chalf    ! inhibitor concentration that halves repair rate (when used) 
 real(8) :: Preass   ! rate of reassignment to pathway 4, TMEJ (prob of reass/hour)
 !real(8) :: KmaxInhibitRate = 0.8
 !real(8) :: b_exp = 1.0
@@ -176,6 +175,9 @@ logical, parameter :: write_nfres = .false.
 type(cell_type), pointer :: cpnow
 real(8) :: damage(3)
 
+logical :: use_DNAPK
+
+
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
 contains
@@ -188,6 +190,7 @@ integer :: nfin
 integer :: iuse_baserate, iuse_exp, icase, nCPparams, iph, j
 real(8) :: TMEJrep, TMEJfid, SSArep, SSAfid
 real(8) :: pHR_S, pfc_S, pHR_G2, pfc_G2, k3, k4
+real(8) :: Cdrug
 
 write(*,*) 'ReadMcParameters:'
 read(nfin,*) expt_ID
@@ -249,7 +252,9 @@ nIliakis = 1
 read(nfin,*) ksup
 !read(nfin,*) G1_tdelay
 G1_tdelay = 0
-read(nfin,*) Chalf
+read(nfin,*) Chalf  ! < 0 ==> use logistic function for repratefactor
+use_DNAPK = (Chalf < 0)
+if (use_DNAPK) Chalf = -Chalf
 !read(nfin,*) Preass
 Preass = 0
 read(nfin,*) dsigma_dt
@@ -628,7 +633,10 @@ if (use_Jeggo) then     ! using this
     else
         pHR = 0
     endif
-!    write(nflog,'(a,7f8.3)') 'fsup, f_s_decay, T_S, th, pHR: ',fsup, f_s_decay, ccp%T_S/3600, th, pHR
+    pHR_sum = pHR_sum + pHR
+    if (f_S == 1) then
+!        write(nflog,'(a,7e12.3)') 'fsup, f_s_decay, T_S, th, pHR: ',fsup, f_s_decay, ccp%T_S/3600, th, pHR
+    endif
     if (kcell_now == 1) then
         write(*,'(a,2f8.3)') 'th, fdecay(th): ',th, fdecay(th)
         write(*,'(a,3f8.3)') 'fsup,pHR: ',fsup,pHR
@@ -638,7 +646,7 @@ if (use_Jeggo) then     ! using this
             write(*,'(a,2i4,3f8.3)') 'kcell,phase,fsup,pHR: ',kcell_now,phase,fsup,pHR
         endif
     endif
-    if (option == 1) then
+    if (option == 1) then   ! NOT USED
         pNHEJ = 1 - pHR
         DSB0(NHEJfast,1) = (1 - pComplex) * Npre
         DSB0(NHEJfast,2) = pJeggo * pNHEJ * Npost     ! fast
@@ -711,7 +719,10 @@ else    ! not using this
         DSB0(NHEJslow,2) = 0
     endif
 endif
-if (kcell_now == 1) write(nflog,'(a,i6,3f8.2)') 'cellIrradiation: kcell,f_S,NG1,totDSB0: ',kcell_now,f_S,NG1,totDSB0
+if (kcell_now == 9) then
+    write(nflog,'(a,i6,3f8.2)') 'cellIrradiation: kcell,f_S,NG1,totDSB0: ',kcell_now,f_S,NG1,totDSB0
+    write(nflog,'(a,5f8.3)') 'Npre,Npost,pHR,fsup,pComplex: ',Npre,Npost,pHR,fsup,pComplex
+endif
 !write(*,'(a,2i4,6f8.1)') 'cellIrradiation: ',kcell_now,phase,DSB0(1:3,1),DSB0(1:3,2)
 cp%pATM = 0
 cp%pATR = 0
@@ -750,7 +761,7 @@ cp%DSB0 = DSB0
 cp%totDSB0 = totDSB0
 !cp%Nlethal = 0
 cp%Nmis = 0
-!if (kcell_now <= 10) write(*,'(a,2i6,8f8.2)') 'IR: kcell, phase,DSB,f_S: ',kcell_now,phase,cp%DSB(1:4),f_S
+if (kcell_now == 9) write(nflog,'(a,i4,6f8.2)') 'updateRepair: kcell, DSB(:,2): ',kcell_now,cp%DSB(:,2)
 
 totPmit = 0
 totPaber = 0
@@ -1168,11 +1179,14 @@ else
         dt = DELTA_T
         call get_slowdown_factors(cp,fATM, fATR)
 if (kcell_now == -2) write(nflog,'(a,2i4,2f8.3)') 'iph, kcell,fATM,fATR: ',iph, kcell_now,fATM,fATR
-        if (use_addATMATRtimes) then
+        if (use_addATMATRtimes) then    ! don't do this
             dt = DELTA_T
             fslow = max(0.0,fATM + fATR - 1)
         else
             fslow = fATM*fATR
+            if (use_DNAPK .and. iph == S_phase) then
+                fslow = fDNAPK*fslow
+            endif
 !            if (single_cell) write(nflog,'(a,3f8.3)') 'fATM, fATR, fslow: ',fATM, fATR, fslow
             if (kcell_now <= -10) then
                 write(*,'(a,i6,i4,3f6.3)') 'fslow: ',kcell_now,iph,fATM,fATR,fslow
@@ -1595,38 +1609,72 @@ end function
 !------------------------------------------------------------------------
 ! Moved here from updateRepair
 !------------------------------------------------------------------------
-subroutine getRepRateFactor(cp)
-type(cell_type), pointer :: cp
-real(REAL_KIND) :: Cdrug
-
-repRateFactor = 1.0     ! why??  This make repRateFactor(3) = 1
-! DNA-PK inhibition, DSB reassignment
-!if (use_constant_drug_conc) then
-!    Cdrug = Caverage(MAX_CHEMO + DRUG_A)
+!subroutine getRepRateFactor(cp)
+!type(cell_type), pointer :: cp
+!real(REAL_KIND) :: Cdrug
+!
+!repRateFactor = 1.0     ! why??  This make repRateFactor(3) = 1
+!! DNA-PK inhibition, DSB reassignment
+!!if (use_constant_drug_conc) then
+!!    Cdrug = Caverage(MAX_CHEMO + DRUG_A)
+!!else
+!!    Cdrug = cp%Cin(DRUG_A)
+!!endif
+!!if (cp%ID == 1) write(*,*) 'updateRepair: Cdrug: ',Cdrug, t_simulation/3600
+!!inhibrate = inhibitRate(Cdrug)
+!!if (inhibrate > 0) then
+!!    do k = 1,NP-1
+!!        Nreassign = DSB(k)*inhibrate*dt
+!!        DSB(k) = DSB(k) - Nreassign
+!!        DSB(TMEJ) = DSB(TMEJ) + Nreassign
+!!    enddo
+!!endif
+!! Now the effect of inhibition is to reduce the repair rate.
+!Cdrug = Caverage(MAX_CHEMO + DRUG_A)
+!if (Chalf < 0) then
+!    repRateFactor(1:2) = 1 - logistic(Cdrug)
 !else
-!    Cdrug = cp%Cin(DRUG_A)
+!    ! Chalf is the drug concentration that reduces repair rate by 1/2.  fRR = exp(-k*C/Chalf)
+!    ! fRR = 0.5 when C = Chalf, 0.5 = exp(-k), k = -log(0.5) = 0.693
+!    !if (Chalf == 0) then
+!    !    write(nflog,*) 'ERROR: Chalf = 0  Preass: ',Preass
+!    !    write(*,*) 'ERROR: getRepRateFactor: Chalf = 0  Preass: ',Preass
+!    !    stop
+!    !endif
+!    repRateFactor(1:2) = exp(-0.693*Cdrug/Chalf)    ! what about path = 3, HR? 
 !endif
-!if (cp%ID == 1) write(*,*) 'updateRepair: Cdrug: ',Cdrug, t_simulation/3600
-!inhibrate = inhibitRate(Cdrug)
-!if (inhibrate > 0) then
-!    do k = 1,NP-1
-!        Nreassign = DSB(k)*inhibrate*dt
-!        DSB(k) = DSB(k) - Nreassign
-!        DSB(TMEJ) = DSB(TMEJ) + Nreassign
-!    enddo
+!if (kcell_now < 5) write(nflog,'(a,i4,2f8.3,e12.3)') 'Cdrug, Chalf, repRateFactor: ',kcell_now,Cdrug,Chalf,repRateFactor(1)
+!end subroutine
+
+!------------------------------------------------------------------------
+!------------------------------------------------------------------------
+!function DNAPKinhibition(C) result(f)
+!real(8) :: C, f
+!real(8) :: expmin = 0.11, kexp = 0.8
+!real(8) :: kp1 = 0.415, kp2 = -0.487
+!real(8) :: fmin = 0.2
+!real(8) :: C03, D03
+!
+!if (C == 0) then
+!    DNAPKact = 1
+!    f = 1
+!    return
 !endif
-! Now the effect of inhibition is to reduce the repair rate.
-! Chalf is the drug concentration that reduces repair rate by 1/2.  fRR = exp(-k*C/Chalf)
-! fRR = 0.5 when C = Chalf, 0.5 = exp(-k), k = -log(0.5) = 0.693
-if (Chalf == 0) then
-    write(nflog,*) 'ERROR: Chalf = 0  Preass: ',Preass
-    write(*,*) 'ERROR: getRepRateFactor: Chalf = 0  Preass: ',Preass
-    stop
-endif
-Cdrug = Caverage(MAX_CHEMO + DRUG_A)
-repRateFactor(1:2) = exp(-0.693*Cdrug/Chalf)    ! what about path = 3, HR? 
-!write(*,'(a,2f8.3,e12.3)') 'Cdrug, Chalf, repRateFactor: ',Cdrug,Chalf,repRateFactor(1)
-end subroutine
+!if (use_power_DNAPKact) then
+!    C03 = 0.3
+!    if (C < C03) then
+!        D03 = kp1*C03**kp2
+!        DNAPKact = D03 + (1 - D03)*(C03 - C)/C03
+!    else
+!        DNAPKact = kp1*C**kp2
+!    endif
+!else
+!    DNAPKact = expmin + (1 - expmin)*exp(-kexp*C)
+!endif
+!f = fmin + (1 - fmin)*DNAPKact
+!write(nflog,'(a,3f8.3)') 'DNAPKinhibition: C, DNAPKact, fDNAPK: ',C, DNAPKact, f
+!write(*,'(a,3f8.3)') 'DNAPKinhibition: C, DNAPKact, fDNAPK: ',C, DNAPKact, f
+!end function
 
 !------------------------------------------------------------------------
 ! To use parameters from mcradio, need to convert time from secs to hours
@@ -1656,8 +1704,9 @@ logical :: use_G1_tdelay = .false.
 logical :: do_G1_Jaiswal
 logical :: use_constant_V = .false.
 
-dbug = (kcell_now == -39 .and. istep == 109)
+dbug = (kcell_now == -9 .and. istep < 5)
 
+if (dbug) write(nflog,'(a,i4,6f8.2)') 'updateRepair (a): kcell, DSB(:,2): ',kcell_now,cp%DSB(:,2)
 if (cp%state == EVALUATED) return
 dth = dt/3600   ! hours
 use_ATM = .not.use_fixed_CP
@@ -1673,9 +1722,15 @@ if (cp%DSB0(TMEJ,1) /= 0) then
 endif
 iph = phase
 DSB = cp%DSB
+if (use_DNAPK) then
+    reprateFactor(1:2) = fDNAPK
+else
+    reprateFactor(1:2) = exp(-0.693*C_SN39536/Chalf)
+endif
+reprateFactor(3) = 1
 !write(*,'(a,i4,4f8.1)') 'phase,DSB: ',phase,DSB(1:4)
 !if (iph == G1_phase) write(*,*) 'updateRepair: G1 cell: ',kcell_now
-call getRepRateFactor(cp)
+!call getRepRateFactor(cp)
 !if (kcell_now == 1) write(nflog,'(a,4f10.4)') 'Cdrug IC,EC,Chalf,fRR: ',Cdrug,Caverage(MAX_CHEMO + DRUG_A),Chalf,repRateFactor(1)
 ! Reassignment to pathway 4 is (tentatively) constant
 ! Preass is an input parameter = prob of reassignment per hour
@@ -1693,6 +1748,7 @@ if (Preass > 0 .and. phase >= S_phase) then
     enddo
     enddo
 endif
+if (dbug) write(nflog,'(a,i4,6f8.2)') 'updateRepair (b): kcell, DSB(:,2): ',kcell_now,DSB(:,2)
 DSB0 = DSB     ! initial DSBs for this time step
 if (DSB0(TMEJ,1) /= 0) then
     write(nflog,*) 'b DSB0(TMEJ,1): ',DSB0(TMEJ,1)
@@ -1750,6 +1806,7 @@ if (((iph == G1_phase).and.do_G1_Jaiswal).or.(iph >= S_phase)) then
     call Jaiswal_update(cp,dth)  ! try this
 !    if (iph == G2_phase) write(*,'(a,2i6,e12.3)') 'did Jaiswal: ',kcell_now, cp%generation, cp%ATM_act
 endif
+if (dbug) write(nflog,'(a,i4,6f8.2)') 'updateRepair (c): kcell, DSB(:,2): ',kcell_now,DSB(:,2)
 
 if ((iph == 1 .and. use_G1_pATM) .or. (iph == 2 .and. use_S_pATM)) then 
     call updateATM(iph,cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth
@@ -1765,6 +1822,7 @@ do jpp = 1,2
 enddo
 enddo
 ! DSB0(k) is the count before repair, DSB(k) is the count after repair
+if (dbug) write(nflog,'(a,i4,6f8.2)') 'updateRepair (c1): kcell, DSB(:,2): ',kcell_now,DSB(:,2)
 
 ! The following commented out code follows MEDRAS
 #if 0
@@ -1854,8 +1912,10 @@ totDSB0 = sum(DSB0(NHEJfast,:)) + sum(DSB0(NHEJslow,:))
 totDSB = sum(DSB(NHEJfast,:)) + sum(DSB(NHEJslow,:))
 Pmis = misrepairRate(totDSB0, totDSB, eta_NHEJ)
 dmis = Pmis*(totDSB0 - totDSB)
+if (dbug) write(nflog,'(a,7e12.4)') 'f_S,tIR,eta_NHEJ,Pmis,dmis: ',f_S,tIR,eta_NHEJ,Pmis,dmis,DSB(HR,2)
 if (isnan(dmis)) then
     write(nflog,*) 'dmis is NaN'
+    write(nflog,'(a,8f8.3)') 'NHEJ DSBs: ',DSB(1:3,1:2)
     write(nflog,'(a,2f8.2,e12.3)') 'totDSB0, totDSB, eta_NHEJ: ',totDSB0, totDSB, eta_NHEJ
     write(nflog,'(a,i4,4e12.3)') 'phase, f_S, tIR, sigma_NHEJ, Kcoh: ',phase, f_S, tIR, sigma_NHEJ, Kcoh
     stop
@@ -1900,6 +1960,7 @@ if (sum(DSB0(TMEJ,:)) > 0) then ! not used currently
     Nmis(2) = Nmis(2) + dmis*f_S
     misjoins(2) = misjoins(2) + Nmis(1) + Nmis(2)
 endif
+if (dbug) write(nflog,'(a,i4,6f8.2)') 'updateRepair (d): kcell, DSB(:,2): ',kcell_now,DSB(:,2)
 cp%DSB = DSB
 cp%Nmis = cp%Nmis + Nmis
 !if (kcell_now == 18) write(nflog,'(a,2i3,2f8.3,f8.1,2e12.3,5f8.3)') 'kcell,phase,f_S,tIR,NHEJ0,eta,Pmis,dmis,Nmis,cp%Nmis: ', &
@@ -1938,6 +1999,7 @@ if (single_cell .and. cp%irradiated) then
 endif
 
 end subroutine
+
 
 !------------------------------------------------------------------------
 ! Clonogenic survival probability at first mitosis (McMahon, mcradio)

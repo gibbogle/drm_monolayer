@@ -613,6 +613,9 @@ integer :: npet
 logical :: use_drug_halflife
 real(REAL_KIND) :: Khalflife, drug_time, drug_conc0
 
+! DNA-PK inhibition parameters
+real(8) :: C_SN39536, fDNAPK, Chalf
+
 logical :: test_run = .false.	! to check Psurvive etc
 LOGICAL :: use_no_random = .false.	! to turn off variation in cycle time, DSB_Gy
 
@@ -843,9 +846,9 @@ T_S = ccp%T_S
 T_M = cp%mitosis_duration
 Tdiv = DivideTime(ityp)     ! log-normally distributed
 Tdiv = min(Tdiv,1.2*divide_time_median(ityp))
-if (allow_second_mitosis) then
-	Tsum = ccp%T_G1 + ccp%T_S + ccp%T_G2 + ccp%T_M
-	Tfixed = 0	!T_M
+if (allow_second_mitosis) then	! makes no difference to T_G1, T_S, T_G2, T_M
+	Tsum = ccp%T_G1 + ccp%T_S + ccp%T_G2 !+ ccp%T_M
+	Tfixed = T_M	! was 0
 	fg(M_phase) = T_M/ccp%T_M
 else
 	Tsum = ccp%T_G1 + ccp%T_S + ccp%T_G2
@@ -1289,6 +1292,44 @@ do
 enddo
 res = k-1
 end function
+
+!------------------------------------------------------------------------
+! See docs\models\DNA-PK\DNA-PK.xlsx
+! This is DNAPKact(C) = H(C)
+! Returns a fraction between 0 and 1.
+!------------------------------------------------------------------------
+function logistic(C) result(y)
+real(REAL_KIND) :: C, y
+real(REAL_KIND) :: bottom, top, EC50, hillslope, percent
+
+bottom = 0
+top = 100
+hillslope = -0.6919
+EC50 = Chalf
+write(nflog,*) 'logistic: C, Chalf: ',C,Chalf
+if (C > 0) then
+    percent = bottom + (top-bottom)/(1 + 10**((log10(EC50) - log10(C))*hillslope))
+else
+    percent = 100
+endif
+y = percent/100
+end function
+
+subroutine check_logistic
+integer :: i
+real(8) :: C, y
+
+do i = 1,10
+	C = i*0.1
+	y = logistic(C)
+	write(nflog,'(2f8.4)') C, y
+enddo
+do i = 1,10
+	C = i*2
+	y = logistic(C)
+	write(nflog,'(2f8.4)') C, y
+enddo
+end subroutine
 
 
 end module

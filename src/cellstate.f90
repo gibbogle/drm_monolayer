@@ -80,7 +80,7 @@ type(cycle_parameters_type), pointer :: ccp
 ok = .true.
 Nirradiated = Ncells
 t_irradiation = t_simulation
-write(nflog,'(a,f8.3,i6)') 'Irradiation: t, Nirradiated: ',t_irradiation/3600,Nirradiated
+write(nflog,'(a,f8.3,2i6)') 'Irradiation: t, Nirradiated,istep: ',t_irradiation/3600,Nirradiated,istep
 call get_phase_distribution(phase_count)
 total = sum(phase_count)
 ph_dist = 100*phase_count/total
@@ -153,6 +153,7 @@ counts = 0
 	Nsecond = 0
     tmin = 1.0      ! for now...
     n = 0
+	fDNAPK = logistic(C_SN39536)
     do kcell = 1,nlist
         kcell_now = kcell
         cp => cell_list(kcell)
@@ -193,6 +194,7 @@ counts = 0
 		else
 			fsup = 1.0
 		endif
+		if (kcell == 9) write(nflog,'(a,i4,4f8.3)') 'Irradiation: kcell,nIliakis,ksup,dose_threshold,fsup: ',kcell,nIliakis,ksup,dose_threshold,fsup
         SER = 1 ! turn off SER - Bill confirmed
         call cellIrradiation(cp,dose)
 !        call radiation_damage(cp, ccp, dose, SER, tmin)
@@ -253,6 +255,9 @@ if (single_cell) then
     enddo
     write(nflog,'(a,3f8.1)') 'At IR: DSB: ',totDSB,sum(totDSB)
 endif
+
+repratefactor(1:2) = fDNAPK
+repratefactor(3) = 1
 
 write(*,*) 'Irradiation: phase counts: ',counts
 write(nflog,*) 'At irradiation, total DSB: ',total
@@ -776,7 +781,6 @@ do kcell = 1,nlist0
 ! if allow_second_mitosis = true, need to account for cells with phase0 = M_phase.
 !			write(*,'(a,2L4,f8.3)') 'use_SF, is_radiation, cp%Psurvive: ',use_SF, is_radiation, cp%Psurvive
 
-!			if (kcell == 363) write(nflog,'(a,3i6,f8.2)') 'grower: cell ends mitosis: kcell,state,phase0,t_divide_last: ',kcell,cp%state,cp%phase0,cp%t_divide_last/3600
 ! New method (14/02/25)
 			if (allow_second_mitosis .and. (cp%phase0 == M_phase)) then		! mitotic cell
 				if (cp%t_divide_last < 0) then
@@ -788,9 +792,11 @@ do kcell = 1,nlist0
 !						cp%Psurvive = 0
 !						divide (1 new cell) and set state = DYING for both daughters
 						call divider(kcell, 1, DYING, ok)
+!						write(nflog,*) 'M-cell divides, dies: ',kcell
 					else
 !						divide (1 new cell) and set state = ALIVE for both daughters
 						call divider(kcell, 1, ALIVE, ok)
+!						write(nflog,*) 'M-cell divides, survives: ',kcell
 					endif
 				else	! cells at M2
 					if (use_SF) then	! evaluate Psurvive
@@ -815,12 +821,14 @@ do kcell = 1,nlist0
 					cp%state = EVALUATED
 				else
 !					divide (1 new cell) and set state = ALIVE for both daughters
+!					write(nflog,*) 'Non-mitotic cell divides: ',kcell
 					call divider(kcell, 1, ALIVE, ok)
                 endif
 			endif
 		endif
 	endif
 enddo
+!write(*,*) 'ndone = ',ndone
 SFdone = (ndone == 0)
 
 #if 0
@@ -1070,17 +1078,20 @@ type(cycle_parameters_type), pointer :: ccp
 integer :: kpar = 0
 
 ok = .true.
-if (nnew == 1) then
+!if (nnew == 1) then
 	kcell1 = kcell0
-elseif (nnew == 2) then
-	nlist = nlist + 1
-	if (nlist > MAX_NLIST) then
-		ok = .false.
-		call logger('Error: Maximum number of cells MAX_NLIST has been exceeded.  Increase and rebuild.')
-		return
-	endif
-	kcell1 = nlist
-endif
+!	nlist = nlist + 1
+!	write(nflog,*) 'nnew=1: nlist = ',nlist
+!elseif (nnew == 2) then
+!	nlist = nlist + 1
+!!	write(nflog,*) 'nnew=2: nlist = ',nlist
+!	if (nlist > MAX_NLIST) then
+!		ok = .false.
+!		call logger('Error: Maximum number of cells MAX_NLIST has been exceeded.  Increase and rebuild.')
+!		return
+!	endif
+!	kcell1 = nlist
+!endif
 ityp = 1
 ccp => cc_parameters(ityp)
 ndivided = ndivided + 1
@@ -1174,14 +1185,16 @@ cp1%DSB(TMEJ,:) = 0
 !    kcell2 = gaplist(ngaps)
 !    ngaps = ngaps - 1
 !else
+	!nlist = nlist + 1
+	!if (nlist > MAX_NLIST) then
+	!	ok = .false.
+	!	call logger('Error: Maximum number of cells MAX_NLIST has been exceeded.  Increase and rebuild.')
+	!	return
+	!endif
 	nlist = nlist + 1
-	if (nlist > MAX_NLIST) then
-		ok = .false.
-		call logger('Error: Maximum number of cells MAX_NLIST has been exceeded.  Increase and rebuild.')
-		return
-	endif
 	kcell2 = nlist
 !endif
+!write(nflog,*) 'Second cell: nlist = ',nlist
 Nsecond = Nsecond + 1
 if (colony_simulation .and. kcell2 > nColonyMax) then
 	ok = .false.
