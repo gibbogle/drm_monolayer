@@ -1184,9 +1184,9 @@ if (kcell_now == -2) write(nflog,'(a,2i4,2f8.3)') 'iph, kcell,fATM,fATR: ',iph, 
             fslow = max(0.0,fATM + fATR - 1)
         else
             fslow = fATM*fATR
-            if (use_DNAPK .and. iph == S_phase) then
-                fslow = fDNAPK*fslow
-            endif
+            !if (use_DNAPK .and. iph == S_phase) then
+            !    fslow = fDNAPK*fslow
+            !endif
 !            if (single_cell) write(nflog,'(a,3f8.3)') 'fATM, fATR, fslow: ',fATM, fATR, fslow
             if (kcell_now <= -10) then
                 write(*,'(a,i6,i4,3f6.3)') 'fslow: ',kcell_now,iph,fATM,fATR,fslow
