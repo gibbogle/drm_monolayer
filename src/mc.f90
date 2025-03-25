@@ -175,7 +175,7 @@ logical, parameter :: write_nfres = .false.
 type(cell_type), pointer :: cpnow
 real(8) :: damage(3)
 
-logical :: use_DNAPK
+logical :: use_logistic
 
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
@@ -253,8 +253,8 @@ read(nfin,*) ksup
 !read(nfin,*) G1_tdelay
 G1_tdelay = 0
 read(nfin,*) Chalf  ! < 0 ==> use logistic function for repratefactor
-use_DNAPK = (Chalf < 0)
-if (use_DNAPK) Chalf = -Chalf
+use_logistic = (Chalf < 0)
+if (use_logistic) Chalf = -Chalf
 !read(nfin,*) Preass
 Preass = 0
 read(nfin,*) dsigma_dt
@@ -1184,7 +1184,7 @@ if (kcell_now == -2) write(nflog,'(a,2i4,2f8.3)') 'iph, kcell,fATM,fATR: ',iph, 
             fslow = max(0.0,fATM + fATR - 1)
         else
             fslow = fATM*fATR
-            !if (use_DNAPK .and. iph == S_phase) then
+            !if (use_logistic .and. iph == S_phase) then
             !    fslow = fDNAPK*fslow
             !endif
 !            if (single_cell) write(nflog,'(a,3f8.3)') 'fATM, fATR, fslow: ',fATM, fATR, fslow
@@ -1725,11 +1725,11 @@ if (cp%DSB0(TMEJ,1) /= 0) then
 endif
 iph = phase
 DSB = cp%DSB
-if (use_DNAPK) then
+!if (use_logistic) then
     reprateFactor(1:2) = fDNAPK
-else
-    reprateFactor(1:2) = exp(-0.693*C_SN39536/Chalf)
-endif
+!else
+!    reprateFactor(1:2) = exp(-0.693*C_SN39536/Chalf)
+!endif
 reprateFactor(3) = 1
 !write(*,'(a,i4,4f8.1)') 'phase,DSB: ',phase,DSB(1:4)
 !if (iph == G1_phase) write(*,*) 'updateRepair: G1 cell: ',kcell_now
