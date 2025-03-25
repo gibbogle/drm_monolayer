@@ -1284,7 +1284,7 @@ real(8) :: dth
 real(8) :: dt = 0.001
 real(8) :: D_ATR, D_ATM, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact, tIR
 real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, t_G2, Kkcc, DSB(NP), CC_act0, d(3),datr(2)
-real(8) :: dATM_plus, dATM_minus, D_NHEJ, D_HR, ATM_fac
+real(8) :: dATM_plus, dATM_minus, D_NHEJ, D_HR, ATM_fac, Krpp
 !real(8) :: D_NHEJmax = 100.6, D_HRmax = 45.3
 integer :: iph, it, Nt
 type(cycle_parameters_type),pointer :: ccp
@@ -1297,6 +1297,8 @@ real(8) :: v(3), dv(3), abserr, relerr, tstart, tend
 integer :: nvars, k, flag
 logical :: use_RK = .false.
 integer :: NRK = 20
+
+Krpp = fDNAPK*Krp
 
 !if (kcell_now == 363) then
 !    write(nflog,'(a,i6,2f8.3)') 'Jaiswal_update: kcell, tnow, CC_act: ', kcell_now,tnow/3600,cp%CC_act
@@ -1447,9 +1449,9 @@ do it = 1,Nt
         d(1) = (Kkcc + CC_act) * CC_inact / (Kmccp + CC_inact)    ! CC_act effect
         d(2) = - cp%Kccmd * ATM_act * CC_act / (Kmccmd + CC_act)    ! ATM_act effect
         d(3) = - cp%Kccrd * ATR_act * CC_act / (Kmccrd + CC_act)    ! ATR_act effect
-!VBA    dATR_act_dt = krp * D_ATR * ATR_inact / (Kmrp + ATR_inact) - krd * ATR_act * CC_act / (Kmrd + CC_act)
-        dATR_act_dt = Krp * D_ATR * ATR_inact / (Kmrp + ATR_inact) - Krd * ATR_act * CC_act / (Kmrd + CC_act)
-        datr(1) = Krp * D_ATR * ATR_inact / (Kmrp + ATR_inact)
+!VBA    dATR_act_dt = krpp * D_ATR * ATR_inact / (Kmrp + ATR_inact) - krd * ATR_act * CC_act / (Kmrd + CC_act)
+        dATR_act_dt = Krpp * D_ATR * ATR_inact / (Kmrp + ATR_inact) - Krd * ATR_act * CC_act / (Kmrd + CC_act)
+        datr(1) = Krpp * D_ATR * ATR_inact / (Kmrp + ATR_inact)
         datr(2) = - Krd * ATR_act * CC_act / (Kmrd + CC_act)
         if (istep == -1 .and. it <= 100) write(nflog,'(a,i6,7e12.3)') 'it,D_ATR,CC_act,ATR_act,ATR_inact,datr(1:2),dATR_act_dt: ',it,D_ATR,CC_act,ATR_act,ATR_inact,datr(1:2),dATR_act_dt
 ! Try this
@@ -1460,13 +1462,13 @@ do it = 1,Nt
         ATR_act = ATR_act + dt * dATR_act_dt
         ATR_act = min(ATR_act, ATR_tot)
     elseif (use_ATR .and. D_ATR > 0) then
-        dATR_act_dt = Krp * D_ATR * ATR_inact / (Kmrp + ATR_inact)  - Krd * ATR_act * CC_act / (Kmrd + CC_act)
-        datr(1) = Krp * D_ATR * ATR_inact / (Kmrp + ATR_inact)
+        dATR_act_dt = Krpp * D_ATR * ATR_inact / (Kmrp + ATR_inact)  - Krd * ATR_act * CC_act / (Kmrd + CC_act)
+        datr(1) = Krpp * D_ATR * ATR_inact / (Kmrp + ATR_inact)
         datr(2) = - Krd * ATR_act * CC_act / (Kmrd + CC_act)
         ATR_act = ATR_act + dt * dATR_act_dt
 !        ATR_act = min(ATR_act, ATR_tot)
-!        if (single_cell) write(nflog,'(a,i4,4f8.3)') 'iph,D_ATR, Krp, ATR_inact, dATR_act_dt: ', &
-!                    iph, D_ATR, Krp, ATR_inact, dATR_act_dt
+!        if (single_cell) write(nflog,'(a,i4,4f8.3)') 'iph,D_ATR, Krpp, ATR_inact, dATR_act_dt: ', &
+!                    iph, D_ATR, Krpp, ATR_inact, dATR_act_dt
 !        write(nflog,'(a,i6,7e12.3)') 'it,D_ATR,CC_act,ATR_act,ATR_inact,datr(1:2),dATR_act_dt: ',it,D_ATR,CC_act,ATR_act,ATR_inact,datr(1:2),dATR_act_dt
     endif
 !    dATM_plus = Kd2t * D_ATM * ATM_inact / (Kmmp + ATM_inact)
@@ -1528,10 +1530,11 @@ end subroutine
 subroutine deriv(t, v, dv)
 real(8) :: t, v(3), dv(3)
 real(8) :: ATM_act, ATR_act, CC_act, ATM_inact, ATR_inact, CC_inact
-real(8) :: D_ATR, Kkcc
+real(8) :: D_ATR, Kkcc, Krpp
 integer :: iph
 logical :: use_ATR
 
+Krpp = fDNAPK*Krp
 iph = cpnow%phase
 use_ATR = (iph == 3) .or. ((iph == 2) .and. (ATR_in_S >= 1))
 ATM_act = v(1)
@@ -1550,9 +1553,9 @@ if (iph == G2_phase) then
     CC_inact = CC_tot - CC_act
     ATR_inact = ATR_tot - ATR_act
     dv(3) = (Kkcc + CC_act) * CC_inact / (Kmccp + CC_inact) - cpnow%Kccmd * ATM_act * CC_act / (Kmccmd + CC_act) - cpnow%Kccrd * ATR_act * CC_act / (Kmccrd + CC_act)
-    dv(2) = Krp * D_ATR * ATR_inact / (Kmrp + ATR_inact) - Krd * ATR_act * CC_act / (Kmrd + CC_act)
+    dv(2) = Krpp * D_ATR * ATR_inact / (Kmrp + ATR_inact) - Krd * ATR_act * CC_act / (Kmrd + CC_act)
 elseif (use_ATR .and. D_ATR > 0) then
-    dv(2) = Krp * D_ATR * ATR_inact / (Kmrp + ATR_inact)  - Krd * ATR_act * CC_act / (Kmrd + CC_act)
+    dv(2) = Krpp * D_ATR * ATR_inact / (Kmrp + ATR_inact)  - Krd * ATR_act * CC_act / (Kmrd + CC_act)
 endif
 dv(1) = (Kmp1*damage(1) + Kmp2*damage(2)) * ATM_inact / (Kmmp + ATM_inact) - Kmd * ATM_act / (Kmmd + ATM_act)
 end subroutine

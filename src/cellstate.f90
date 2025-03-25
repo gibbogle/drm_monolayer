@@ -153,7 +153,11 @@ counts = 0
 	Nsecond = 0
     tmin = 1.0      ! for now...
     n = 0
-	fDNAPK = logistic(C_SN39536)
+	if (use_DNAPK) then
+		fDNAPK = logistic(C_SN39536)
+	else
+		fDNAPK = 1
+	endif
     do kcell = 1,nlist
         kcell_now = kcell
         cp => cell_list(kcell)
