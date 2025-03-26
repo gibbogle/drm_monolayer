@@ -175,7 +175,7 @@ logical, parameter :: write_nfres = .false.
 type(cell_type), pointer :: cpnow
 real(8) :: damage(3)
 
-logical :: use_logistic
+!logical :: use_logistic
 
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
@@ -252,9 +252,9 @@ nIliakis = 1
 read(nfin,*) ksup
 !read(nfin,*) G1_tdelay
 G1_tdelay = 0
-read(nfin,*) Chalf  ! < 0 ==> use logistic function for repratefactor
-use_logistic = (Chalf < 0)
-if (use_logistic) Chalf = -Chalf
+read(nfin,*) Chalf  ! < 0 ==> do not change Krp
+inhibit_ATR = (Chalf > 0)
+if (Chalf < 0) Chalf = -Chalf
 !read(nfin,*) Preass
 Preass = 0
 read(nfin,*) dsigma_dt
@@ -1298,7 +1298,11 @@ integer :: nvars, k, flag
 logical :: use_RK = .false.
 integer :: NRK = 20
 
-Krpp = fDNAPK*Krp
+if (inhibit_ATR) then
+    Krpp = fDNAPK*Krp
+else
+    Krpp = Krp
+endif
 
 !if (kcell_now == 363) then
 !    write(nflog,'(a,i6,2f8.3)') 'Jaiswal_update: kcell, tnow, CC_act: ', kcell_now,tnow/3600,cp%CC_act

@@ -615,6 +615,7 @@ real(REAL_KIND) :: Khalflife, drug_time, drug_conc0
 
 ! DNA-PK inhibition parameters
 real(8) :: C_SN39536, fDNAPK, Chalf
+logical :: inhibit_ATR
 
 logical :: test_run = .false.	! to check Psurvive etc
 LOGICAL :: use_no_random = .false.	! to turn off variation in cycle time, DSB_Gy
