@@ -2358,15 +2358,15 @@ endif
 !write(*,'(a,3i8)') 'cell, state, phase: ',kcell,cp%state,cp%phase
 
 istep = istep + 1
-overstepped = (istep == maxhours*nthour)
-if (overstepped) then
-    write(*,*) 'overstepped the mark'
-    call nondivided()
-!    stop
-    call completed
-    res = 1
-    return
-endif
+!overstepped = (istep == maxhours*nthour)
+!if (overstepped) then
+!    write(*,*) 'overstepped the mark'
+!    call nondivided()
+!!    stop
+!    call completed
+!    res = 1
+!    return
+!endif
 if (istep == 144) then
     Ngen1 = 0
     do kcell = 1,nlist
