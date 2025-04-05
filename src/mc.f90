@@ -253,7 +253,7 @@ read(nfin,*) ksup
 !read(nfin,*) G1_tdelay
 G1_tdelay = 0
 read(nfin,*) Chalf  ! < 0 ==> do not change Krp
-inhibit_ATR = (Chalf > 0)
+suppress_ATR = (Chalf > 0)
 if (Chalf < 0) Chalf = -Chalf
 !read(nfin,*) Preass
 Preass = 0
@@ -1284,7 +1284,7 @@ real(8) :: dth
 real(8) :: dt = 0.001
 real(8) :: D_ATR, D_ATM, CC_act, ATR_act, ATM_act, CC_inact, ATR_inact, ATM_inact, tIR
 real(8) :: dCC_act_dt, dATR_act_dt, dATM_act_dt, t, t_G2, Kkcc, DSB(NP), CC_act0, d(3),datr(2)
-real(8) :: dATM_plus, dATM_minus, D_NHEJ, D_HR, ATM_fac, Krpp
+real(8) :: dATM_plus, dATM_minus, D_NHEJ, D_HR, ATM_fac, Krpp, Kmdd
 !real(8) :: D_NHEJmax = 100.6, D_HRmax = 45.3
 integer :: iph, it, Nt
 type(cycle_parameters_type),pointer :: ccp
@@ -1292,18 +1292,23 @@ logical :: use_ATR  ! ATR is used in G2, and computed in S if ATR_in_S >= 1
 logical :: dbug
 logical :: split_kmp
 logical :: first = .true.
+logical :: slow_ATM_decay = .true.
 
 real(8) :: v(3), dv(3), abserr, relerr, tstart, tend
 integer :: nvars, k, flag
-logical :: use_RK = .false.
+logical :: use_RK = .false. ! not currently usable
 integer :: NRK = 20
 
-if (inhibit_ATR) then
+if (suppress_ATR) then
     Krpp = fDNAPK*Krp
 else
     Krpp = Krp
 endif
-
+if (slow_ATM_decay) then
+    Kmdd = fDNAPK*Kmd
+else
+    Kmdd = Kmd
+endif
 !if (kcell_now == 363) then
 !    write(nflog,'(a,i6,2f8.3)') 'Jaiswal_update: kcell, tnow, CC_act: ', kcell_now,tnow/3600,cp%CC_act
 !    write(nflog,'(a,i4,3f8.3)') 'phase, progress, ATR_act, ATM_act : ',cp%phase,cp%progress,cp%ATR_act,cp%ATM_act 
@@ -1478,7 +1483,7 @@ do it = 1,Nt
 !    dATM_plus = Kd2t * D_ATM * ATM_inact / (Kmmp + ATM_inact)
 !    dATM_plus = (Kmp1*DSB(NHEJslow) + Kmp2*DSB(HR)) * ATM_inact / (Kmmp + ATM_inact)
     if (tIR > t_switch_ATM) then
-        D_ATM = 0   ! is this correct??  Yes, but unnecessary
+!        D_ATM = 0   ! valid for split_kmp = false, not for true
         dATM_plus = 0
     else
         if (split_kmp) then
@@ -1487,7 +1492,7 @@ do it = 1,Nt
             dATM_plus = Kmp1 * D_ATM * ATM_inact / (Kmmp + ATM_inact)   ! not using kmp2, effectively kmp2 = kmp1
         endif
     endif
-    dATM_minus = Kmd * ATM_act / (Kmmd + ATM_act)
+    dATM_minus = Kmdd * ATM_act / (Kmmd + ATM_act)
     dATM_act_dt = dATM_plus - dATM_minus
     ATM_act = ATM_act + dt*dATM_act_dt
     ATM_act = min(ATM_act, ATM_tot)
@@ -1921,9 +1926,9 @@ Pmis = misrepairRate(totDSB0, totDSB, eta_NHEJ)
 dmis = Pmis*(totDSB0 - totDSB)
 if (dbug) write(nflog,'(a,7e12.4)') 'f_S,tIR,eta_NHEJ,Pmis,dmis: ',f_S,tIR,eta_NHEJ,Pmis,dmis,DSB(HR,2)
 if (isnan(dmis)) then
-    write(nflog,*) 'dmis is NaN'
+    write(nflog,*) 'dmis is NaN: kcell_now: ', kcell_now
     write(nflog,'(a,8f8.3)') 'NHEJ DSBs: ',DSB(1:3,1:2)
-    write(nflog,'(a,2f8.2,e12.3)') 'totDSB0, totDSB, eta_NHEJ: ',totDSB0, totDSB, eta_NHEJ
+    write(nflog,'(a,2f8.2,2e12.3)') 'totDSB0, totDSB, eta_NHEJ, Pmis: ',totDSB0, totDSB, eta_NHEJ, Pmis
     write(nflog,'(a,i4,4e12.3)') 'phase, f_S, tIR, sigma_NHEJ, Kcoh: ',phase, f_S, tIR, sigma_NHEJ, Kcoh
     stop
 endif
