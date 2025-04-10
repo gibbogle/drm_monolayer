@@ -1292,7 +1292,7 @@ logical :: use_ATR  ! ATR is used in G2, and computed in S if ATR_in_S >= 1
 logical :: dbug
 logical :: split_kmp
 logical :: first = .true.
-logical :: slow_ATM_decay = .true.
+logical :: slow_ATM_decay = .false.
 
 real(8) :: v(3), dv(3), abserr, relerr, tstart, tend
 integer :: nvars, k, flag
