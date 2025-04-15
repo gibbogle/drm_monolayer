@@ -695,7 +695,7 @@ integer :: k, kcell, nlist0, ityp, idrug, prev_phase, kpar=0
 type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
 real(REAL_KIND) :: rr(3), c(3), rad, d_desired, R, rrsum, pdeath, mitosis_duration, f_CP
-real(REAL_KIND) :: PS, Ntot
+real(REAL_KIND) :: PS, Ntot, tIR
 integer :: ndone
 logical :: stuck
 real(REAL_KIND) :: fslow(3), Cdrug
@@ -723,6 +723,8 @@ if (use_drug_halflife) then
 !	write(*,'(a,3e12.3)') 'grower: ',drug_time/3600, t_simulation/3600,Cdrug
     Caverage(MAX_CHEMO + DRUG_A) = Cdrug
 endif
+
+tIR = (tnow - t_irradiation)/3600
 
 fslow = 0
 nslow = 0
