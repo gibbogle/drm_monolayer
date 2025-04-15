@@ -704,6 +704,7 @@ integer, parameter :: MAX_DIVIDE_LIST = 100000
 integer :: ndivide, divide_list(MAX_DIVIDE_LIST)
 logical :: drugkilled, radkilled
 logical :: divide, tagged
+real(REAL_KIND) :: maxlife_hours = 4*24
 
 ok = .true.
 changed = .false.
@@ -736,8 +737,13 @@ do kcell = 1,nlist0
 !	if (kcell == 5 .and. cp%psurvive > 0) write(*,'(a,3i6)') 'grower: kcell, phase, state: ',kcell,cp%phase,cp%state
 !   if (cp%state == DIVIDED) cycle
 !	if (cp%state == DEAD) cycle
-!	if (cp%state == DYING) cycle	
+!	if (cp%state == DYING) cycle
     if (use_SF .and. cp%state == EVALUATED) cycle
+	if (tIR > maxlife_hours) then
+		cp%Psurvive = 0
+		cp%state = EVALUATED
+		cycle
+	endif	
 	ndone = ndone + 1
     ! start cell simulation----------------------------------------------------------
 	ityp = cp%celltype
