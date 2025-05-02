@@ -614,7 +614,7 @@ logical :: use_drug_halflife
 real(REAL_KIND) :: Khalflife, drug_time, drug_conc0
 
 ! DNA-PK inhibition parameters
-real(8) :: C_SN39536, fDNAPK, Chalf
+real(8) :: C_SN39536, fDNAPK, Chalf, fDNAPKmin
 logical :: suppress_ATR
 
 logical :: test_run = .false.	! to check Psurvive etc
@@ -1307,13 +1307,13 @@ bottom = 0
 top = 100
 hillslope = -0.6919
 EC50 = Chalf
-write(nflog,*) 'logistic: C, Chalf: ',C,Chalf
 if (C > 0) then
     percent = bottom + (top-bottom)/(1 + 10**((log10(EC50) - log10(C))*hillslope))
 else
     percent = 100
 endif
 y = percent/100
+y = (1 - fDNAPKmin)*y + fDNAPKmin
 end function
 
 subroutine check_logistic

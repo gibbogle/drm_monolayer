@@ -255,6 +255,7 @@ G1_tdelay = 0
 read(nfin,*) Chalf  ! < 0 ==> do not change Krp
 suppress_ATR = (Chalf > 0)
 if (Chalf < 0) Chalf = -Chalf
+fDNAPKmin = 0.1     ! temporarily fixed
 !read(nfin,*) Preass
 Preass = 0
 read(nfin,*) dsigma_dt
@@ -1524,7 +1525,7 @@ if (first) then
     first = .false.
     write(nflog,'(a6,12a11)') '  t   ','     D_ATR ','dATR_act_dt','    ATR_act','   D_ATM ','dATM_act_dt','    ATM_act','       d(1)','       d(2)','       d(3)',' dCC_act_dt','     CC_act'
 endif
-if (single_cell) write(nflog,'(f6.2,12f11.4)') tnow/3600,D_ATR,dATR_act_dt,ATR_act,D_ATM,dATM_act_dt,ATM_act,d(1:3),dCC_act_dt,CC_act
+!if (single_cell) write(nflog,'(f6.2,12f11.4)') tnow/3600,D_ATR,dATR_act_dt,ATR_act,D_ATM,dATM_act_dt,ATM_act,d(1:3),dCC_act_dt,CC_act
 t = t_simulation/3600.
 !if (test_run .and. (kcell_now==3 .or. kcell_now==6)) then
 !    write(nflog,'(a,2i4,f8.2,2e12.3,f8.3)') 'Jaiswal_update: kcell,iph,tIR,ATM_act,ATR_act,CC_act: ',kcell_now,iph,tIR,ATM_act,ATR_act,CC_act
@@ -1705,6 +1706,7 @@ real(8) :: ATR_DSB, ATM_DSB, dth, binMisProb
 real(8) :: Cdrug, inhibrate, Nreassign
 real(8) :: f_S, eta_NHEJ, eta_TMEJ, tIR, eta, Nrep, sigma
 real(8) :: th_since_IR
+real(8) :: DSB1, DSB2, totNmis
 logical :: pathUsed(NP)
 integer :: k, iph, jpp  ! jpp = 1 for pre, = 2 for post
 logical :: use_DSBinfid = .true.
@@ -1799,12 +1801,12 @@ ATR_DSB = sum(DSB(HR,:))
 !    if (G1_tdelay == 0) write(*,*) 'Error: no Jaiswal_update with G1_tdelay = 0'
 !endif
 
+! Current time is tnow (sec).  IR time is t_irradiation
+! Time since IR is th_since_IR(hours)
+th_since_IR = (tnow - t_irradiation)/3600
 if (iph == G1_phase) then
     if (use_G1_tdelay) then
         ! We want to update Jaiswal for a cell in G1 only if G1_tdelay has elapsed since IR
-        ! Current time is tnow (sec).  IR time is t_irradiation
-        ! Time since IR is th_since_IR(hours)
-        th_since_IR = (tnow - t_irradiation)/3600
         do_G1_Jaiswal = (th_since_IR > G1_tdelay).and.(G1_tdelay > 0)
     else
         ! We want to update Jaiswal for a cell in G1 only if the cell has undergone mitosis post-IR
@@ -1975,11 +1977,12 @@ endif
 if (dbug) write(nflog,'(a,i4,6f8.2)') 'updateRepair (d): kcell, DSB(:,2): ',kcell_now,DSB(:,2)
 cp%DSB = DSB
 cp%Nmis = cp%Nmis + Nmis
-!if (kcell_now == 18) write(nflog,'(a,2i3,2f8.3,f8.1,2e12.3,5f8.3)') 'kcell,phase,f_S,tIR,NHEJ0,eta,Pmis,dmis,Nmis,cp%Nmis: ', &
-!    kcell_now,cp%phase,f_S,tIR,totDSB0,eta_nhej,Pmis,dmis,Nmis,cp%Nmis
-!if (single_cell) write(nflog,'(a,4e12.3)') 'f_S,dmis,Nmis: ',f_S,dmis,cp%Nmis
-!write(*,*) 'end   DSB(3,2): ',DSB(3,2)
-
+if (single_cell) then
+    DSB1 = sum(DSB(:,1))
+    DSB2 = sum(DSB(:,2))
+    totNmis = 2*cp%Nmis(1)+cp%Nmis(2)
+    write(nflog,'(a,4f10.3)') 'tIR, DSB1, DSB2, totNmis: ',th_since_IR,DSB1,DSB2,totNmis
+endif
 ! record signalling for single-cell
 !if (single_cell) then
 !    istep_signal = istep_signal + 1

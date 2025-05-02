@@ -1786,13 +1786,14 @@ do kevent = 1,Nevents
 			C(GLUCOSE) = E%glumedium
 			C(DRUG_A:DRUG_A+1) = 0
             drug_conc0 = 0      ! for decay calc in grower() 
-            do kcell = 1,10
-                cp => cell_list(kcell)
-                write(nflog,'(a,2i4,4f8.3)') 'kcell,phase,progress,DSB: ',kcell,cp%phase,cp%progress,cp%DSB(1:3,1)
-            enddo
+            !do kcell = 1,10
+            !    cp => cell_list(kcell)
+            !    write(nflog,'(a,2i4,4f8.3)') 'kcell,phase,progress,DSB: ',kcell,cp%phase,cp%progress,cp%DSB(1:3,1)
+            !enddo
 			V = E%volume
 			full = E%full
 			call MediumChange(V,C,full)
+            C_SN39536 = 0
             is_event = .true.
 		elseif (E%etype == DRUG_EVENT) then
 			C = 0
@@ -2058,6 +2059,12 @@ logical :: ok = .true.
 logical :: dbug
 
 !write(nflog,*) 'istep,npar_uni,npar_rnor: ',istep,npar_uni,npar_rnor
+if (C_SN39536 == 0) then
+    fDNAPK = 1
+else
+    fDNAPK = logistic(C_SN39536)
+endif
+!write(*,'(a,2f8.3)') 'C_SN39536, fDNAPK: ',C_SN39536, fDNAPK
 
 cp => cell_list(1)
 tIR = (istep-1)*DELTA_T/3600.0

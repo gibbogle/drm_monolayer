@@ -154,7 +154,8 @@ counts = 0
     tmin = 1.0      ! for now...
     n = 0
 !	if (use_logistic) then
-		fDNAPK = logistic(C_SN39536)
+!		fDNAPK = logistic(C_SN39536)
+		write(nflog,'(a,2f8.3)') 'C_SN39536, fDNAPK: ',C_SN39536, fDNAPK
 !	else
 !		fDNAPK = exp(-0.693*C_SN39536/Chalf)
 !	endif
