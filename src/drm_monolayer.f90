@@ -1793,7 +1793,7 @@ do kevent = 1,Nevents
 			V = E%volume
 			full = E%full
 			call MediumChange(V,C,full)
-            C_SN39536 = 0
+!            C_SN39536 = 0
             is_event = .true.
 		elseif (E%etype == DRUG_EVENT) then
 			C = 0
@@ -1806,9 +1806,10 @@ do kevent = 1,Nevents
 			write(logmsg,'(a,i4,2f8.3)') 'DRUG_EVENT: ichemo, volume, conc: ',ichemo,E%volume,E%conc
 			call logger(logmsg)
             ! DNA-PK
-            !call check_logistic
-            !stop
-            C_SN39536 = E%conc
+!            call check_logistic
+!            stop
+!            C_SN39536 = E%conc
+            drug_conc0 = E%conc
             !write(*,*) 'call DNAPKinhibition'
             !fDNAPK = DNAPKinhibition(E%conc)
 
@@ -2053,16 +2054,20 @@ real(REAL_KIND) :: total, tadjust
 real(REAL_KIND) :: fATM, fATR, fCP, dtCPdelay, dtATMdelay, dtATRdelay, ATM_DSB, DNA_rate
 real(REAL_KIND) :: pATM_sum, pATR_sum, DSB_sum, tIR
 real(REAL_KIND) :: SFtot, Pp, Pd, newSFtot, total_mitosis_time, V0
+real(REAL_KIND) :: Cdrug
 integer :: Ntot, Ndying, Ncont(5),Ngen1
 logical :: PEST_OK
 logical :: ok = .true.
 logical :: dbug
 
 !write(nflog,*) 'istep,npar_uni,npar_rnor: ',istep,npar_uni,npar_rnor
-if (C_SN39536 == 0) then
+if (drug_conc0 == 0) then
     fDNAPK = 1
 else
-    fDNAPK = logistic(C_SN39536)
+    if (use_drug_halflife) then
+        Cdrug = drug_conc0*exp(-Khalflife*(t_simulation - drug_time)/3600)
+    endif
+    fDNAPK = logistic(Cdrug)
 endif
 !write(*,'(a,2f8.3)') 'C_SN39536, fDNAPK: ',C_SN39536, fDNAPK
 

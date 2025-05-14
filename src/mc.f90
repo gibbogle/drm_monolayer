@@ -311,7 +311,7 @@ use_Iliakis = (ksup > 0)
 ! For PEST runs, expt_ID must be -1 (for M runs) or -2 (for C runs) or -3 (for MC runs)
 use_SF = .false.
 nphase_hours = 0
-next_phase_hour = 0
+next_phase_hour = 1
 phase_hour(:) = 0
 output_DNA_rate = .false.
 normalise = .false.
@@ -322,7 +322,7 @@ if (expt_ID == -1) then    ! PDSN dose = 0
     normalise = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 4
-    next_phase_hour = 1
+!    next_phase_hour = 1
     phase_hour(1:4) = [5.0, 11.5, 18.5, 24.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
     ! Note: output G1, S, G2, M
 elseif (expt_ID == -2) then    ! PDSN dose = 2
@@ -330,7 +330,7 @@ elseif (expt_ID == -2) then    ! PDSN dose = 2
     compute_cycle = .true.
     normalise = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
-    next_phase_hour = 1
+!    next_phase_hour = 1
 !    nphase_hours = 6
 !    phase_hour(1:6) = [1.0, 2.0, 3.0, 5.0, 8.5, 11.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 !    nphase_hours = 25
@@ -344,7 +344,7 @@ elseif (expt_ID == -3) then    ! PDSN dose = 6
     compute_cycle = .true.
     normalise = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
-    next_phase_hour = 1
+!    next_phase_hour = 1
 !    nphase_hours = 3
 !    phase_hour(1:3) = [5.0, 8.5, 11.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
     nphase_hours = 5
@@ -352,20 +352,52 @@ elseif (expt_ID == -3) then    ! PDSN dose = 6
 elseif (expt_ID == 1) then
     use_SF = .true.     ! in this case SFave only is recorded
     compute_cycle = .false.
+    next_phase_hour = 0
+
+elseif (expt_ID == 11) then    ! this is the output_DNA_rate case (EDUALL, D6C0)
+    compute_cycle = .false.
+    output_DNA_rate = .true.
+    use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
+    nphase_hours = 5    ! To fit S ATM parameters to EDU data
+    phase_hour(1:5) = [0.75,1.25,2.25,3.25,4.25]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+elseif (expt_ID == 12) then    ! this is the output_DNA_rate case (EDUALL, D2C0)
+    compute_cycle = .false.
+    output_DNA_rate = .true.
+    use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
+    nphase_hours = 2    ! To fit S ATM parameters to EDU data
+    phase_hour(1:2) = [1.0,5.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+elseif (expt_ID == 13) then    ! this is the output_DNA_rate case (EDUALL, D2C3)
+    compute_cycle = .false.
+    output_DNA_rate = .true.
+    use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
+    nphase_hours = 2    ! To fit S ATM parameters to EDU data
+    phase_hour(1:2) = [1.0,5.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+elseif (expt_ID == 14) then    ! this is the output_DNA_rate case (EDUALL, D6C0)
+    compute_cycle = .false.
+    output_DNA_rate = .true.
+    use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
+    nphase_hours = 2    ! To fit S ATM parameters to EDU data
+    phase_hour(1:2) = [1.0,5.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+elseif (expt_ID == 15) then    ! this is the output_DNA_rate case (EDUALL, D6C3)
+    compute_cycle = .false.
+    output_DNA_rate = .true.
+    use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
+    nphase_hours = 2    ! To fit S ATM parameters to EDU data
+    phase_hour(1:2) = [1.0,5.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 
 elseif (mod(expt_ID,10) == 1) then    ! this is the compute_cycle case for KASTAN data
     expt_tag = "KASTAN"
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 4
-    next_phase_hour = 1
+!    next_phase_hour = 1
     phase_hour(1:4) = [0.5, 1.0, 1.5, 2.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 elseif (mod(expt_ID,10) == 2) then    ! this is the compute_cycle case for CA-135
     expt_tag = "CA-135"
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 5    !5
-    next_phase_hour = 1
+!    next_phase_hour = 1
     phase_hour(1:5) = [5.0, 8.5, 11.5, 18.5, 24.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
     ! Note: output G1, S, G2, M
 elseif (mod(expt_ID,10) == 9) then    ! this is the compute_cycle case for CC-13
@@ -373,7 +405,7 @@ elseif (mod(expt_ID,10) == 9) then    ! this is the compute_cycle case for CC-13
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 8    !8
-    next_phase_hour = 1
+!    next_phase_hour = 1
     phase_hour(1:8) = [1, 2, 3, 5, 8, 12, 18, 24]   
     ! Note: output M
 elseif (mod(expt_ID,10) == 5) then    ! this is the compute_cycle case for CC-11
@@ -381,7 +413,7 @@ elseif (mod(expt_ID,10) == 5) then    ! this is the compute_cycle case for CC-11
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 5
-    next_phase_hour = 1
+!    next_phase_hour = 1
     phase_hour(1:5) = [1.0, 1.5, 2.5, 3.5, 4.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
     ! Note: output G1, S, G2
 
@@ -399,24 +431,24 @@ elseif (expt_ID == 6) then    ! this is the output_DNA_rate case (EDU)
     !do j = 1,nphase_hours
     !    phase_hour(j) = j*0.25
     !enddo
-    next_phase_hour = 1
+!    next_phase_hour = 1
 elseif (expt_ID == 3) then
     use_SF = .true.     ! in this case SFave is recorded and there are multiple phase distribution recording times
     nphase_hours = 4
-    next_phase_hour = 1
+!    next_phase_hour = 1
     phase_hour(1:4) = [8, 12, 18, 24]
 elseif (expt_ID == 4) then    ! this is the synchronised IR case
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 1
-    next_phase_hour = 1
+!    next_phase_hour = 1
     phase_hour(1:5) = [40, 0, 0, 0, 0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 elseif (mod(expt_ID,10) == 7) then    ! this is the compute_cycle case for multiple times, no PEST
     compute_cycle = .true.
     normalise = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 49
-    next_phase_hour = 1
+!    next_phase_hour = 1
     do j = 1,49
         phase_hour(j) = (j-1)*0.5
     enddo
@@ -425,7 +457,7 @@ elseif (mod(expt_ID,10) == 8) then    ! this is the compute_cycle case for M%-on
     compute_cycle = .true.
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 5
-    next_phase_hour = 1
+!    next_phase_hour = 1
     phase_hour(1:5) = [1.0, 1.5, 2.5, 3.5, 4.5]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 else
     if (use_PEST) then

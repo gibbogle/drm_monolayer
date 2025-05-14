@@ -36,8 +36,8 @@ do
     if (ddbug) write(*,'(i4,4f8.4)') n,dfdx,x0,x1,f0
     x = x1
     t = tmitosis(CC_tot,x,kmccp)
-    if (abs(Tph - t) < 0.005) exit
     if (n > Nits) then
+        if (abs(Tph - t) < 0.005) exit
         write(*,*) 'newton, n > Nits: ',Nits
         write(*,'(a,3f10.5)') 'Initial x0, t0, Tph: ',x0,t0,Tph
         write(*,'(a,2f10.5)') 'Final x, t: ',x,t

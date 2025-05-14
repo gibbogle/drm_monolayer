@@ -614,7 +614,7 @@ logical :: use_drug_halflife
 real(REAL_KIND) :: Khalflife, drug_time, drug_conc0
 
 ! DNA-PK inhibition parameters
-real(8) :: C_SN39536, fDNAPK, Chalf, fDNAPKmin
+real(8) :: fDNAPK, Chalf, fDNAPKmin
 logical :: suppress_ATR
 
 logical :: test_run = .false.	! to check Psurvive etc
@@ -1327,6 +1327,11 @@ do i = 1,10
 enddo
 do i = 1,10
 	C = i*2
+	y = logistic(C)
+	write(nflog,'(2f8.4)') C, y
+enddo
+do i = 1,10
+	C = 20+i*3
 	y = logistic(C)
 	write(nflog,'(2f8.4)') C, y
 enddo
