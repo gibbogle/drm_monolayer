@@ -1537,7 +1537,7 @@ do it = 1,Nt
 enddo
 endif
 
-if (dbug) write(nfres,'(a,10f9.4,2e12.3)') 'Jaiswal: ',tIR,D_ATM,ATM_act,ATM_inact,Kmp1,Kmp2,Kmmp,Kmd,Kmmd,ATM_act,dATM_plus,dATM_minus
+!write(nfres,'(a,i3,10f9.4,2e12.3)') 'iph,tIR,ATM_act,DSB(NHEJslow),DSB(HR): ',iph,tIR,ATM_act,DSB(NHEJslow),DSB(HR)    !,ATM_inact,Kmp1,Kmp2,Kmmp,Kmd,Kmmd,ATM_act,dATM_plus,dATM_minus
 !if (single_cell) then
 !    write(*,'(a,2i4,4f8.4)') 'kcell,iph,ATR,ATM: ',kcell_now,iph,ATR_act,ATM_act
 !    write(nflog,'(a,2i4,4f8.4)') 'kcell,iph,ATR,ATM: ',kcell_now,iph,ATR_act,ATM_act

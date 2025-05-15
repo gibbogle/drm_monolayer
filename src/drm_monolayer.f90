@@ -1035,7 +1035,7 @@ do itime = 1,ntimes
 		event(kevent)%dose = 0
 		event(kevent)%full = .false.	
 		chemo(ichemo)%used = .true.
-		write(nflog,'(a,i3,2f8.3)') 'define DRUG_EVENT: volume, O2conc: ',kevent,event(kevent)%volume,event(kevent)%O2conc
+		write(nflog,'(a,i3,2f8.3)') 'define DRUG_EVENT: volume, conc: ',kevent,event(kevent)%volume,event(kevent)%conc
 		if (drug(idrug)%use_metabolites) then
 			do im = 1,drug(idrug)%nmetabolites
 				chemo(ichemo+im)%used = .true.
@@ -1786,6 +1786,7 @@ do kevent = 1,Nevents
 			C(GLUCOSE) = E%glumedium
 			C(DRUG_A:DRUG_A+1) = 0
             drug_conc0 = 0      ! for decay calc in grower() 
+			write(nflog,'(a,f8.3)') 'MEDIUM_EVENT: conc: ',drug_conc0
             !do kcell = 1,10
             !    cp => cell_list(kcell)
             !    write(nflog,'(a,2i4,4f8.3)') 'kcell,phase,progress,DSB: ',kcell,cp%phase,cp%progress,cp%DSB(1:3,1)
@@ -1803,8 +1804,7 @@ do kevent = 1,Nevents
 			idrug = E%idrug
 			C(ichemo) = E%conc
 			V = E%volume
-			write(logmsg,'(a,i4,2f8.3)') 'DRUG_EVENT: ichemo, volume, conc: ',ichemo,E%volume,E%conc
-			call logger(logmsg)
+			write(nflog,'(a,i4,2f8.3)') 'DRUG_EVENT: ichemo, volume, conc: ',ichemo,E%volume,E%conc
             ! DNA-PK
 !            call check_logistic
 !            stop
@@ -2062,14 +2062,16 @@ logical :: dbug
 
 !write(nflog,*) 'istep,npar_uni,npar_rnor: ',istep,npar_uni,npar_rnor
 if (drug_conc0 == 0) then
+    Cdrug = 0
     fDNAPK = 1
 else
+    Cdrug = drug_conc0
     if (use_drug_halflife) then
         Cdrug = drug_conc0*exp(-Khalflife*(t_simulation - drug_time)/3600)
     endif
     fDNAPK = logistic(Cdrug)
 endif
-!write(*,'(a,2f8.3)') 'C_SN39536, fDNAPK: ',C_SN39536, fDNAPK
+!write(nflog,'(a,3f8.3)') 'drug_conc0, Cdrug, fDNAPK: ',drug_conc0, Cdrug, fDNAPK
 
 cp => cell_list(1)
 tIR = (istep-1)*DELTA_T/3600.0
