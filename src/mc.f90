@@ -1163,7 +1163,7 @@ else
     else
         fATM = 1.0
     endif
-    if (kcell_now == -2) write(nflog,'(a,2i5,2e12.3)') 'iph, kcell, atm, fATM: ',iph,kcell_now,atm,fATM
+    if (kcell_now == -1) write(nflog,'(a,2i5,2e12.3)') 'iph, kcell, atm, fATM: ',iph,kcell_now,atm,fATM
 endif
 !if (kcell_now == 8) write(nflog,'(a,2i6,4e12.3)') 'slowdown: kcell,iph,k3,k4,atm,fATM: ',kcell_now,iph,k3,k4,atm,fATM
 if (iph == S_phase .and. use_ATR) then
@@ -1555,7 +1555,7 @@ endif
 !write(nflog,'(a,i3,9e12.3)') 'iph,dATR,ATR_act,dATM,ATM_act,d(1:3),dCC,CC_act: ',iph,dATR_act_dt,ATR_act,dATM_act_dt,ATM_act,d(1:3),dCC_act_dt,CC_act
 if (first) then
     first = .false.
-    write(nflog,'(a6,12a11)') '  t   ','     D_ATR ','dATR_act_dt','    ATR_act','   D_ATM ','dATM_act_dt','    ATM_act','       d(1)','       d(2)','       d(3)',' dCC_act_dt','     CC_act'
+!    write(nfres,'(a6,12a11)') '  t   ','     D_ATR ','dATR_act_dt','    ATR_act','   D_ATM ','dATM_act_dt','    ATM_act','       d(1)','       d(2)','       d(3)',' dCC_act_dt','     CC_act'
 endif
 !if (single_cell) write(nflog,'(f6.2,12f11.4)') tnow/3600,D_ATR,dATR_act_dt,ATR_act,D_ATM,dATM_act_dt,ATM_act,d(1:3),dCC_act_dt,CC_act
 t = t_simulation/3600.
@@ -1608,10 +1608,13 @@ end subroutine
 !--------------------------------------------------------------------------
 subroutine pathwayRepair(path, dth, N0, N)
 integer :: path
-real(8) :: dth, N0, N, dt
+real(8) :: dth, N0, N, dt, tIR
 integer :: Nt, it
 
+tIR = (t_simulation - t_irradiation)/3600   ! time since IR, in hours
+
 N = N0
+if (N == 0) return
 if (dth >= 0) then
 !    Nt = 10
     Nt = 1
@@ -1619,6 +1622,7 @@ if (dth >= 0) then
 !    if (single_cell) write(*,'(a,2i6,2f8.4)') 'istep,path,repRate(path),dt: ',istep,path,repRate(path),dt
     do it = 1,Nt
         N = N*exp(-repRate(path)*dt*repRateFactor(path))
+!        if (tIR > 24.0 .and. tIR < 30.0) write(nflog,'(a,i4,4e12.3)') 'path, k, N0, N, N/N0: ',path,repRate(path)*repRateFactor(path),N0,N,N/N0
     enddo
 else
     N = 0
@@ -1629,20 +1633,30 @@ end subroutine
 !--------------------------------------------------------------------------
 function misrepairRate(initialBreaks, finalBreaks, eta) result(Pmis)
 real(8) :: initialBreaks, finalBreaks, eta, Pmis
-real(8) :: repairedBreaks, atanNum, atanDen
-real(8) :: etamod, etafac = 1.0
+real(8) :: repairedBreaks, atanNum, atanDen, term1, term2, N0, N1, Nr
+!real(8) :: etamod, etafac = 1.0
+logical :: first = .true.
 
-etamod = etafac*eta
+!etamod = etafac*eta
 repairedBreaks = initialBreaks-finalBreaks
 if (repairedBreaks < 1E-10) then
     Pmis = 0
     return
 endif
-atanNum = sqrt(3.0)*etamod*repairedBreaks
-atanDen = 2 + etamod*(2*initialBreaks*finalBreaks*etamod + initialBreaks + finalBreaks) 
-Pmis = 1 - 2 * atan(atanNum/atanDen) / (repairedBreaks*sqrt(3.0)*etamod)
-
-if (eta > 1.0E-3 .and. test_run) write(nflog,'(a,i6,2e12.3)') 'kcell,eta,Pmis: ',kcell_now,eta,Pmis
+atanNum = sqrt(3.0)*eta*repairedBreaks
+atanDen = 2 + eta*(2*initialBreaks*finalBreaks*eta + initialBreaks + finalBreaks) 
+term1 = 2 * atan(atanNum/atanDen)
+term2 = (repairedBreaks*sqrt(3.0)*eta)
+!Pmis = 1 - 2 * atan(atanNum/atanDen) / (repairedBreaks*sqrt(3.0)*eta)
+Pmis = 1 - term1/term2
+N0 = initialBreaks
+N1 = finalBreaks
+Nr = repairedBreaks
+if (first .and. single_cell) then
+    first = .false.
+    write(nflog,'(9a12)') '    N0',  '    N1', '    Nr', '    eta', '  atanNum', '  atanDen', ' term1',' term2','     Pmis'
+endif
+if (eta > 1.0E-3 .and. single_cell) write(nflog,'(9e12.3)') initialBreaks, finalBreaks, repairedBreaks, eta,atanNum, atanDen,term1,term2,Pmis
 
 !if (kcell_now == 1) write(nflog,'(a,2f8.1,2e12.3)') 'initialBreaks, finalBreaks, eta, Pmis: ',initialBreaks, finalBreaks,eta,Pmis
 
@@ -1749,7 +1763,13 @@ logical :: dbug
 logical :: use_G1_tdelay = .false.
 logical :: do_G1_Jaiswal
 logical :: use_constant_V = .false.
+logical :: first = .true.
 
+if (first) then
+    write(nfres,'(a,3f8.2)') 't_flush, D, C: ',t_flush,rad_dose,drug_conc0
+    write(nfres,'(a)') '     tIR       sigma     DSB1      DSB2      Pmis      dmis      Nmis      ATR_act   ATM_act   CC_act'
+    first = .false.
+endif
 dbug = (kcell_now == -9 .and. istep < 5)
 
 if (dbug) write(nflog,'(a,i4,6f8.2)') 'updateRepair (a): kcell, DSB(:,2): ',kcell_now,cp%DSB(:,2)
@@ -2010,10 +2030,11 @@ if (dbug) write(nflog,'(a,i4,6f8.2)') 'updateRepair (d): kcell, DSB(:,2): ',kcel
 cp%DSB = DSB
 cp%Nmis = cp%Nmis + Nmis
 if (single_cell) then
-    DSB1 = sum(DSB(:,1))
-    DSB2 = sum(DSB(:,2))
+    sigma = sigma_NHEJ + tIR*dsigma_dt
+    DSB1 = sum(DSB(1:2,1))
+    DSB2 = sum(DSB(1:2,2))
     totNmis = 2*cp%Nmis(1)+cp%Nmis(2)
-    write(nflog,'(a,4f10.3)') 'tIR, DSB1, DSB2, totNmis: ',th_since_IR,DSB1,DSB2,totNmis
+    write(nfres,'(11f10.3)') tIR,sigma,DSB1,DSB2,Pmis,dmis,totNmis,cp%ATR_act,cp%ATM_act,cp%CC_act,repratefactor(1)
 endif
 ! record signalling for single-cell
 !if (single_cell) then

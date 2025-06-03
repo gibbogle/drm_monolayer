@@ -81,6 +81,7 @@ if (cp%phase == G1_phase) then
     endif
 elseif (cp%phase == S_phase) then
     cp%progress = cp%progress + cp%fp*dt/ccp%T_S
+!    write(*,*) 'cp%fp: ',cp%fp,cp%progress,t_simulation/3600
     if (cp%progress >= 1) then
         if (use_S_stop) then
             ! At start of CP, need to compute CP delay

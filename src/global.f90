@@ -612,6 +612,7 @@ integer :: npet
 ! Drug half-life simulation
 logical :: use_drug_halflife
 real(REAL_KIND) :: Khalflife, drug_time, drug_conc0
+real(REAL_KIND) :: rad_dose, t_flush
 
 ! DNA-PK inhibition parameters
 real(8) :: fDNAPK, Chalf, fDNAPKmin
@@ -1305,7 +1306,7 @@ real(REAL_KIND) :: bottom, top, EC50, hillslope, percent
 
 bottom = 0
 top = 100
-hillslope = -0.6919
+hillslope = -1.0	!-0.6919
 EC50 = Chalf
 if (C > 0) then
     percent = bottom + (top-bottom)/(1 + 10**((log10(EC50) - log10(C))*hillslope))

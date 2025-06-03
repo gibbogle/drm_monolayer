@@ -1036,6 +1036,7 @@ do itime = 1,ntimes
 		event(kevent)%full = .false.	
 		chemo(ichemo)%used = .true.
 		write(nflog,'(a,i3,2f8.3)') 'define DRUG_EVENT: volume, conc: ',kevent,event(kevent)%volume,event(kevent)%conc
+        write(nflog,'(a,f8.3)') 'fDNAPK: ',logistic(conc)
 		if (drug(idrug)%use_metabolites) then
 			do im = 1,drug(idrug)%nmetabolites
 				chemo(ichemo+im)%used = .true.
@@ -1063,6 +1064,7 @@ do itime = 1,ntimes
 		    Eflush%lacmedium = chemo(LACTATE)%dose_conc	
 		    Eflush%full = .false.	
 		    Eflush%dose = 0
+            t_flush = dt
 		    write(nflog,'(a,i3,2f8.3)') 'define MEDIUM_EVENT: volume: ',kevent,Eflush%volume,Eflush%O2medium
 !		endif
 	elseif (trim(line) == 'MEDIUM') then
@@ -1092,6 +1094,7 @@ do itime = 1,ntimes
         endif
         CA_time_h = CA_time_h + t
 		read(nf,*) dose
+        rad_dose = dose
 		event(kevent)%time = t
 		event(kevent)%dose = dose	
 		event(kevent)%ichemo = 0
@@ -2499,8 +2502,11 @@ if (SFdone) then
     write(nflog,'(a,f8.2)') 'CA_time_h: ',CA_time_h
     write(nflog,'(a,7i6)') 'Ncont, Ndying, Ncells0: ',Ncont,Ndying,Ncont(1)/2 + Ncont(2) + (Ncont(3)/2 + Ncont(4))/2 + Ncont(5)/2
     write(nflog,'(a,i6,2x,f8.3)') 'Ntot, SFtot: ',Ntot,SFtot
-    write(logmsg,'(a,e12.4,f8.3)') 'SFave,log10(SFave): ',SFave,log10(SFave)
-    call logger(logmsg)  
+    if (SFave == 0) then
+        SFave = 0.00001
+        write(nflog,*)'SFave was 0!!!'
+    endif
+    write(nflog,'(a,e12.4,f8.3)') 'SFave,log10(SFave): ',SFave,log10(SFave)
     call completed
     res = 1
 endif
