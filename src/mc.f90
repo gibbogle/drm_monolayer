@@ -1765,7 +1765,7 @@ logical :: do_G1_Jaiswal
 logical :: use_constant_V = .false.
 logical :: first = .true.
 
-if (first) then
+if (first .and. single_cell) then
     write(nfres,'(a,3f8.2)') 't_flush, D, C: ',t_flush,rad_dose,drug_conc0
     write(nfres,'(a)') '     tIR       sigma     DSB1      DSB2      Pmis      dmis      Nmis      ATR_act   ATM_act   CC_act'
     first = .false.
