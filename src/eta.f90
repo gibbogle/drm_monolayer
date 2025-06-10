@@ -93,9 +93,10 @@ end function
 function eta_Arnould(phase,f_S, tIR, S_NHEJ, fsmin) result(eta)
 integer :: phase
 real(8) :: f_S, tIR, S_NHEJ, fsmin, eta
-real(8) :: Reff, sigma, fsigma
+real(8) :: Reff, sigma, fsigma, Z
 logical, parameter :: use_old_method = .false.   ! results the same as new method
 
+Z = 2
 if (use_old_method) then
     if (phase == 1) then
         Reff = (1 - Reffmin)*exp(-Kclus*tIR) + Reffmin
@@ -108,7 +109,7 @@ else
     Reff = (1 - f_S)*((1 - Reffmin)*exp(-Kclus*tIR) + Reffmin) + f_S*1.26
 endif
 fsigma = 1 - (1 - fsmin)*f_S
-sigma = S_NHEJ + tIR*dsigma_dt*(1 - f_S)    ! added (1 - f_S) 6/6/25, Bill's suggestion
+sigma = S_NHEJ + tIR*dsigma_dt*(1 - f_S/Z)    ! added (1 - f_S) 6/6/25, Bill's suggestion
 sigma = fsigma*sigma
 ! Testing
 !Reff = (1 - f_S) + f_S*1.26
