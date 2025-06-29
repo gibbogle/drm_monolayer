@@ -255,7 +255,7 @@ G1_tdelay = 0
 read(nfin,*) Chalf  ! < 0 ==> do not change Krp
 suppress_ATR = (Chalf > 0)
 if (Chalf < 0) Chalf = -Chalf
-fDNAPKmin = 0.0     ! temporarily fixed
+fDNAPKmin = 0.05     ! temporarily fixed
 !read(nfin,*) Preass
 Preass = 0
 read(nfin,*) dsigma_dt

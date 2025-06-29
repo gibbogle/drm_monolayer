@@ -2507,6 +2507,7 @@ if (SFdone) then
         write(nflog,*)'SFave was 0!!!'
     endif
     write(nflog,'(a,e12.4,f8.3)') 'SFave,log10(SFave): ',SFave,log10(SFave)
+    write(*,'(a,e12.4,f8.3)') 'SFave,log10(SFave): ',SFave,log10(SFave)
     call completed
     res = 1
 endif
