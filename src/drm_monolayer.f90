@@ -560,9 +560,9 @@ write(nflog,'(a,f6.1)') 'dose_threshold: ',dose_threshold
 ! Try setting this for each cell unless use_cell_kcc_dependence
 !write(*,*) 'do get_Kcc: kmccp: ',kmccp
 Kcc = get_Kcc(kmccp,CC_tot,CC_threshold_factor,cc_parameters(1)%T_G2/3600)
-!write(nflog,*) 'did get_Kcc: ',Kcc
 single_cell = (initial_count==1)
 write(nflog,*) 'single_cell: ',single_cell
+write(nflog,*) 'did get_Kcc: ',Kcc
 
 ! Rescale
 chemo(OXYGEN)%membrane_diff_in = chemo(OXYGEN)%membrane_diff_in*Vsite_cm3/60		! /min -> /sec
@@ -1036,7 +1036,7 @@ do itime = 1,ntimes
 		event(kevent)%full = .false.	
 		chemo(ichemo)%used = .true.
 		write(nflog,'(a,i3,2f8.3)') 'define DRUG_EVENT: volume, conc: ',kevent,event(kevent)%volume,event(kevent)%conc
-        write(nflog,'(a,f8.3)') 'fDNAPK: ',logistic(conc)
+!        write(nflog,'(a,f8.3)') 'fDNAPK: ',logistic(conc)
 		if (drug(idrug)%use_metabolites) then
 			do im = 1,drug(idrug)%nmetabolites
 				chemo(ichemo+im)%used = .true.
@@ -2078,6 +2078,7 @@ endif
 
 cp => cell_list(1)
 tIR = (istep-1)*DELTA_T/3600.0
+if (single_cell) write(nflog,'(a,f6.2,3f8.3)') 'tIR, CC, ATR, ATM_act: ',tIR,cp%CC_act,cp%ATR_act,cp%ATM_act
 !if (mod(istep,10) == 0) write(nflog,'(a,2i4,f8.2,3e12.3)') 'kcell,istep,tIR,ATM_act,ATR_act,CC_act: ', kcell_now,istep,tIR,cp%ATM_act,cp%ATR_act,cp%CC_act
 !write(nfres,'(a,3i6,2f6.2,e12.3)') 'istep,kcell,phase,f_S,tIR,ATM_act: ',istep,1,cp%phase,cp%progress,tIR,cp%ATM_act
 !write(nfres,'(2i6,2f12.2,3e12.3)') istep,cp%phase,cp%progress,tIR,cp%ATR_act,cp%ATM_act,cp%CC_act

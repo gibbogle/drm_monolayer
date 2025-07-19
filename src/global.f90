@@ -1309,13 +1309,13 @@ top = 100
 hillslope = -1.0	!-0.6919
 EC50 = Chalf
 if (C > 0) then
-    percent = bottom + (top-bottom)/(1 + 10**((log10(EC50) - log10(C))*hillslope))
+	y = ((log10(EC50) - log10(C))*hillslope)
+    percent = bottom + (top-bottom)/(1 + 10**y)
 else
     percent = 100
 endif
 y = percent/100
 y = (1 - fDNAPKmin)*y + fDNAPKmin
-!write(nflog,*) 'logistic,C,y: ',C,y
 end function
 
 subroutine check_logistic
