@@ -1331,7 +1331,7 @@ real(8) :: v(3), dv(3), abserr, relerr, tstart, tend
 integer :: nvars, k, flag
 logical :: use_RK = .false. ! not currently usable
 integer :: NRK = 20
-real(8) :: mfac = 0.0
+real(8) :: mfac = 1.0
 
 if (suppress_ATR) then
     Krpp = fDNAPK*Krp*mfac
