@@ -87,7 +87,7 @@ real(8) :: Preass   ! rate of reassignment to pathway 4, TMEJ (prob of reass/hou
 !logical :: alt_EJ_suppressed = .false.
 
 ! Jaiswal formulation (26/09/22)
-real(8) :: Kcc, Krd, Krp, Kmp1, Kmp2, Kccrd, Kccmd, Kmd
+real(8) :: Kcc, Krd, Krp_max, Krp_min, Kmp1, Kmp2, Kccrd, Kccmd, Kmd
 real(8) :: Km1, Km10, Km10t
 real(8) :: kmmp, kmmd               ! ATM production, decay
 real(8) :: kmrp, kmrd               ! ATR production, decay
@@ -271,7 +271,8 @@ read(nfin,*) t_switch_ATM       ! time after IR when ATM_act production goes to 
 if (use_Jaiswal) then
 !    read(nfin,*) Kcc     ! this is computed for each cell
     read(nfin,*) Krd
-    read(nfin,*) Krp
+    read(nfin,*) Krp_max
+    read(nfin,*) Krp_min
     read(nfin,*) Kmp1
     read(nfin,*) Kmp2
     read(nfin,*) Kccrd
@@ -1331,13 +1332,13 @@ real(8) :: v(3), dv(3), abserr, relerr, tstart, tend
 integer :: nvars, k, flag
 logical :: use_RK = .false. ! not currently usable
 integer :: NRK = 20
-real(8) :: krp_min, mfac = 1.0
+!real(8) :: krp_min, mfac = 1.0
 
 if (suppress_ATR) then
-    krp_min = mfac*krp
-    Krpp = fDNAPK*(Krp - krp_min) + krp_min
+!    krp_min = mfac*krp
+    Krpp = fDNAPK*(Krp_max - krp_min) + krp_min
 else
-    Krpp = Krp
+    Krpp = Krp_max
 endif
 if (slow_ATM_decay) then
     Kmdd = fDNAPK*Kmd
@@ -1578,7 +1579,11 @@ real(8) :: D_ATR, Kkcc, Krpp
 integer :: iph
 logical :: use_ATR
 
-Krpp = fDNAPK*Krp
+if (suppress_ATR) then
+    Krpp = fDNAPK*(Krp_max - krp_min) + krp_min
+else
+    Krpp = Krp_max
+endif
 iph = cpnow%phase
 use_ATR = (iph == 3) .or. ((iph == 2) .and. (ATR_in_S >= 1))
 ATM_act = v(1)
