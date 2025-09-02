@@ -86,7 +86,7 @@ real(8) :: x0, t0
 !real(8),parameter :: alfa = -1.0, beta = 0.45
 real(8),parameter :: a = 0.015, b = 0.1737, c = 0.1075 
 
-ddbug = (CC_threshold_factor < 0)
+ddbug = (kmccp == 0)
 !ddbug = .true.
 CC_factor = abs(CC_threshold_factor)
 !x0 = alfa + beta*kmccp      ! initial guess

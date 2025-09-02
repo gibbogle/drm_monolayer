@@ -1275,7 +1275,7 @@ cp%t_start_G2 = 0
 do i = 1,8
     kmccp_temp = 4.0 + (i-1)*0.5
     Kcc_temp = get_Kcc(kmccp_temp,CC_tot,CC_threshold_factor,T_G2h)    
-    write(*,'(a,2f8.3)') 'kmccp, kcc: ',kmccp_temp,kcc_temp
+!    write(*,'(a,2f8.3)') 'kmccp, kcc: ',kmccp_temp,kcc_temp
 enddo
 cp%Kcc = get_Kcc(kmccp,CC_tot,CC_threshold_factor,T_G2h)  
 write(*,*) 'Kcc: ',cp%Kcc
@@ -1332,6 +1332,7 @@ real(8) :: v(3), dv(3), abserr, relerr, tstart, tend
 integer :: nvars, k, flag
 logical :: use_RK = .false. ! not currently usable
 integer :: NRK = 20
+real(8) :: Tlag = 2 ! hours
 !real(8) :: krp_min, mfac = 1.0
 
 if (suppress_ATR) then
@@ -1349,7 +1350,7 @@ endif
 !    write(nflog,'(a,i6,2f8.3)') 'Jaiswal_update: kcell, tnow, CC_act: ', kcell_now,tnow/3600,cp%CC_act
 !    write(nflog,'(a,i4,3f8.3)') 'phase, progress, ATR_act, ATM_act : ',cp%phase,cp%progress,cp%ATR_act,cp%ATM_act 
 !endif
-tIR = (tnow - t_irradiation)/3600
+tIR = (tnow - t_irradiation)/3600   ! hours
 iph = cp%phase
 if (iph >= 7) iph = iph - 6     ! checkpoint phase numbers --> phase number, to continue ATM and ATR processes through checkpoints
 if (iph > G2_phase) then
@@ -1530,6 +1531,7 @@ do it = 1,Nt
     endif
     dATM_minus = Kmdd * ATM_act / (Kmmd + ATM_act)
     dATM_act_dt = dATM_plus - dATM_minus
+    if (iph == G1_phase .and. tIR < Tlag) dATM_act_dt = 0
     ATM_act = ATM_act + dt*dATM_act_dt
     ATM_act = min(ATM_act, ATM_tot)
     !if (single_cell .and. iph == G2_phase .and. t_simulation < 3.2*3600) then
