@@ -257,7 +257,7 @@ type cycle_parameters_type
     ! Radiation damage/repair
     real(REAL_KIND) :: eta_PL, eta_IRL
     real(REAL_KIND) :: HRR_repair_base, HRR_repair_max
-    real(REAL_KIND) :: NHEJ_repair, NHEJ_misrepair
+!    real(REAL_KIND) :: NHEJ_repair, NHEJ_misrepair	! in mc.f90
     real(REAL_KIND) :: DIM_misrepair
     real(REAL_KIND) :: fraction_Ch1, psurvive_Ch1, psurvive_Ch2		! prob of surviving mitosis
     real(REAL_KIND) :: psurvive_PL

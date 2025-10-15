@@ -108,7 +108,7 @@ elseif (cp%phase == S_phase) then
         endif
     endif
 elseif (cp%phase == G2_phase) then
-    if (use_Jaiswal) then
+    if (use_Jaiswal .and. use_CPs) then
         if (is_radiation) then      ! post-IR
             Nwrite = 0.1*3600/DELTA_T
  !           if (single_cell) write(nflog,'(f6.3,2f9.6)') istep*DELTA_T/3600.0,cp%CC_act,cp%dCC_act_dt
@@ -133,7 +133,7 @@ elseif (cp%phase == G2_phase) then
         endif
     else
         cp%progress = cp%progress + cp%fp*dt/ccp%T_G2
-    !    if (kcell_now < 10) write(*,*) 'phase, progress: ',kcell_now, cp%phase,cp%progress
+!        if (kcell_now == 11) write(*,*) 'NO Jaiswal!!! kcell, phase, progress: ',kcell_now, cp%phase,cp%progress
         if (cp%progress >= 1) then
     !        if (kcell_now <= 10) write(nflog,'(a,i6,2e12.3)') 'To M_phase, V, divide_volume: ',kcell_now, cp%V, cp%divide_volume
             if (use_G2_stop) then

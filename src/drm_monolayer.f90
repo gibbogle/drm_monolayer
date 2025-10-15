@@ -1569,7 +1569,7 @@ elseif (t <= tswitch(3)) then
 !        write(*,'(a,4e12.3,f6.3)') 'Vleft,Vphase,Vend,Vdivide0,progress: ',Vleft, Vphase, cp%V + Vleft, Vdivide0, cp%progress
 !        if (kcell == 4) stop
 !    endif
-    if (use_Jaiswal) then   ! need to initialise CC_act
+    if (use_Jaiswal .and. use_CPs) then   ! need to initialise CC_act
         cp%DSB = 0
         dth = (t - tswitch(2))/3600
         cp%G2t0 = dth
@@ -2503,9 +2503,11 @@ if (SFdone) then
     write(nflog,'(a,f8.2)') 'CA_time_h: ',CA_time_h
     write(nflog,'(a,7i6)') 'Ncont, Ndying, Ncells0: ',Ncont,Ndying,Ncont(1)/2 + Ncont(2) + (Ncont(3)/2 + Ncont(4))/2 + Ncont(5)/2
     write(nflog,'(a,i6,2x,f8.3)') 'Ntot, SFtot: ',Ntot,SFtot
+    write(*,'(a,i6)') 'Ndying: ',Ndying
     if (SFave == 0) then
         SFave = 0.00001
         write(nflog,*)'SFave was 0!!!'
+        write(*,*)'SFave was 0!!!'
     endif
     write(nflog,'(a,e12.4,f8.3)') 'SFave,log10(SFave): ',SFave,log10(SFave)
     write(*,'(a,e12.4,f8.3)') 'SFave,log10(SFave): ',SFave,log10(SFave)

@@ -23,7 +23,7 @@ implicit none
 !! 5 = HR slow post-replication (simple)
 !! 6 = MMEJ very slow post-replication (complex)
 
-! There are 5 pathways:
+! There are 4 pathways:
 integer, parameter :: NHEJfast = 1
 integer, parameter :: NHEJslow = 2
 integer, parameter :: HR = 3
@@ -95,7 +95,9 @@ real(8) :: kmccp, kmccrd, kmccmd    ! CC production, ATR-driven decay, ATM-drive
 real(8) :: CC_tot, ATR_tot, ATM_tot, CC_act0, CC_threshold, CC_threshold_factor
 real(8) :: km10_alfa, km10_beta     ! for G2 only
 real(8) :: G1_tdelay = 4            ! delay before ATM_act updated (hours)
-logical :: use_Jaiswal = .true.
+logical :: use_Jaiswal = .true.     !!!!! (false, true) = no repair at all, no CP, (true, false) = no NHEJ repair, normal CP
+logical :: NHEJ_repair = .true.     !!!!! (true, true) = normal repair, normal CP
+logical :: use_CPs = .true.
 logical :: vary_km10 = .true.
 real(8) :: jaiswal_std = 0.6    !0.6
 real(8) :: G2_D_ATM_max     != 30 now input
@@ -268,7 +270,7 @@ read(nfin,*) G2_D_ATM_max       ! cap on D_ATM in G2
 read(nfin,*) t_switch_ATM       ! time after IR when ATM_act production goes to 0
 !call check_eta(sigma_NHEJ)
 
-if (use_Jaiswal) then
+!if (use_Jaiswal) then  ! we always read these parameters
 !    read(nfin,*) Kcc     ! this is computed for each cell
     read(nfin,*) Krd
     read(nfin,*) Krp_max
@@ -292,7 +294,7 @@ if (use_Jaiswal) then
     CC_act0 = 0
     CC_threshold_factor = 0.9
     CC_threshold = CC_threshold_factor*CC_tot
-endif
+!endif
 
 !call make_eta_table(sigma_NHEJ, sigma_TMEJ, Kcoh)
 !call test_eta(sigma_NHEJ, 1.d0)
@@ -385,6 +387,14 @@ elseif (expt_ID == 15) then    ! this is the output_DNA_rate case (EDUALL, D6C3)
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 2    ! To fit S ATM parameters to EDU data
     phase_hour(1:2) = [1.0,5.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+
+elseif (expt_ID == 111) then    ! this is the compute_cycle case for PDTEST
+    expt_tag = "PDTEST"
+    compute_cycle = .true.
+    use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
+    nphase_hours = 3
+!    next_phase_hour = 1
+    phase_hour(1:3) = [1.0, 2.0, 3.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
 
 elseif (mod(expt_ID,10) == 1) then    ! this is the compute_cycle case for KASTAN data
     expt_tag = "KASTAN"
@@ -1335,6 +1345,8 @@ integer :: NRK = 20
 real(8) :: Tlag = 2 ! hours
 !real(8) :: krp_min, mfac = 1.0
 
+if (.not. use_CPs) return
+
 if (suppress_ATR) then
 !    krp_min = mfac*krp
     Krpp = fDNAPK*(Krp_max - krp_min) + krp_min
@@ -1774,6 +1786,9 @@ logical :: do_G1_Jaiswal
 logical :: use_constant_V = .false.
 logical :: first = .true.
 
+!if (kcell_now == 1) write(*,'(a,i3,8f10.1)') 'kcell_now, cp%DSB: ',kcell_now,cp%DSB
+if (.not. use_Jaiswal) return  !!!!!!!!!!!!!!!!!!!!!! testing no repair
+
 if (first .and. single_cell) then
     write(nfres,'(a,3f8.2)') 't_flush, D, C: ',t_flush,rad_dose,drug_conc0
     write(nfres,'(a)') '     tIR       sigma     DSB1      DSB2      Pmis      dmis      Nmis      ATR_act   ATM_act   CC_act'
@@ -1887,14 +1902,16 @@ if ((iph == 1 .and. use_G1_pATM) .or. (iph == 2 .and. use_S_pATM)) then
     call updateATM(iph,cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth
 endif
 
-DSB = 0
+DSB = DSB0
 do k = 1,3
+if ((k <= 2 .and. NHEJ_repair) .or. k == 3) then
 do jpp = 1,2
 !   if (dbug .and. DSB0(k) > 0) write(*,*) 'pathwayRepair: k,DSB0(k): ',kcell_now,k,DSB0(k)
     call pathwayRepair(k, dth, DSB0(k,jpp), DSB(k,jpp))
     if (DSB(k,jpp) < DSB_min) DSB(k,jpp) = 0
 !    if (dbug .and.k == 1 .and. jpp == 1) write(nfres,'(a,3f8.3)') 'DSB0,DSB,repratefactor: ',DSB0(k,jpp),DSB(k,jpp),repratefactor(1)
 enddo
+endif
 enddo
 ! DSB0(k) is the count before repair, DSB(k) is the count after repair
 if (dbug) write(nflog,'(a,i4,6f8.2)') 'updateRepair (c1): kcell, DSB(:,2): ',kcell_now,DSB(:,2)
@@ -1979,6 +1996,8 @@ else
 endif
 
 Nmis = 0
+Nrep = 0
+if (NHEJ_repair) then
 ! For NHEJ pathways
 ! pre-rep fraction = (1 - f_S)
 ! post-rep fraction = f_S
@@ -1996,7 +2015,7 @@ if (isnan(dmis)) then
     stop
 endif
 Nrep = totDSB0 - totDSB
-
+endif
 ! Here we could increment 
 ! Nreptot by Nrep = totDSB0 - totDSB
 ! Pmistot by Nrep*Pmis
@@ -2010,8 +2029,9 @@ Nmis(1) = Nmis(1) + dmis*(1 - f_S)  ! doubled at mitosis
 Nmis(2) = Nmis(2) + dmis*f_S
 misjoins(1) = misjoins(1) + Nmis(1) + Nmis(2)
 
-if (kcell_now==-1) then
-    write(nflog,'(a,2i4,f8.3,e12.3,f8.2,2e12.3)') 'UpdateRepair: kcell,phase,tIR,eta,totDSB,Pmis,dmis:',kcell_now,iph,tIR,eta_NHEJ,totDSB,Pmis,dmis
+if (kcell_now==1) then
+!    write(nflog,'(a,2i4,f8.3,e12.3,f8.2,2e12.3)') 'UpdateRepair: kcell,phase,tIR,eta,totDSB,Pmis,dmis:',kcell_now,iph,tIR,eta_NHEJ,totDSB,Pmis,dmis
+!    write(nflog,'(a,i4,6f8.1)') 'updateRepair: kcell, DSB: ', kcell_now,cp%DSB(1:3,:)
 endif
 
 !if (single_cell) &
@@ -2114,6 +2134,10 @@ if (cp%phase0 < M_phase) then   ! G1, S, G2
     Paber(2) = exp(-Klethal*Nmis(2))
     cp%Psurvive = Pmit(1)*Pmit(2)*Paber(1)*Paber(2)  
     cp%Psurvive_nodouble = Pmit(1)*Pmit(2)*Paber1_nodouble*Paber(2)
+    !if (kcell_now <= 100) then
+    !    write(nflog,'(a,i4,6f8.1,5e12.3)') 'kcell,DSB,Paber,Pmit,Psurvive: ', &
+    !        kcell_now,cp%DSB(1:3,:),Paber(:),Pmit(:),cp%Psurvive
+    !endif
     if (single_cell) then
 !        write(nfres,'(a,6e12.3)') 'totNmisjoins,totNDSB: ', &
 !        2*totNmisjoins(1),totNmisjoins(2),2*totNmisjoins(1)+totNmisjoins(2),totNDSB,sum(totNDSB)

@@ -741,10 +741,12 @@ do kcell = 1,nlist0
 !   if (cp%state == DIVIDED) cycle
 !	if (cp%state == DEAD) cycle
 !	if (cp%state == DYING) cycle
+!	if (kcell == 11) write(*,'(a,2i3,f6.3)') 'grower: kcell,phase,progress: ',kcell,cp%phase,cp%progress
     if (use_SF .and. cp%state == EVALUATED) cycle
 	if (tIR > maxlife_hours) then
 		cp%Psurvive = 0
 		cp%state = EVALUATED
+		if (kcell <= 100) write(nflog,'(a,2i4,f8.3)') 'Psurvive = 0: kcell, phase, CC_act: ',kcell,cp%phase,cp%CC_act
 		cycle
 	endif	
 	ndone = ndone + 1
@@ -976,7 +978,12 @@ endif
 ! This is definitive
 iph = cp%phase
 
-f_CP = slowdown(cp)
+if (use_CPs) then
+	f_CP = slowdown(cp)
+else
+	f_CP = 1
+endif
+
 if (.not.is_radiation .and. f_CP < 1.0) then
     write(*,*) 'growcell: f_CP < 1'
     stop
