@@ -96,7 +96,7 @@ real(8) :: f_S, tIR, S_NHEJ, fsmin, eta
 real(8) :: Reff, sigma, fsigma, Z
 logical, parameter :: use_old_method = .false.   ! results the same as new method
 
-Z = 2   ! testing
+Z = 1   ! testing
 if (use_old_method) then
     if (phase == 1) then
         Reff = (1 - Reffmin)*exp(-Kclus*tIR) + Reffmin
