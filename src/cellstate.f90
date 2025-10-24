@@ -705,7 +705,7 @@ integer, parameter :: MAX_DIVIDE_LIST = 100000
 integer :: ndivide, divide_list(MAX_DIVIDE_LIST)
 logical :: drugkilled, radkilled
 logical :: divide, tagged
-real(REAL_KIND) :: maxlife_hours = 4*24
+!real(REAL_KIND) :: maxlife_hours = 4*24	! X = 4
 
 ok = .true.
 changed = .false.
@@ -743,12 +743,14 @@ do kcell = 1,nlist0
 !	if (cp%state == DYING) cycle
 !	if (kcell == 11) write(*,'(a,2i3,f6.3)') 'grower: kcell,phase,progress: ',kcell,cp%phase,cp%progress
     if (use_SF .and. cp%state == EVALUATED) cycle
-	if (tIR > maxlife_hours) then
-		cp%Psurvive = 0
-		cp%state = EVALUATED
-		if (kcell <= 100) write(nflog,'(a,2i4,f8.3)') 'Psurvive = 0: kcell, phase, CC_act: ',kcell,cp%phase,cp%CC_act
-		cycle
-	endif	
+
+
+!	if (tIR > maxlife_hours) then
+!		cp%Psurvive = 0
+!		cp%state = EVALUATED
+!!		if (kcell <= 100) write(nflog,'(a,2i4,f8.3)') 'Psurvive = 0: kcell, phase, CC_act: ',kcell,cp%phase,cp%CC_act
+!		cycle
+!	endif	
 	ndone = ndone + 1
     ! start cell simulation----------------------------------------------------------
 	ityp = cp%celltype

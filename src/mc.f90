@@ -102,6 +102,7 @@ logical :: vary_km10 = .true.
 real(8) :: jaiswal_std = 0.6    !0.6
 real(8) :: G2_D_ATM_max     != 30 now input
 real(8) :: t_switch_ATM
+real(8) :: kCPdelay, CPdelay0
 
 real(8) :: ATMsum, ATRsum, Sthsum, G2thsum(2)
 integer :: NSth, NG2th
@@ -268,6 +269,8 @@ read(nfin,*) reprate3_max
 read(nfin,*) Kclus
 read(nfin,*) G2_D_ATM_max       ! cap on D_ATM in G2
 read(nfin,*) t_switch_ATM       ! time after IR when ATM_act production goes to 0
+read(nfin,*) kCPdelay
+read(nfin,*) CPdelay0
 !call check_eta(sigma_NHEJ)
 
 !if (use_Jaiswal) then  ! we always read these parameters
@@ -2097,6 +2100,53 @@ endif
 
 end subroutine
 
+!------------------------------------------------------------------------
+!------------------------------------------------------------------------
+function get_CPdelay(cp) result(CPdelay)
+type(cell_type), pointer :: cp
+real(8) :: tIR, dt0, CPdelay
+real(8) :: T_G1h, T_Sh, T_G2h
+type(cycle_parameters_type),pointer :: ccp
+
+! Evaluate CPdelay as dt0
+! Cell was irradiated at phase0, progress0, now at mitosis (phase, progress)
+! dt0 is the time between phase0,progress0 and phase,progress for the average unirradiated cell
+dt0 = 0
+#if 0
+! This code did not assume that mitosis has been reached
+if (cp%phase == G1_phase) then
+	dt0 = dt0 +T_G1*(cp%progress - cp%progress0)
+elseif (cp%phase == S_phase) then
+	if (cp%phase0 == G1_phase) then
+		dt0 = dt0 + t_G1*(1 - cp%progress0)
+	endif
+	dt0 = dt0 +T_S*(cp%progress - cp%progress0)
+elseif (cp%phase == G2_phase) then
+	if (cp%phase0 == G1_phase) then
+		dt0 = dt0 + t_G1*(1 - cp%progress0)
+		dt0 = dt0 + t_S
+	elseif (cp%phase0 == S_phase) then
+		dt0 = dt0 + t_S*(1 - cp%progress0)
+	endif
+	dt0 = dt0 + T_G2*(cp%progress - cp%progress0)
+endif
+#endif
+ccp => cc_parameters(1)
+T_G1h = ccp%T_G1/3600
+T_Sh = ccp%T_S/3600
+T_G2h = ccp%T_G2/3600
+tIR = (istep-1)*DELTA_T/3600.0  ! hours since IR
+if (cp%phase0 == G1_phase) then
+	dt0 = dt0 + T_G1h*(1 - cp%progress0)
+	dt0 = dt0 + T_Sh + T_G2h
+elseif (cp%phase0 == S_phase) then
+	dt0 = dt0 + T_Sh*(1 - cp%progress0)
+	dt0 = dt0 + T_G2h
+else
+	dt0 = dt0 + T_G2h*(1 - cp%progress0)
+endif
+CPdelay = tIR - dt0
+end function
 
 !------------------------------------------------------------------------
 ! Clonogenic survival probability at first mitosis (McMahon, mcradio)
@@ -2109,6 +2159,7 @@ subroutine survivalProbability(cp)
 type(cell_type), pointer :: cp
 real(8) :: DSB(NP,2), totDSB(2), Nmis(2), Nlethal(2), Paber(2), Pbase, Papop, Pmit(2), Psurv
 real(8) :: Nlethal_sum, Paber1_nodouble, Nmistot, tIR,totNmis
+real(8) :: CPdelay, fCPdelay
 integer :: k, jpp, ityp
 
 DSB = cp%DSB
@@ -2129,11 +2180,18 @@ do k = 1,2
     totSFfactor(k) = totSFfactor(k) + Pmit(k)
 enddo
 if (cp%phase0 < M_phase) then   ! G1, S, G2
+    CPdelay = get_CPdelay(cp)
+    if (CPdelay < CPdelay0) then
+        fCPdelay = 1
+    else
+        fCPdelay = exp(-kCPdelay*(CPdelay - CPdelay0))
+    endif
+!    if (kcell_now <= 100) write(nflog,'(a,i4,2f8.3)') 'kcell, CPdelay, fCPdelay: ',kcell_now,CPdelay,fCPdelay
     Paber(1) = exp(-2*Klethal*Nmis(1))
     Paber1_nodouble = exp(-Klethal*Nmis(1))
     Paber(2) = exp(-Klethal*Nmis(2))
-    cp%Psurvive = Pmit(1)*Pmit(2)*Paber(1)*Paber(2)  
-    cp%Psurvive_nodouble = Pmit(1)*Pmit(2)*Paber1_nodouble*Paber(2)
+    cp%Psurvive = Pmit(1)*Pmit(2)*Paber(1)*Paber(2)*fCPdelay  
+    cp%Psurvive_nodouble = Pmit(1)*Pmit(2)*Paber1_nodouble*Paber(2)*fCPdelay
     !if (kcell_now <= 100) then
     !    write(nflog,'(a,i4,6f8.1,5e12.3)') 'kcell,DSB,Paber,Pmit,Psurvive: ', &
     !        kcell_now,cp%DSB(1:3,:),Paber(:),Pmit(:),cp%Psurvive
