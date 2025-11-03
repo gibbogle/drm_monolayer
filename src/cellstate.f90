@@ -705,7 +705,7 @@ integer, parameter :: MAX_DIVIDE_LIST = 100000
 integer :: ndivide, divide_list(MAX_DIVIDE_LIST)
 logical :: drugkilled, radkilled
 logical :: divide, tagged
-!real(REAL_KIND) :: maxlife_hours = 4*24	! X = 4
+real(REAL_KIND) :: maxlife_hours = 4*24	! X = 4
 
 ok = .true.
 changed = .false.

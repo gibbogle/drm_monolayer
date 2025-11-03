@@ -96,7 +96,7 @@ real(8) :: f_S, tIR, S_NHEJ, fsmin, eta
 real(8) :: Reff, sigma, fsigma, Z
 logical, parameter :: use_old_method = .false.   ! results the same as new method
 
-Z = 1   ! testing
+Z = -1   ! signals constant dsigma_dt
 if (use_old_method) then
     if (phase == 1) then
         Reff = (1 - Reffmin)*exp(-Kclus*tIR) + Reffmin
@@ -109,7 +109,11 @@ else
     Reff = (1 - f_S)*((1 - Reffmin)*exp(-Kclus*tIR) + Reffmin) + f_S*1.26
 endif
 fsigma = 1 - (1 - fsmin)*f_S
-sigma = S_NHEJ + tIR*dsigma_dt*(1 - f_S/Z)    ! added (1 - f_S) 6/6/25, Bill's suggestion
+if (Z > 0) then
+    sigma = S_NHEJ + tIR*dsigma_dt*(1 - f_S/Z)    ! added (1 - f_S) 6/6/25, Bill's suggestion
+else
+    sigma = S_NHEJ + tIR*dsigma_dt
+endif
 sigma = fsigma*sigma
 ! Testing
 !Reff = (1 - f_S) + f_S*1.26
