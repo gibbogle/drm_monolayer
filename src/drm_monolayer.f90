@@ -1046,10 +1046,22 @@ do itime = 1,ntimes
 !        if (.not.(idrug == 1 .and. use_inhibiter)) then     ! the flushing MEDIUM_EVENT is not added if the drug is an inhibiter
 !		    kevent = kevent + 1
             flushing = .true.
-            if (dt < 0) then    ! this signals a CDTD expt for which CA_time = flushing time, i.e. Cho1 only.  Otherwise CA_time takes the input parameter value.
+            !if (dt < 0) then    ! this signals a CDTD expt for which CA_time = flushing time, i.e. Cho1 only.  Otherwise CA_time takes the input parameter value.
+            !    dt = -dt
+            !endif
+            !flush_time_h = dt
+            !CA_time_h = dt
+
+! test fix, using dt < 0 to flag CDTD Cho2.  (Previously signified a Cho1 case.)
+! In all other cases C_time_h = flush_time_h
+! Requires all .tpl files to be recreated with sfall.exe
+            if (dt < 0) then    ! this is CDTD Cho2 case, with CA_time = 24
                 dt = -dt
+                CA_time_h = 24
+            else
                 CA_time_h = dt
             endif
+            flush_time_h = dt
 		    Eflush%etype = MEDIUM_EVENT
 ! assuming DRUG_EVENT is at time 0, and RADIATION_EVENT is at time > 0
 ! because RADIATION_EVENT t > 0 implies a delay of one time step (DELTA_T) before IR
@@ -1064,7 +1076,6 @@ do itime = 1,ntimes
 		    Eflush%lacmedium = chemo(LACTATE)%dose_conc	
 		    Eflush%full = .false.	
 		    Eflush%dose = 0
-            t_flush = dt
 		    write(nflog,'(a,i3,2f8.3)') 'define MEDIUM_EVENT: volume: ',kevent,Eflush%volume,Eflush%O2medium
 !		endif
 	elseif (trim(line) == 'MEDIUM') then
@@ -2500,7 +2511,7 @@ if (SFdone) then
 
     SFave = SFtot/Ntot
     write(*,*)
-    write(nflog,'(a,f8.2)') 'CA_time_h: ',CA_time_h
+    write(nflog,'(a,2f8.2)') 'CA_time_h, flush_time_h: ',CA_time_h,flush_time_h
     write(nflog,'(a,7i6)') 'Ncont, Ndying, Ncells0: ',Ncont,Ndying,Ncont(1)/2 + Ncont(2) + (Ncont(3)/2 + Ncont(4))/2 + Ncont(5)/2
     write(nflog,'(a,i6,2x,f8.3)') 'Ntot, SFtot: ',Ntot,SFtot
     write(*,'(a,i6)') 'Ndying: ',Ndying

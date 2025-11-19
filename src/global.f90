@@ -612,11 +612,13 @@ integer :: npet
 ! Drug half-life simulation
 logical :: use_drug_halflife
 real(REAL_KIND) :: Khalflife, drug_time, drug_conc0
-real(REAL_KIND) :: rad_dose, t_flush
+real(REAL_KIND) :: rad_dose, flush_time_h
 
 ! DNA-PK inhibition parameters
 real(8) :: fDNAPK, Chalf, fDNAPKmin
 logical :: suppress_ATR
+
+real(8) :: eta_Z = -1	! to set Z in eta_Arnould()
 
 logical :: test_run = .false.	! to check Psurvive etc
 LOGICAL :: use_no_random = .false.	! to turn off variation in cycle time, DSB_Gy
@@ -962,11 +964,11 @@ end function
 real(REAL_KIND) function rv_lognormal(p1,p2,kpar)
 integer :: kpar
 real(REAL_KIND) :: p1,p2
-real(REAL_KIND) :: R,z
+real(REAL_KIND) :: R,zz
 
 R = par_rnor(kpar)
-z = p1 + R*p2
-rv_lognormal = exp(z)
+zz = p1 + R*p2
+rv_lognormal = exp(zz)
 end function
 
 !--------------------------------------------------------------------------------------

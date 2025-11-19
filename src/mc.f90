@@ -258,7 +258,7 @@ G1_tdelay = 0
 read(nfin,*) Chalf  ! < 0 ==> do not change Krp
 suppress_ATR = (Chalf > 0)
 if (Chalf < 0) Chalf = -Chalf
-fDNAPKmin = 0.05     ! temporarily fixed
+!fDNAPKmin = 0.05     ! temporarily fixed ! moved to where cpdelay0 is read
 !read(nfin,*) Preass
 Preass = 0
 read(nfin,*) dsigma_dt
@@ -271,6 +271,7 @@ read(nfin,*) G2_D_ATM_max       ! cap on D_ATM in G2
 read(nfin,*) t_switch_ATM       ! time after IR when ATM_act production goes to 0
 read(nfin,*) kCPdelay
 read(nfin,*) CPdelay0
+fDNAPKmin = CPdelay0  !0.05     ! temporarily fixed - moved here
 !call check_eta(sigma_NHEJ)
 
 !if (use_Jaiswal) then  ! we always read these parameters
@@ -1793,8 +1794,9 @@ logical :: first = .true.
 if (.not. use_Jaiswal) return  !!!!!!!!!!!!!!!!!!!!!! testing no repair
 
 if (first .and. single_cell) then
-    write(nfres,'(a,3f8.2)') 't_flush, D, C: ',t_flush,rad_dose,drug_conc0
-    write(nfres,'(a)') '     tIR       sigma     DSB1      DSB2      Pmis      dmis      Nmis      ATR_act   ATM_act   CC_act'
+    write(nfres,'(a,3f8.2,i4,2f8.2)') 'flush_time_h, D, C, phase0, f_S0, Z: ', &
+            flush_time_h,rad_dose,drug_conc0,cp%phase0,cp%f_s_at_IR,eta_Z
+    write(nfres,'(a)') '     tIR       sigma     DSB1      DSB2      Pmis      dmis      Nmis      ATR_act   ATM_act   CC_act   fDNAPK'
     first = .false.
 endif
 dbug = (kcell_now == -9 .and. istep < 5)
@@ -2009,6 +2011,10 @@ totDSB0 = sum(DSB0(NHEJfast,:)) + sum(DSB0(NHEJslow,:))
 totDSB = sum(DSB(NHEJfast,:)) + sum(DSB(NHEJslow,:))
 Pmis = misrepairRate(totDSB0, totDSB, eta_NHEJ)
 dmis = Pmis*(totDSB0 - totDSB)
+!if (kcell_now == 1) then
+!    write(nflog,'(a,i4,2f8.1,2e12.3)') 'after misrepairRate: kcell, totDSB0, totDSB, eta_NHEJ, Pmis: ', &
+!                kcell_now,totDSB0, totDSB, eta_NHEJ, Pmis
+!endif
 if (dbug) write(nflog,'(a,7e12.4)') 'f_S,tIR,eta_NHEJ,Pmis,dmis: ',f_S,tIR,eta_NHEJ,Pmis,dmis,DSB(HR,2)
 if (isnan(dmis)) then
     write(nflog,*) 'dmis is NaN: kcell_now: ', kcell_now

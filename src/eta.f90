@@ -96,7 +96,8 @@ real(8) :: f_S, tIR, S_NHEJ, fsmin, eta
 real(8) :: Reff, sigma, fsigma, Z
 logical, parameter :: use_old_method = .false.   ! results the same as new method
 
-Z = -1   ! signals constant dsigma_dt
+!Z = -1   ! signals constant dsigma_dt
+Z = eta_Z   ! now set in global.f90
 if (use_old_method) then
     if (phase == 1) then
         Reff = (1 - Reffmin)*exp(-Kclus*tIR) + Reffmin

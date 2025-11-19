@@ -678,6 +678,38 @@ kcell = random_int(1,nlist,kpar)
 call divider(kcell,1,ALIVE,ok)
 end subroutine
 
+!------------------------------------------------------------------------
+!------------------------------------------------------------------------
+function CA_Psurvive(cp) result(P)
+type(cell_type), pointer :: cp
+real(8) :: DSB(NP,2), totDSB(2), Nmis(2), Paber(2), Pmit(2), P
+real(8) :: CPdelay, fCPdelay
+integer :: k, jpp
+
+DSB = cp%DSB
+do jpp = 1,2
+    totDSB(jpp) = sum(DSB(:,jpp))
+enddo
+Nmis = cp%Nmis
+
+do k = 1,2
+    Pmit(k) = exp(-mitRate(k)*totDSB(k))
+enddo
+if (cp%phase0 < M_phase) then   ! G1, S, G2
+    CPdelay = get_CPdelay(cp)
+    if (CPdelay < CPdelay0) then
+        fCPdelay = 1
+    else
+        fCPdelay = exp(-kCPdelay*(CPdelay - CPdelay0))
+    endif
+    Paber(1) = exp(-2*Klethal*Nmis(1))
+    Paber(2) = exp(-Klethal*Nmis(2))
+    P = Pmit(1)*Pmit(2)*Paber(1)*Paber(2)*fCPdelay 
+else
+	P = -1	! this is M-phase
+endif
+end function
+
 !-----------------------------------------------------------------------------------------
 ! Cell growth, death and division are handled here.  Division occurs when cell volume 
 ! exceeds the divide volume. 
@@ -696,7 +728,7 @@ integer :: k, kcell, nlist0, ityp, idrug, prev_phase, kpar=0
 type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
 real(REAL_KIND) :: rr(3), c(3), rad, d_desired, R, rrsum, pdeath, mitosis_duration, f_CP
-real(REAL_KIND) :: PS, Ntot, tIR
+real(REAL_KIND) :: PS, Ntot, tIR, tnow_h, Psurv
 integer :: ndone
 logical :: stuck
 real(REAL_KIND) :: fslow(3), Cdrug
@@ -726,7 +758,7 @@ if (use_drug_halflife) then
 endif
 
 tIR = (tnow - t_irradiation)/3600
-
+tnow_h = tnow/3600
 fslow = 0
 nslow = 0
 do kcell = 1,nlist0
@@ -766,6 +798,17 @@ do kcell = 1,nlist0
 	        fslow(cp%phase) = fslow(cp%phase) + f_CP
 	    endif
 	endif
+
+! This might not be correct, Bill to decide if SF is to be computed at CA
+!	if (tnow_h > CA_time_h .and. cp%state /= EVALUATED) then
+!		Psurv = CA_Psurvive(cp)
+!!		cp%Psurvive = Psurv
+!!		cp%state = EVALUATED
+!		if (kcell_now <= 10) then
+!			cp%state = EVALUATED
+!			write(*,'(a,i4,2f8.2,e12.3)') 'kcell, tnow, CA_time_h, Psurv: ',kcell_now, tnow/3600, CA_time_h,Psurv
+!		endif
+!	endif
     call log_timestep(cp, ccp, dt)
     if (cp%phase == M_phase) then
 !        if (istep == 0) write(nflog,'(a,i6,f6.3)') 'Enter M_phase: kcell, time: ',kcell_now,t_simulation/3600
