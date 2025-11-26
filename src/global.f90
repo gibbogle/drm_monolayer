@@ -618,7 +618,7 @@ real(REAL_KIND) :: rad_dose, flush_time_h
 real(8) :: fDNAPK, Chalf, fDNAPKmin
 logical :: suppress_ATR
 
-real(8) :: eta_Z = -1	! to set Z in eta_Arnould()
+real(8) :: eta_Z = 4	! to set Z in eta_Arnould()
 
 logical :: test_run = .false.	! to check Psurvive etc
 LOGICAL :: use_no_random = .false.	! to turn off variation in cycle time, DSB_Gy

@@ -2522,10 +2522,43 @@ if (SFdone) then
     endif
     write(nflog,'(a,e12.4,f8.3)') 'SFave,log10(SFave): ',SFave,log10(SFave)
     write(*,'(a,e12.4,f8.3)') 'SFave,log10(SFave): ',SFave,log10(SFave)
+
+! To check which cases give high SF
+    write(*,*) 'call record_phi_data'
+    call record_phi_data(SFave)
     call completed
     res = 1
 endif
 
+end subroutine
+
+subroutine record_phi_data(SFave)
+real(8) :: SFave
+real(8) :: totDSB(2), totNmis(2), totPsurvive, Cdrug
+integer :: kcell, jpp, fnum=19
+type(cell_type), pointer :: cp
+
+write(*,*) 'record_phi_data: ',SFave
+!OPEN(UNIT=fnum, FILE='phi.txt', STATUS='OLD', &
+!       ACTION='WRITE', POSITION='APPEND', IOSTAT=fnum)
+open(fnum,FILE='phi.txt',status = 'old',access='APPEND')
+Cdrug = event(1)%conc
+totDSB = 0
+totNmis = 0
+totPsurvive = 0
+do kcell = 1,nlist
+    cp => cell_list(kcell)
+    do jpp = 1,2
+        totDSB(jpp) = totDSB(jpp) + sum(cp%DSB(:,jpp))
+        totNmis(jpp) = totNmis(jpp) + cp%Nmis(jpp)
+    enddo
+    totPsurvive = totPsurvive + cp%Psurvive
+enddo
+write(fnum,'(8f8.3,2e12.3)') &
+rad_dose,Cdrug,flush_time_h,totDSB/nlist,totNmis/nlist,(2*totNmis(1)+totNmis(2))/nlist,totPsurvive/nlist,SFave
+write(*,'(8f8.3,2e12.3)') &
+rad_dose,Cdrug,flush_time_h,totDSB/nlist,totNmis/nlist,(2*totNmis(1)+totNmis(2))/nlist,totPsurvive/nlist,SFave
+close(fnum)
 end subroutine
 
 !-----------------------------------------------------------------------------------------
