@@ -2524,8 +2524,8 @@ if (SFdone) then
     write(*,'(a,e12.4,f8.3)') 'SFave,log10(SFave): ',SFave,log10(SFave)
 
 ! To check which cases give high SF
-    write(*,*) 'call record_phi_data'
-    call record_phi_data(SFave)
+    !write(*,*) 'call record_phi_data'
+    !call record_phi_data(SFave)
     call completed
     res = 1
 endif
