@@ -81,9 +81,23 @@ end subroutine
 !--------------------------------------------------------------------------
 function etafun(R,S) result(eta)
 real(8) :: R, S, eta
+real(8) :: skewBase = 0.7567, skewRate = 5.3924, skewCorrection
 
 !eta = (6/(4*pi*R**3))*theta15(R,S)
 eta = (6/(4*pi*R**3))*thetaM(R,S)
+
+        ! MEDRAS: 
+	    ! # Calculate 'eta' value, characterising probability of misrepair with a single DSB
+	    ! def calculateMisrepairCoefficient(self,radius=1.0):
+
+		!# Distribution is highly skewed, so apply skew correction to mean
+		!skewBase = 0.7567
+		!skewRate = 5.3924
+		!skewCorrection = skewBase+(1-skewBase)*(1-np.exp(-skewRate*self.sigma/radius))
+		!return rawEta/skewCorrection
+
+!skewCorrection = skewBase+(1-skewBase)*(1-exp(-skewRate*S/R))
+!eta = eta/skewCorrection
 end function	
 
 !--------------------------------------------------------------------------
@@ -97,7 +111,7 @@ real(8) :: Reff, sigma, fsigma, Z
 logical, parameter :: use_old_method = .false.   ! results the same as new method
 
 !Z = -1   ! signals constant dsigma_dt
-Z = eta_Z   ! now set in global.f90
+Z = eta_Z   ! now set in global.f90 - now (26/11/2025) set = kcpdelay when it is read in.
 if (use_old_method) then
     if (phase == 1) then
         Reff = (1 - Reffmin)*exp(-Kclus*tIR) + Reffmin
