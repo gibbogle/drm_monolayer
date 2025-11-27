@@ -203,8 +203,9 @@ CA_time_h = 18  ! default time, overridden by CDTD input data
 !read(nfin,*) baseRate
 baseRate = 0
 read(nfin,*) mitRate(1)
-write(*,*) 'mitrate(1): ',mitrate(1)
 read(nfin,*) mitRate(2)
+mitrate(1) = 2*mitrate(2)
+write(*,*) 'mitrate: ',mitrate
 !read(nfin,*) Msurvival
 !Msurvival = 0.1  ! not used
 read(nfin,*) Klethal
@@ -271,6 +272,7 @@ read(nfin,*) G2_D_ATM_max       ! cap on D_ATM in G2
 read(nfin,*) t_switch_ATM       ! time after IR when ATM_act production goes to 0
 read(nfin,*) kCPdelay
 read(nfin,*) CPdelay0
+eta_Z = kCPdelay
 fDNAPKmin = CPdelay0  !0.05     ! temporarily fixed - moved here
 !call check_eta(sigma_NHEJ)
 
@@ -2186,12 +2188,14 @@ do k = 1,2
     totSFfactor(k) = totSFfactor(k) + Pmit(k)
 enddo
 if (cp%phase0 < M_phase) then   ! G1, S, G2
-    CPdelay = get_CPdelay(cp)
-    if (CPdelay < CPdelay0) then
-        fCPdelay = 1
-    else
-        fCPdelay = exp(-kCPdelay*(CPdelay - CPdelay0))
-    endif
+! not using fCPdelay now
+    fCPdelay = 1
+    !CPdelay = get_CPdelay(cp)
+    !if (CPdelay < CPdelay0) then
+    !    fCPdelay = 1
+    !else
+    !    fCPdelay = exp(-kCPdelay*(CPdelay - CPdelay0))
+    !endif
 !    if (kcell_now <= 100) write(nflog,'(a,i4,2f8.3)') 'kcell, CPdelay, fCPdelay: ',kcell_now,CPdelay,fCPdelay
     Paber(1) = exp(-2*Klethal*Nmis(1))
     Paber1_nodouble = exp(-Klethal*Nmis(1))
