@@ -204,7 +204,7 @@ CA_time_h = 18  ! default time, overridden by CDTD input data
 baseRate = 0
 read(nfin,*) mitRate(1)
 read(nfin,*) mitRate(2)
-mitrate(1) = mitrate(2)
+if (mitRate(1) <= 0) mitRate(1) = mitRate(2)
 write(*,*) 'mitrate: ',mitrate
 !read(nfin,*) Msurvival
 !Msurvival = 0.1  ! not used
