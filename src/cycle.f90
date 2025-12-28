@@ -108,7 +108,9 @@ elseif (cp%phase == S_phase) then
         endif
     endif
 elseif (cp%phase == G2_phase) then
-    if (use_Jaiswal .and. use_CPs) then
+    if (use_Jaiswal .and. use_CPs) then        !!!!!!!!!!!!! to turn off CP slowdown
+ !   if (.false.) then                           !!!!!!!!!!!!! to turn off CP slowdown
+
         if (is_radiation) then      ! post-IR
             Nwrite = 0.1*3600/DELTA_T
  !           if (single_cell) write(nflog,'(f6.3,2f9.6)') istep*DELTA_T/3600.0,cp%CC_act,cp%dCC_act_dt

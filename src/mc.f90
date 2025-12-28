@@ -100,7 +100,7 @@ logical :: NHEJ_repair = .true.     !!!!! (true, true) = normal repair, normal C
 logical :: use_CPs = .true.
 logical :: vary_km10 = .true.
 real(8) :: jaiswal_std = 0.6    !0.6
-real(8) :: G2_D_ATM_max     != 30 now input
+real(8) :: G2_D_ATM_max
 real(8) :: t_switch_ATM
 real(8) :: kCPdelay, CPdelay0
 
@@ -178,7 +178,7 @@ logical, parameter :: write_nfres = .false.
 type(cell_type), pointer :: cpnow
 real(8) :: damage(3)
 
-!logical :: use_logistic
+logical :: use_EQ  ! this is to use katm1g1,2g1 for katm1g1d,2g1d
 
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
@@ -215,10 +215,10 @@ write(*,*) 'klethal: ',klethal
     do j = 1,2
         do iph = 1,2
             read(nfin,*) K_ATM(iph,j)
-            write(nflog,*) j,iph,K_ATM(iph,j)
+            write(nflog,*) iph,j,K_ATM(iph,j)
         enddo
      enddo
-    write(nflog,*) 'K_ATR'
+!    write(nflog,*) 'K_ATR'
 !    do j = 3,4
     !do j = 1,2
     !    do iph = 2,2
@@ -226,10 +226,14 @@ write(*,*) 'klethal: ',klethal
     !        write(nflog,*) j,iph,K_ATR(iph,j)
     !    enddo
     !enddo
-
 read(nfin,*) KATM1G1D
 read(nfin,*) KATM2G1D
-
+use_EQ = (KATM1G1D <= 0)
+if (use_EQ) then
+   KATM1G1D = K_ATM(1,1) 
+   KATM2G1D = K_ATM(1,2) 
+endif
+write(nflog,'(a,2f8.4)') 'KATM1G1D, KATM2G1D: ',KATM1G1D, KATM2G1D
 !read(nfin,*) repRate(NHEJfast)
 !read(nfin,*) repRate(NHEJslow)
 !read(nfin,*) repRate(HR)
@@ -393,6 +397,15 @@ elseif (expt_ID == 15) then    ! this is the output_DNA_rate case (EDUALL, D6C3)
     use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
     nphase_hours = 2    ! To fit S ATM parameters to EDU data
     phase_hour(1:2) = [1.0,5.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+elseif (expt_ID == 16) then    ! this is the output_DNA_rate case (EDUALL, D6C3)
+    compute_cycle = .false.
+    output_DNA_rate = .true.
+    use_SF = .false.    ! in this case no SFave is recorded, there are multiple phase distribution recording times
+    nphase_hours = 18    ! To generate a smooth plot
+!    phase_hour(1:2) = [1.0,5.0]   ! these are hours post irradiation, incremented when irradiation time is known (in ReadProtocol)
+    do j = 1,nphase_hours
+        phase_hour(j) = j*0.25
+    enddo
 
 elseif (expt_ID == 111) then    ! this is the compute_cycle case for PDTEST
     expt_tag = "PDTEST"
@@ -769,7 +782,7 @@ else    ! not using this
         DSB0(NHEJslow,2) = 0
     endif
 endif
-if (kcell_now == 9) then
+if (kcell_now == 1) then
     write(nflog,'(a,i6,3f8.2)') 'cellIrradiation: kcell,f_S,NG1,totDSB0: ',kcell_now,f_S,NG1,totDSB0
     write(nflog,'(a,5f8.3)') 'Npre,Npost,pHR,fsup,pComplex: ',Npre,Npost,pHR,fsup,pComplex
 endif
@@ -811,7 +824,7 @@ cp%DSB0 = DSB0
 cp%totDSB0 = totDSB0
 !cp%Nlethal = 0
 cp%Nmis = 0
-if (kcell_now == 9) write(nflog,'(a,i4,6f8.2)') 'updateRepair: kcell, DSB(:,2): ',kcell_now,cp%DSB(:,2)
+if (kcell_now == 1) write(nflog,'(a,i4,6f8.2)') 'updateRepair: kcell, DSB(:,2): ',kcell_now,cp%DSB(:,2)
 
 totPmit = 0
 totPaber = 0
@@ -1151,8 +1164,9 @@ k2 = K_ATM(iph,2)
 
 if (iph == G1_phase) then
     if (cp%birthtime > t_irradiation) then      ! post-mitosis
-        if (cp%rad_state == G1_phase) then      ! this cell was irradiated in G
+        if (cp%rad_state == G1_phase) then      ! this cell was irradiated in G1
             fATM = 1
+            write(nflog,'(a,2i6,2f8.3,i6)') 'in get_slowdown_factors: kcell,iph,birthtime,t_irrad,rad_state: ',kcell_now,iph,cp%birthtime/3600,t_irradiation/3600,cp%rad_state
             return
         else
             if (use_SF .and. .not. allow_second_mitosis) then
@@ -1169,7 +1183,7 @@ endif
     
 !if (single_cell) then
 !    write(*,'(a,3e12.3)') 'k3,k4,ATM_act: ',k3,k4,cp%ATM_act
-!    write(nflog,'(a,3e12.3)') 'k3,k4,ATM_act: ',k3,k4,cp%ATM_act
+!    write(nflog,'(a,3e12.3)') 'k3,k4,ATM_act: ',k3,k4,cp%ATM_actFtIR, CC,
 !endif
 !if (single_cell) write(nflog,'(a,i6,3e12.4)') 'get_slowdown_factors: kcell,k3,k4,atm: ',kcell_now,k3,k4,atm
 if (use_exp_slowdown) then
@@ -1180,7 +1194,7 @@ else
     else
         fATM = 1.0
     endif
-    if (kcell_now == -1) write(nflog,'(a,2i5,2e12.3)') 'iph, kcell, atm, fATM: ',iph,kcell_now,atm,fATM
+    !if (kcell_now == 9) write(nflog,'(a,2i5,4e12.3)') 'iph, kcell, atm,k1,k2, fATM: ',iph,kcell_now,atm,k1,k2,fATM
 endif
 !if (kcell_now == 8) write(nflog,'(a,2i6,4e12.3)') 'slowdown: kcell,iph,k3,k4,atm,fATM: ',kcell_now,iph,k3,k4,atm,fATM
 if (iph == S_phase .and. use_ATR) then
@@ -1228,7 +1242,7 @@ else
     else
         dt = DELTA_T
         call get_slowdown_factors(cp,fATM, fATR)
-if (kcell_now == -2) write(nflog,'(a,2i4,2f8.3)') 'iph, kcell,fATM,fATR: ',iph, kcell_now,fATM,fATR
+!if (kcell_now == 9) write(nflog,'(a,2i4,2f8.3)') 'iph, kcell,fATM,fATR: ',iph, kcell_now,fATM,fATR
         if (use_addATMATRtimes) then    ! don't do this
             dt = DELTA_T
             fslow = max(0.0,fATM + fATR - 1)
@@ -1238,7 +1252,7 @@ if (kcell_now == -2) write(nflog,'(a,2i4,2f8.3)') 'iph, kcell,fATM,fATR: ',iph, 
             !    fslow = fDNAPK*fslow
             !endif
 !            if (single_cell) write(nflog,'(a,3f8.3)') 'fATM, fATR, fslow: ',fATM, fATR, fslow
-            if (kcell_now <= -10) then
+            if (kcell_now == -9) then
                 write(*,'(a,i6,i4,3f6.3)') 'fslow: ',kcell_now,iph,fATM,fATR,fslow
                 write(nflog,'(a,i6,i4,3f6.3)') 'fslow: ',kcell_now,iph,fATM,fATR,fslow
             endif
@@ -1557,6 +1571,19 @@ do it = 1,Nt
     !endif
     t = it*dt
 !    if (t_G2 <= 0.1 .and. it <= 10) write(nflog,'(a,3f8.4)') 'D_ATM,ATM_act,ATM_inact: ',D_ATM,ATM_act,ATM_inact
+
+!if (ATM_act /= 0) then
+!    write(*,*) 'kcell, it, ATM_act: ',kcell_now,it,ATM_act
+!    write(*,*) 'dATM_plus, minus: ',dATM_plus, dATM_minus
+!    write(*,*) 'kmp1, kmp2, kmdd: ',kmp1,kmp2,kmdd
+!    stop
+!endif
+!if (ATR_act /= 0) then
+!    write(*,*) 'kcell, it, ATR_act: ',kcell_now,it,ATR_act
+!    stop
+!endif
+    !if (kcell_now == 9) write(nflog,'(a,i6,6f8.3,e12.3)') 'it,D_NHEJ,D_HR,,ATM_inact,ATM_act,dATM_plus,dATM_minus,ATM_act: ',it,D_NHEJ,D_HR,ATM_inact,ATM_act,dATM_plus,dATM_minus,ATM_act
+
 enddo
 endif
 
@@ -1588,6 +1615,7 @@ t = t_simulation/3600.
 !if (kcell_now == 18) write(nflog,'(a,2i4,f8.2,2e12.3,f8.3)') 'Jaiswal_update: kcell,iph,tIR,ATM_act,ATR_act,CC_act: ',kcell_now,iph,tIR,ATM_act,ATR_act,CC_act
 !write(nflog,'(a,9f8.3)') 'tIR,CC_act,dCC_act_dt,d(1:3), ATM_act, ATR_act: ',tIR,CC_act,dCC_act_dt, d(1:3), ATM_act, ATR_act
 !write(nflog,'(a,4f8.3,e12.3)') 'tIR, D_ATM, ATR_act, ATM_act,dCC_act_dt: ',tIR,D_ATM, ATR_act, ATM_act,dCC_act_dt
+!if (kcell_now == 9) stop
 end subroutine
 
 !--------------------------------------------------------------------------
@@ -1786,7 +1814,7 @@ logical :: use_DSBinfid = .true.
 real(8) :: DSB_min = 1.0e-3
 logical :: use_totMis = .true.      ! was false!
 logical :: use_ATM != .false.
-logical :: dbug
+logical :: dbug = .false.
 logical :: use_G1_tdelay = .false.
 logical :: do_G1_Jaiswal
 logical :: use_constant_V = .false.
@@ -1801,10 +1829,10 @@ if (first .and. single_cell) then
     write(nfres,'(a)') '     tIR       sigma     DSB1      DSB2      Pmis      dmis      Nmis      ATR_act   ATM_act   CC_act   fDNAPK'
     first = .false.
 endif
-dbug = (kcell_now == -9 .and. istep < 5)
+dbug = (kcell_now == 9)
 
-if (dbug) write(nflog,'(a,i4,6f8.2)') 'updateRepair (a): kcell, DSB(:,2): ',kcell_now,cp%DSB(:,2)
-if (cp%state == EVALUATED) return
+!if (dbug) write(nflog,'(a,i4,6f8.2)') 'updateRepair (a): kcell, DSB(:,2): ',kcell_now,cp%DSB(:,2)
+if (cp%state == EVALUATED) return!
 dth = dt/3600   ! hours
 use_ATM = .not.use_fixed_CP
 phase = cp%phase
@@ -1845,7 +1873,7 @@ if (Preass > 0 .and. phase >= S_phase) then
     enddo
     enddo
 endif
-if (dbug) write(nflog,'(a,i4,6f8.2)') 'updateRepair (b): kcell, DSB(:,2): ',kcell_now,DSB(:,2)
+!if (dbug) write(nflog,'(a,i4,6f8.2)') 'updateRepair (b): kcell, DSB(:,2): ',kcell_now,DSB(:,2)
 DSB0 = DSB     ! initial DSBs for this time step
 if (DSB0(TMEJ,1) /= 0) then
     write(nflog,*) 'b DSB0(TMEJ,1): ',DSB0(TMEJ,1)
@@ -1903,7 +1931,8 @@ if (((iph == G1_phase).and.do_G1_Jaiswal).or.(iph >= S_phase)) then
     call Jaiswal_update(cp,dth)  ! try this
 !    if (iph == G2_phase) write(*,'(a,2i6,e12.3)') 'did Jaiswal: ',kcell_now, cp%generation, cp%ATM_act
 endif
-if (dbug) write(nflog,'(a,i4,6f8.2)') 'updateRepair (c): kcell, DSB(:,2): ',kcell_now,DSB(:,2)
+!if (dbug) write(nflog,'(a,2i4,6f8.2)') 'updateRepair (c): kcell, phase,DSB(1:3,:): ',kcell_now,cp%phase,DSB(1:3,:)
+!if (dbug) write(nflog,*) 'repratefactor: ',repratefactor
 
 if ((iph == 1 .and. use_G1_pATM) .or. (iph == 2 .and. use_S_pATM)) then 
     call updateATM(iph,cp%pATM,ATM_DSB,dth)     ! updates the pATM mass through time step = dth
@@ -1921,7 +1950,7 @@ enddo
 endif
 enddo
 ! DSB0(k) is the count before repair, DSB(k) is the count after repair
-if (dbug) write(nflog,'(a,i4,6f8.2)') 'updateRepair (c1): kcell, DSB(:,2): ',kcell_now,DSB(:,2)
+!if (dbug) write(nflog,'(a,2i4,6f8.2)') 'updateRepair (c1): istep, kcell, DSB(1:3,:): ',istep,kcell_now,DSB(1:3,:)
 
 ! The following commented out code follows MEDRAS
 #if 0
@@ -2013,11 +2042,12 @@ totDSB0 = sum(DSB0(NHEJfast,:)) + sum(DSB0(NHEJslow,:))
 totDSB = sum(DSB(NHEJfast,:)) + sum(DSB(NHEJslow,:))
 Pmis = misrepairRate(totDSB0, totDSB, eta_NHEJ)
 dmis = Pmis*(totDSB0 - totDSB)
+!if (dbug) write(nflog,'(a,2i4,3f8.3,e12.3,f6.3)') 'DSB0,DSB,Pmis,dmis: ',istep,cp%phase,cp%progress,totDSB0,totDSB,Pmis,dmis
 !if (kcell_now == 1) then
 !    write(nflog,'(a,i4,2f8.1,2e12.3)') 'after misrepairRate: kcell, totDSB0, totDSB, eta_NHEJ, Pmis: ', &
 !                kcell_now,totDSB0, totDSB, eta_NHEJ, Pmis
 !endif
-if (dbug) write(nflog,'(a,7e12.4)') 'f_S,tIR,eta_NHEJ,Pmis,dmis: ',f_S,tIR,eta_NHEJ,Pmis,dmis,DSB(HR,2)
+!if (dbug) write(nflog,'(a,7e12.4)') 'f_S,tIR,eta_NHEJ,Pmis,dmis: ',f_S,tIR,eta_NHEJ,Pmis,dmis,DSB(HR,2)
 if (isnan(dmis)) then
     write(nflog,*) 'dmis is NaN: kcell_now: ', kcell_now
     write(nflog,'(a,8f8.3)') 'NHEJ DSBs: ',DSB(1:3,1:2)
@@ -2066,7 +2096,7 @@ if (sum(DSB0(TMEJ,:)) > 0) then ! not used currently
     Nmis(2) = Nmis(2) + dmis*f_S
     misjoins(2) = misjoins(2) + Nmis(1) + Nmis(2)
 endif
-if (dbug) write(nflog,'(a,i4,6f8.2)') 'updateRepair (d): kcell, DSB(:,2): ',kcell_now,DSB(:,2)
+!if (dbug) write(nflog,'(a,i4,6f8.2)') 'updateRepair (d): kcell, DSB(:,2): ',kcell_now,DSB(:,2)
 cp%DSB = DSB
 cp%Nmis = cp%Nmis + Nmis
 if (single_cell) then
@@ -2378,6 +2408,7 @@ enddo
 DNA_rate = rate_sum/cnt
 atm_ave = atm_ave/cnt
 !write(*,'(a,3f8.3,e12.3)') 'DNA growth rate factor: ',DNA_rate,k3,k4,atm_ave
+write(nflog,'(a,2i8,e12.3)') 'get_DNA_synthesis_rate, istep,cnt,DNA_rate: ',istep,cnt,DNA_rate
 end subroutine
 
 #if 0

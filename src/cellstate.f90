@@ -80,13 +80,13 @@ type(cycle_parameters_type), pointer :: ccp
 ok = .true.
 Nirradiated = Ncells
 t_irradiation = t_simulation
-write(nflog,'(a,f8.3,2i6)') 'Irradiation: t, Nirradiated,istep: ',t_irradiation/3600,Nirradiated,istep
+write(nflog,'(a,f8.3,i8,i4)') 'Irradiation: t, Nirradiated,istep: ',t_irradiation/3600,Nirradiated,istep
 call get_phase_distribution(phase_count)
 total = sum(phase_count)
 ph_dist = 100*phase_count/total
 write(nflog,'(a,5i6)') 'phase count: ',phase_count
 write(nflog,'(a,5f8.2)') 'phase distribution: ',ph_dist
-
+recorded_phase_dist(1,:) = ph_dist(:)
 if (no_S_Iliakis) then
 	write(*,*) '*** Iliakis is suppressed in S-phase ***'
 	write(nflog,*) '*** Iliakis is suppressed in S-phase ***'
@@ -199,7 +199,7 @@ counts = 0
 		else
 			fsup = 1.0
 		endif
-		if (kcell == 9) write(nflog,'(a,i4,4f8.3)') 'Irradiation: kcell,nIliakis,ksup,dose_threshold,fsup: ',kcell,nIliakis,ksup,dose_threshold,fsup
+		if (kcell == 1) write(nflog,'(a,i4,4f8.3)') 'Irradiation: kcell,nIliakis,ksup,dose_threshold,fsup: ',kcell,nIliakis,ksup,dose_threshold,fsup
         SER = 1 ! turn off SER - Bill confirmed
         call cellIrradiation(cp,dose)
 !        call radiation_damage(cp, ccp, dose, SER, tmin)
@@ -265,7 +265,7 @@ repratefactor(1:2) = fDNAPK
 repratefactor(3) = 1
 
 write(*,*) 'Irradiation: phase counts: ',counts
-write(nflog,*) 'At irradiation, total DSB: ',total
+write(nflog,*) 'At irradiation, istep, total DSB: ',istep, total
 end subroutine
 
 #if 0
@@ -559,6 +559,8 @@ if (.not.now) then
         ! cell was already tagged to die
     else
     	cp%state = DYING
+write(*,*) 'cp%state = DYING in CellDies'
+stop
     	cp%tag_time = tnow;
     	cp%apoptosis_delay = ApoptosisDelay(ityp)
 	    Ndying(ityp) = Ndying(ityp) + 1
@@ -729,7 +731,7 @@ type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
 real(REAL_KIND) :: rr(3), c(3), rad, d_desired, R, rrsum, pdeath, mitosis_duration, f_CP
 real(REAL_KIND) :: PS, Ntot, tIR, tnow_h, Psurv
-integer :: ndone
+integer :: ndone, cnt
 logical :: stuck
 real(REAL_KIND) :: fslow(3), Cdrug
 integer :: nslow(3)
@@ -761,6 +763,7 @@ tIR = (tnow - t_irradiation)/3600
 tnow_h = tnow/3600
 fslow = 0
 nslow = 0
+call output_DSBs(tIR)
 do kcell = 1,nlist0
 	kcell_now = kcell
 	if (colony_simulation) then
@@ -809,7 +812,10 @@ do kcell = 1,nlist0
 !			write(*,'(a,i4,2f8.2,e12.3)') 'kcell, tnow, CA_time_h, Psurv: ',kcell_now, tnow/3600, CA_time_h,Psurv
 !		endif
 !	endif
+
+	if (kcell == -1) write(nflog,'(a,2i4,6f6.1)') 'pre-log_timestep: istep, phase, DSB: ',istep, cp%phase, cp%DSB(1:3,1:2)
     call log_timestep(cp, ccp, dt)
+	if (kcell == -1) write(nflog,'(a,2i4,6f6.1)') 'post-log_timestep: istep, phase, DSB: ',istep, cp%phase, cp%DSB(1:3,1:2)
     if (cp%phase == M_phase) then
 !        if (istep == 0) write(nflog,'(a,i6,f6.3)') 'Enter M_phase: kcell, time: ',kcell_now,t_simulation/3600
 !        write(nflog,*)
@@ -821,7 +827,7 @@ do kcell = 1,nlist0
 !        if (kcell_now <= 10) write(nflog,'(a,i6,3f8.2)') 'grower: start mitosis counter',kcell_now, tnow/3600, istep*DELTA_T/3600, t_simulation/3600
     endif
 !if (istep > 230) write(*,'(a,4i6,f8.3)') 'left kcell, phase0, phase, state, CC_act: ',kcell,cp%phase0,cp%phase,cp%state,cp%CC_act
-	
+	if (kcell == -1) write(nflog,'(a,2i4,6f6.1)') 'istep, phase, DSB: ',istep, cp%phase, cp%DSB(1:3,1:2)
     if (cp%phase == dividing) then
 		drugkilled = .false.
 		do idrug = 1,ndrugs_used
@@ -1034,7 +1040,7 @@ if (.not.is_radiation .and. f_CP < 1.0) then
     stop
 endif
 cp%fp = metab*f_CP/cp%fg(cp%phase)
-if (kcell_now == -8) write(nflog,'(a,i6,4e13.4)') 'growcell: ',kcell_now,metab,f_CP,cp%fg(cp%phase),cp%fp
+!if (kcell_now == 9) write(nflog,'(a,i6,4e13.4)') 'growcell: ',kcell_now,metab,f_CP,cp%fg(cp%phase),cp%fp
 cp%dVdt = cp%fp*max_growthrate(ityp)
 Cdrug(:) = cp%Cin(DRUG_A:DRUG_A+1)
 Vin_0 = cp%V
@@ -1387,5 +1393,32 @@ integer :: kpar = 0
 r = 1 + (par_uni(kpar) - 0.5)*dr
 end function
 
+!-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+subroutine output_DSBs(tIR)
+real(REAL_KIND) :: tIR
+real(real_KIND) :: totDSB(3,2), Pmit(2), PS, totPS
+integer :: kcell, i, j, k, cnt
+type(cell_type), pointer :: cp
+
+totDSB = 0
+totPS = 0
+cnt = 0		! count EVALUATED cells
+do kcell = 1,nlist
+	cp => cell_list(kcell)
+	if (cp%state == EVALUATED) cnt = cnt + 1
+!	write (nflog,'(i4,2(3f6.1,2x))') kcell,((cp%DSB(j,i),j=1,3),i=1,2)
+	do i = 1,2
+		do j = 1,3
+			totDSB(j,i) = totDSB(j,i) + cp%DSB(j,i)
+		enddo
+		Pmit(i) = exp(-mitRate(i)*sum(cp%DSB(:,i)))
+	enddo
+	PS = Pmit(1)*Pmit(2)
+	totPS = totPS + PS
+enddo
+totDSB = totDSB/nlist
+!write(nflog,'(a,f8.3,2x,i5,2x,2(3f8.2,2x),2f10.2,e12.3)') 'tIR: ',tIR,cnt,((totDSB(j,i),j=1,3),i=1,2),sum(totDSB(:,1)),sum(totDSB(:,2)),totPS/nlist
+end subroutine
 
 end module

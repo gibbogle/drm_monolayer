@@ -873,7 +873,7 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine ReadDrugData(nf)
 integer :: nf
-integer :: idrug, im, ictyp, ival
+integer :: idrug, im, ictyp, ival, i
 character*(16) :: drugname
 
 write(logmsg,*) 'ReadDrugData'
@@ -951,7 +951,11 @@ enddo
 read(nf,'(a)') drug(1)%name
 drug(1)%use_metabolites = .false.
 drug(1)%nmetabolites = 1
-drug(1)%halflife(0) = 0       ! will be set to 0
+!!!drug(1)%halflife(0) = 0       ! to investigate SF vs halflife
+do i = 1,4
+    read(nf,*) 
+enddo
+read(nf,*) drug(1)%halflife(0)
 if (drug(1)%halflife(0) == 0) then
     Khalflife = 0
 else
@@ -1616,6 +1620,7 @@ if (single_cell) then
     write(nflog,*) 'Initial phase, progress: ',cp%phase,cp%progress
     write(*,*)
 endif
+!write(nflog,'(a,2i4,f6.3)') 'setInitialCellCycleStatus: kcell, phase: ', kcell, cp%phase,cp%progress
 cp%t_divide_last = -t
 end subroutine
 
@@ -2067,12 +2072,14 @@ integer :: phase_count(0:4), nG2
 real(REAL_KIND) :: total, tadjust
 real(REAL_KIND) :: fATM, fATR, fCP, dtCPdelay, dtATMdelay, dtATRdelay, ATM_DSB, DNA_rate
 real(REAL_KIND) :: pATM_sum, pATR_sum, DSB_sum, tIR
-real(REAL_KIND) :: SFtot, Pp, Pd, newSFtot, total_mitosis_time, V0
+real(REAL_KIND) :: SFtot, Pptot, Pp, Pd, newSFtot, total_mitosis_time, V0
 real(REAL_KIND) :: Cdrug
 integer :: Ntot, Ndying, Ncont(5),Ngen1
 logical :: PEST_OK
 logical :: ok = .true.
 logical :: dbug
+
+!write(nflog,*) 'istep = ',istep
 
 !write(nflog,*) 'istep,npar_uni,npar_rnor: ',istep,npar_uni,npar_rnor
 if (drug_conc0 == 0) then
@@ -2089,7 +2096,7 @@ endif
 
 cp => cell_list(1)
 tIR = (istep-1)*DELTA_T/3600.0
-if (single_cell) write(nflog,'(a,f6.2,3f8.3)') 'tIR, CC, ATR, ATM_act: ',tIR,cp%CC_act,cp%ATR_act,cp%ATM_act
+if (single_cell) write(nflog,'(a,f6.2,i4,5f8.3)') 'tIR,phase,progress,CC, ATR, ATM_act,fp: ',tIR,cp%phase,cp%progress,cp%CC_act,cp%ATR_act,cp%ATM_act,cp%fp
 !if (mod(istep,10) == 0) write(nflog,'(a,2i4,f8.2,3e12.3)') 'kcell,istep,tIR,ATM_act,ATR_act,CC_act: ', kcell_now,istep,tIR,cp%ATM_act,cp%ATR_act,cp%CC_act
 !write(nfres,'(a,3i6,2f6.2,e12.3)') 'istep,kcell,phase,f_S,tIR,ATM_act: ',istep,1,cp%phase,cp%progress,tIR,cp%ATM_act
 !write(nfres,'(2i6,2f12.2,3e12.3)') istep,cp%phase,cp%progress,tIR,cp%ATR_act,cp%ATM_act,cp%CC_act
@@ -2298,10 +2305,10 @@ if (compute_cycle .or. output_DNA_rate) then
         if (real(istep)/nthour >= phase_hour(next_phase_hour)) then   ! record phase_dist
             write(*,*) 'Reached phase hour: ',next_phase_hour,phase_hour(next_phase_hour)
             if (next_phase_hour <= 9) then
-                write(*,'(a,4i8)') 'count: ',phase_count(1:4)
-                write(nflog,*) 'Reached phase hour: ',next_phase_hour,phase_hour(next_phase_hour)
-                write(nflog,'(a,4i8)') 'count: ',phase_count(1:4)
-                write(nflog,'(a,4f8.3)') 'dist: ',phase_dist(1:4)
+!                write(*,'(a,4i8)') 'count: ',phase_count(1:4)
+                write(nflog,*) 'Reached phase hour: ',istep,nthour,next_phase_hour,phase_hour(next_phase_hour)
+!                write(nflog,'(a,4i8)') 'count: ',phase_count(1:4)
+!                write(nflog,'(a,4f8.3)') 'dist: ',phase_dist(1:4)
 !                write(nflog,'(a,4f8.3)') '%dist: ',100*phase_dist(1:4)/sum(phase_dist(1:4))
             endif
 	        if (compute_cycle) then
@@ -2475,9 +2482,11 @@ if (SFdone) then
     SFtot = 0
     Ndying = 0
     Ncont = 0
+    Pptot = 0
     do kcell = 1,nlist
         cp => cell_list(kcell)
         Pp = cp%Psurvive
+        Pptot = Pptot + cp%Psurvive
 !        if (cp%state == EVALUATED) then    ! now all cells at M are EVALUATED, Psurvive = 0 identifies cells initially DYING
         if (Pp > 0) then
             if (cp%mitosis_time < CA_time_h*3600) then  ! adjust for 2 daughters
@@ -2489,6 +2498,7 @@ if (SFdone) then
                 else
                     Ncont(1) = Ncont(1) + 2
                 endif
+!                write(nflog,'(i4,a,e12.3,a,e12.3)') kcell,' Pp ',Pp,' 2*Pd ',2*Pd
             else                                        ! no daughter adjustment
                 Ntot = Ntot + 1
                 SFtot = SFtot + Pp
@@ -2497,6 +2507,7 @@ if (SFdone) then
                 else
                     Ncont(2) = Ncont(2) + 1
                 endif
+!                write(nflog,'(i4,a,e12.3,a,e12.3)') kcell,' Pp ',Pp
             endif
         else                                            ! state = DYING, Psurvive = 0
             Ntot = Ntot + 1
@@ -2513,7 +2524,10 @@ if (SFdone) then
     write(*,*)
     write(nflog,'(a,2f8.2)') 'CA_time_h, flush_time_h: ',CA_time_h,flush_time_h
     write(nflog,'(a,7i6)') 'Ncont, Ndying, Ncells0: ',Ncont,Ndying,Ncont(1)/2 + Ncont(2) + (Ncont(3)/2 + Ncont(4))/2 + Ncont(5)/2
-    write(nflog,'(a,i6,2x,f8.3)') 'Ntot, SFtot: ',Ntot,SFtot
+    write(nflog,'(a,i6,2x,f8.1)') 'Ntot, SFtot: ',Ntot,SFtot
+    write(*,'(a,i6,2x,f8.1)') 'Ntot, SFtot: ',Ntot,SFtot
+    write(nflog,'(a,i6,2x,2f9.3)') 'nlist, Pptot, Ppave : ',nlist,Pptot,Pptot/nlist
+    write(*,'(a,i6,2x,2f9.3)') 'nlist, Pptot, Ppave : ',nlist,Pptot,Pptot/nlist
     write(*,'(a,i6)') 'Ndying: ',Ndying
     if (SFave == 0) then
         SFave = 0.00001

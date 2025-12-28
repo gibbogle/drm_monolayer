@@ -1318,6 +1318,7 @@ else
 endif
 y = percent/100
 y = (1 - fDNAPKmin)*y + fDNAPKmin
+!write(nflog,'(a,4f8.3)') 'logistic: C, Chalf, fDNAPKmin, y: ',C, Chalf, fDNAPKmin, y
 end function
 
 subroutine check_logistic
