@@ -87,7 +87,7 @@ real(8) :: Preass   ! rate of reassignment to pathway 4, TMEJ (prob of reass/hou
 !logical :: alt_EJ_suppressed = .false.
 
 ! Jaiswal formulation (26/09/22)
-real(8) :: Kcc, Krd, Krp_max, Krp_min, Kmp1, Kmp2, Kccrd, Kccmd, Kmd
+real(8) :: Kcc, Krd, Krp_max, Krp_min, Kmp1, Kmp2, Kccrd, Kccmd, Kmd, Kmd_S
 real(8) :: Km1, Km10, Km10t
 real(8) :: kmmp, kmmd               ! ATM production, decay
 real(8) :: kmrp, kmrd               ! ATR production, decay
@@ -285,6 +285,11 @@ fDNAPKmin = CPdelay0  !0.05     ! temporarily fixed - moved here
     read(nfin,*) Krd
     read(nfin,*) Krp_max
     read(nfin,*) Krp_min
+
+    ! piggy-back on krp_min to vary kmd_S, kmd for S_phase
+    Kmd_S = Krp_min
+    Krp_min = 0
+
     read(nfin,*) Kmp1
     read(nfin,*) Kmp2
     read(nfin,*) Kccrd
@@ -1367,6 +1372,7 @@ real(8) :: Tlag = 2 ! hours
 
 if (.not. use_CPs) return
 
+iph = cp%phase
 if (suppress_ATR) then
 !    krp_min = mfac*krp
     Krpp = fDNAPK*(Krp_max - krp_min) + krp_min
@@ -1375,15 +1381,16 @@ else
 endif
 if (slow_ATM_decay) then
     Kmdd = fDNAPK*Kmd
+    if (iph == S_phase) Kmdd = fDNAPK*Kmd_S
 else
     Kmdd = Kmd
+    if (iph == S_phase) Kmdd = Kmd_S
 endif
 !if (kcell_now == 363) then
 !    write(nflog,'(a,i6,2f8.3)') 'Jaiswal_update: kcell, tnow, CC_act: ', kcell_now,tnow/3600,cp%CC_act
 !    write(nflog,'(a,i4,3f8.3)') 'phase, progress, ATR_act, ATM_act : ',cp%phase,cp%progress,cp%ATR_act,cp%ATM_act 
 !endif
 tIR = (tnow - t_irradiation)/3600   ! hours
-iph = cp%phase
 if (iph >= 7) iph = iph - 6     ! checkpoint phase numbers --> phase number, to continue ATM and ATR processes through checkpoints
 if (iph > G2_phase) then
     return
