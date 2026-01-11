@@ -180,6 +180,8 @@ real(8) :: damage(3)
 
 logical :: use_EQ  ! this is to use katm1g1,2g1 for katm1g1d,2g1d
 
+logical :: use_Kmd_S = .false.      ! This is to define a separate Kmd value for S phase by piggy-backing on krp_min
+
 
 !DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
@@ -284,17 +286,19 @@ fDNAPKmin = CPdelay0  !0.05     ! temporarily fixed - moved here
 !    read(nfin,*) Kcc     ! this is computed for each cell
     read(nfin,*) Krd
     read(nfin,*) Krp_max
-    read(nfin,*) Krp_min
-
-    ! piggy-back on krp_min to vary kmd_S, kmd for S_phase
-    Kmd_S = Krp_min
-    Krp_min = 0
-
+    read(nfin,*) Krp_min        
     read(nfin,*) Kmp1
     read(nfin,*) Kmp2
     read(nfin,*) Kccrd
     read(nfin,*) Kccmd
     read(nfin,*) Kmd
+    ! piggy-back on krp_min to vary kmd_S, kmd for S_phase
+    if (use_Kmd_S) then
+        Kmd_S = Krp_min
+        Krp_min = 0
+    else
+        Kmd_S = Kmd
+    endif
     read(nfin,*) Kmccp
     read(nfin,*) Kmccmd
     read(nfin,*) Kmccrd
@@ -1182,6 +1186,7 @@ if (iph == G1_phase) then
             endif
             k1 = KATM1G1D
             k2 = KATM2G1D
+!            write(nflog,'(a,3i6)') 'get_slowdown_factors: G1, post-mitosis: using KATM1G1D: kcell, iph, IR in phase: ',kcell_now,iph, cp%rad_state
         endif
     endif
 endif
@@ -1201,6 +1206,10 @@ else
     endif
     !if (kcell_now == 9) write(nflog,'(a,2i5,4e12.3)') 'iph, kcell, atm,k1,k2, fATM: ',iph,kcell_now,atm,k1,k2,fATM
 endif
+if (k1 == 0) then
+    write(*,*) 'iph, cp%phase, k1, k2: ',iph, cp%phase, k1, k2
+    stop
+endif
 !if (kcell_now == 8) write(nflog,'(a,2i6,4e12.3)') 'slowdown: kcell,iph,k3,k4,atm,fATM: ',kcell_now,iph,k3,k4,atm,fATM
 if (iph == S_phase .and. use_ATR) then
     k1 = K_ATR(iph,1)   !*G2_katr3_factor
@@ -1212,6 +1221,7 @@ endif
 !    write(*,'(a,i3,5f8.4)') 'iph,fATR,fATM,fslow,: ',iph,atr,atm,fATR,fATM,fATR*fATM
 !    write(nflog,'(a,i3,5f8.4)') 'iph,fATR,fATM,fslow,: ',iph,atr,atm,fATR,fATM,fATR*fATM
 !endif
+
 end subroutine
 
 !------------------------------------------------------------------------

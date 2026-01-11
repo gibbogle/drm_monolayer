@@ -2096,7 +2096,7 @@ endif
 
 cp => cell_list(1)
 tIR = (istep-1)*DELTA_T/3600.0
-if (single_cell) write(nflog,'(a,f6.2,i4,5f8.3)') 'tIR,phase,progress,CC, ATR, ATM_act,fp: ',tIR,cp%phase,cp%progress,cp%CC_act,cp%ATR_act,cp%ATM_act,cp%fp
+if (single_cell) write(nflog,'(a,f6.2,i4,5f8.3)') 'tIR,phase,progress,CC, ATR, ATM_act,fDNAPK: ',tIR,cp%phase,cp%progress,cp%CC_act,cp%ATR_act,cp%ATM_act,fDNAPK
 !if (mod(istep,10) == 0) write(nflog,'(a,2i4,f8.2,3e12.3)') 'kcell,istep,tIR,ATM_act,ATR_act,CC_act: ', kcell_now,istep,tIR,cp%ATM_act,cp%ATR_act,cp%CC_act
 !write(nfres,'(a,3i6,2f6.2,e12.3)') 'istep,kcell,phase,f_S,tIR,ATM_act: ',istep,1,cp%phase,cp%progress,tIR,cp%ATM_act
 !write(nfres,'(2i6,2f12.2,3e12.3)') istep,cp%phase,cp%progress,tIR,cp%ATR_act,cp%ATM_act,cp%CC_act
@@ -2677,7 +2677,7 @@ logical :: only_M_phase = .false.
 logical :: PDS4 = .false.
 real(REAL_KIND) :: dt, phi, PDS4_M(3) = [0.191, 0.414286, 0.732812]
 real(REAL_KIND) :: normalised_phase_dist(60,0:4)   
-REAL(REAL_KIND) :: ave(15), SFMave
+REAL(REAL_KIND) :: ave(15), SFMave, total
 
 if (overstepped) then
     SFave = 1.0E-6
@@ -2912,6 +2912,14 @@ if (use_PEST) then
 !    endif
 endif
 
+! To evaluate average time to mitosis
+total = 0
+do kcell = 1,nlist
+    cp => cell_list(kcell)
+    total = total + cp%t_start_mitosis
+enddo
+write(nflog,'(a,f8.2)') 'Average time to mitosis (h): ',total/(nlist*3600)
+write(*,'(a,f8.2)') 'Average time to mitosis (h): ',total/(nlist*3600)
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -3073,6 +3081,18 @@ outfile = ''
 do i = 1,outbuflen
 	outfile(i:i) = outfile_array(i)
 enddo
+
+if (use_synchronise) then       ! This is to check if correct synch_phase is being used: check_synch_phase.f90
+    if (synch_phase == G1_phase) then
+        write(nflog,'(a)') 'synch_phase: G1'
+    elseif (synch_phase == S_phase) then
+        write(nflog,'(a)') 'synch_phase: S '
+    elseif (synch_phase == G2_phase) then
+        write(nflog,'(a)') 'synch_phase: G2'
+    endif
+else
+    write(nflog,'(a)') 'synch_phase: NO'
+endif
 
 inquire(unit=nflog,OPENED=isopen)
 if (isopen) then

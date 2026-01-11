@@ -1304,21 +1304,31 @@ end function
 !------------------------------------------------------------------------
 function logistic(C) result(y)
 real(REAL_KIND) :: C, y
-real(REAL_KIND) :: bottom, top, EC50, hillslope, percent
+real(REAL_KIND) :: EC50, hill_n
+!real(REAL_KIND) :: bottom, top, EC50, hillslope, percent
 
-bottom = 0
-top = 100
-hillslope = -1.0	!-0.6919
+hill_n = 1.0
 EC50 = Chalf
 if (C > 0) then
-	y = ((log10(EC50) - log10(C))*hillslope)
-    percent = bottom + (top-bottom)/(1 + 10**y)
+    y = 1/(1 + (C/EC50)**hill_n)
 else
-    percent = 100
+   y = 1
 endif
-y = percent/100
 y = (1 - fDNAPKmin)*y + fDNAPKmin
-!write(nflog,'(a,4f8.3)') 'logistic: C, Chalf, fDNAPKmin, y: ',C, Chalf, fDNAPKmin, y
+
+!bottom = 0
+!top = 100
+!hillslope = -1.0	!-0.6919
+!EC50 = Chalf
+!if (C > 0) then
+!	y = ((log10(EC50) - log10(C))*hillslope)
+!    percent = bottom + (top-bottom)/(1 + 10**y)
+!else
+!    percent = 100
+!endif
+!y = percent/100
+!y = (1 - fDNAPKmin)*y + fDNAPKmin
+!!write(nflog,'(a,4f8.3)') 'logistic: C, Chalf, fDNAPKmin, y: ',C, Chalf, fDNAPKmin, y
 end function
 
 subroutine check_logistic
