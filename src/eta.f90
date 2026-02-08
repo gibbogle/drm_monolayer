@@ -135,6 +135,9 @@ sigma = fsigma*sigma
 !sigma = S_NHEJ
 
 eta = etafun(Reff,sigma)
+if (single_cell) then
+    write(nfrun,'(a,i4,5f8.4)') 'phase,f_S,tIR,Reff,sigma,eta: ',cell_list(1)%phase,f_S,tIR,Reff,sigma,eta
+endif
 !if (tIR > 9 .and. tIR < 10) write(*,'(a,4f8.3,e12.3)') 'tIR, f_S, Reff, sigma, eta: ', tIR, f_S, Reff, sigma, eta
 !write(*,'(a,2f8.2,2e12.3)') 'f_S, Reff, sigma, eta: ',f_S,Reff,sigma, eta
 !! pmis.f90

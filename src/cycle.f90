@@ -59,6 +59,7 @@ if (cp%phase == G1_phase) then
     !    write(*,'(a,5e12.3)') 'G1: progress,fp,dt,T_G1, inc: ',cp%progress,cp%fp,dt,ccp%T_G1,cp%fp*dt/ccp%T_G1
     !    write(nflog,'(a,5e12.3)') 'G1: progress,fp,dt,T_G1, inc: ',cp%progress,cp%fp,dt,ccp%T_G1,cp%fp*dt/ccp%T_G1
     !endif
+    if (single_cell) write(nflog,'(a,5f12.4)') 'G1: progress, fp, dt, t_G1, dp: ',cp%progress,cp%fp,dt,ccp%T_G1,cp%fp*dt/ccp%T_G1
     cp%progress = cp%progress + cp%fp*dt/ccp%T_G1
     if (cp%progress >= 1) then
         if (use_G1_stop) then
@@ -108,8 +109,8 @@ elseif (cp%phase == S_phase) then
         endif
     endif
 elseif (cp%phase == G2_phase) then
-    if (use_Jaiswal .and. use_CPs) then        !!!!!!!!!!!!! to turn off CP slowdown
- !   if (.false.) then                           !!!!!!!!!!!!! to turn off CP slowdown
+    if (use_Jaiswal .and. use_CPs) then        !!!!!!!!!!!!! to use CP slowdown
+!    if (.false.) then                         !!!!!!!!!!!!! to turn off CP slowdown
 
         if (is_radiation) then      ! post-IR
             Nwrite = 0.1*3600/DELTA_T

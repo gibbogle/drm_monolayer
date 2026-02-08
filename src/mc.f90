@@ -196,8 +196,10 @@ integer :: iuse_baserate, iuse_exp, icase, nCPparams, iph, j
 real(8) :: TMEJrep, TMEJfid, SSArep, SSAfid
 real(8) :: pHR_S, pfc_S, pHR_G2, pfc_G2, k3, k4
 real(8) :: Cdrug
+type(cycle_parameters_type),pointer :: ccp
 
 write(*,*) 'ReadMcParameters:'
+ccp => cc_parameters(1)
 read(nfin,*) expt_ID
 write(*,*) 'expt_ID: ',expt_ID
 !read(nfin,*) CA_time_h
@@ -641,6 +643,7 @@ next_write_time = 0
 ccp => cc_parameters(1)
 phase = cp%phase
 cp%phase0 = min(phase, M_phase)
+cp%rad_state = cp%phase0
 cp%progress0 = cp%progress
 L = exp(-35.d0)
 if (use_Poisson_DSB .and. Ncells > 1) then
@@ -1172,7 +1175,7 @@ k1 = K_ATM(iph,1)
 k2 = K_ATM(iph,2)
 
 if (iph == G1_phase) then
-    if (cp%birthtime > t_irradiation) then      ! post-mitosis
+    if (cp%birthtime > t_irradiation) then      ! post-mitosis (more easily checked by cp%rad_state = 0, since this is set at division for both daughters) 
         if (cp%rad_state == G1_phase) then      ! this cell was irradiated in G1
             fATM = 1
             write(nflog,'(a,2i6,2f8.3,i6)') 'in get_slowdown_factors: kcell,iph,birthtime,t_irrad,rad_state: ',kcell_now,iph,cp%birthtime/3600,t_irradiation/3600,cp%rad_state
@@ -1200,17 +1203,16 @@ if (use_exp_slowdown) then
     fATM = exp(-k2*atm)
 else
     if ((k2 + atm) > 0) then
-        fATM = max(0.01,1 - k1*atm/(k2 + atm))
+        fATM = max(0.01,1 - k1*atm/(k2 + atm))      ! = 1 if k1 = 0, k2 > 0
     else
-        fATM = 1.0
+        fATM = 1.0                                  ! = 1 if k2 = 0, atm = 0
     endif
     !if (kcell_now == 9) write(nflog,'(a,2i5,4e12.3)') 'iph, kcell, atm,k1,k2, fATM: ',iph,kcell_now,atm,k1,k2,fATM
 endif
-if (k1 == 0) then
-    write(*,*) 'iph, cp%phase, k1, k2: ',iph, cp%phase, k1, k2
-    stop
-endif
-!if (kcell_now == 8) write(nflog,'(a,2i6,4e12.3)') 'slowdown: kcell,iph,k3,k4,atm,fATM: ',kcell_now,iph,k3,k4,atm,fATM
+!if (k1 == 0) then
+!    write(*,*) 'iph, cp%phase, k1, k2: ',iph, cp%phase, k1, k2
+!    stop
+!endif
 if (iph == S_phase .and. use_ATR) then
     k1 = K_ATR(iph,1)   !*G2_katr3_factor
     k2 = K_ATR(iph,2)   !*G2_katr4_factor
@@ -1319,7 +1321,7 @@ cp%progress = 0.9
 cp%t_start_G2 = 0
 do i = 1,8
     kmccp_temp = 4.0 + (i-1)*0.5
-    Kcc_temp = get_Kcc(kmccp_temp,CC_tot,CC_threshold_factor,T_G2h)    
+    Kcc_temp = get_Kcc(kmccp_temp,CC_tot,CC_threshold_factor,T_G2h)
 !    write(*,'(a,2f8.3)') 'kmccp, kcc: ',kmccp_temp,kcc_temp
 enddo
 cp%Kcc = get_Kcc(kmccp,CC_tot,CC_threshold_factor,T_G2h)  
@@ -1602,6 +1604,7 @@ do it = 1,Nt
     !if (kcell_now == 9) write(nflog,'(a,i6,6f8.3,e12.3)') 'it,D_NHEJ,D_HR,,ATM_inact,ATM_act,dATM_plus,dATM_minus,ATM_act: ',it,D_NHEJ,D_HR,ATM_inact,ATM_act,dATM_plus,dATM_minus,ATM_act
 
 enddo
+if (single_cell .and. (iph == G2_phase)) write(nflog,'(a,7e12.4)') 'd, Kccmd,ATM,Kmccmd,dCC_act_dt, CC_act: ',d(1:2),cp%Kccmd,ATM_act,Kmccmd,dCC_act_dt, CC_act
 endif
 
 !write(nfres,'(a,i3,10f9.4,2e12.3)') 'iph,tIR,ATM_act,DSB(NHEJslow),DSB(HR): ',iph,tIR,ATM_act,DSB(NHEJslow),DSB(HR)    !,ATM_inact,Kmp1,Kmp2,Kmmp,Kmd,Kmmd,ATM_act,dATM_plus,dATM_minus
@@ -1730,8 +1733,6 @@ if (first .and. single_cell) then
 endif
 !if (eta > 1.0E-3 .and. single_cell) write(nflog,'(9e12.3)') initialBreaks, finalBreaks, repairedBreaks, eta,atanNum, atanDen,term1,term2,Pmis
 
-!if (kcell_now == 1) write(nflog,'(a,2f8.1,2e12.3)') 'initialBreaks, finalBreaks, eta, Pmis: ',initialBreaks, finalBreaks,eta,Pmis
-
 !write(*,*) 'misrepairRate: '
 !write(*,'(a,3f6.1)') 'initialBreaks, finalBreaks, repairedBreaks: ',initialBreaks, finalBreaks, repairedBreaks
 !write(*,'(a,2e12.3)') 'eta, Pmis: ',eta,Pmis
@@ -1843,7 +1844,7 @@ if (.not. use_Jaiswal) return  !!!!!!!!!!!!!!!!!!!!!! testing no repair
 if (first .and. single_cell) then
     write(nfres,'(a,3f8.2,i4,2f8.2)') 'flush_time_h, D, C, phase0, f_S0, Z: ', &
             flush_time_h,rad_dose,drug_conc0,cp%phase0,cp%f_s_at_IR,eta_Z
-    write(nfres,'(a)') '     tIR       sigma     DSB1      DSB2      Pmis      dmis      Nmis      ATR_act   ATM_act   CC_act   fDNAPK'
+    write(nfres,'(a)') '     tIR       sigma     DSB1      DSB2      Pmis      dmis      Nmis      ATR_act   ATM_act   CC_act   fp'
     first = .false.
 endif
 dbug = (kcell_now == 9)
@@ -2076,7 +2077,7 @@ Nrep = totDSB0 - totDSB
 endif
 ! Here we could increment 
 ! Nreptot by Nrep = totDSB0 - totDSB
-! Pmistot by Nrep*Pmis
+! Pmistot by Nrep*Pmisdaugh
 
 !if (single_cell .and. (tnow < CA_time_h*3600)) then
 !    write(nflog,'(a,i4,f6.2,3f6.1,e12.3,3f8.4)') &
@@ -2121,7 +2122,8 @@ if (single_cell) then
     DSB1 = sum(DSB(1:2,1))
     DSB2 = sum(DSB(1:2,2))
     totNmis = 2*cp%Nmis(1)+cp%Nmis(2)
-    write(nfres,'(11f10.3)') tIR,sigma,DSB1,DSB2,Pmis,dmis,totNmis,cp%ATR_act,cp%ATM_act,cp%CC_act,repratefactor(1)
+    write(nfres,'(11f10.3)') tIR,sigma,DSB1,DSB2,Pmis,dmis,totNmis,cp%ATR_act,cp%ATM_act,cp%CC_act,cp%fp
+!    write(nflog,'(a,i4,2f8.1,2e12.3,f10.3)') 'phase,totDSB0,totDSB,eta,Pmis,Nmis: ',cp%phase,totDSB0,totDSB,eta_NHEJ,Pmis,totNmis
 endif
 ! record signalling for single-cell
 !if (single_cell) then
@@ -2234,7 +2236,8 @@ do k = 1,2
     Pmit(k) = exp(-mitRate(k)*totDSB(k))
     totSFfactor(k) = totSFfactor(k) + Pmit(k)
 enddo
-if (cp%phase0 < M_phase) then   ! G1, S, G2
+!if (cp%phase0 < M_phase) then   ! G1, S, G2    ! try evaluating IR-at-M cells here
+if (cp%state == ALIVE) then
 ! not using fCPdelay now
     fCPdelay = 1
     !CPdelay = get_CPdelay(cp)
@@ -2261,7 +2264,8 @@ if (cp%phase0 < M_phase) then   ! G1, S, G2
 !        write(nflog,'(a,3f8.1,4x,3f8.1)') 'mitosis: DSB, Nmis: ',totDSB,sum(totDSB),2*Nmis(1),Nmis(2),2*Nmis(1)+Nmis(2)
      endif
 !    write(nfres,'(a,i6,4f8.3,e12.3)') 'kcell,totDSB,Nmis,Psurvive: ', kcell_now,totDSB,Nmis,cp%Psurvive
-else    ! M_phase or dividing
+else    ! IR in M_phase
+    cp%Psurvive = 0
     !if (drop_mitotic_cells) then
     !    cp%state = DEAD
     !    cp%Psurvive = 0
@@ -2270,11 +2274,11 @@ else    ! M_phase or dividing
     !    Ncells_type(ityp) = Ncells_type(ityp) - 1
     !    Nviable(ityp) = Ncells_type(ityp)
     !    Ndead(ityp) = Ndead(ityp) + 1
-    !else
-        Paber = 1
-        cp%Psurvive = exp(-kmit*sum(totDSB))
-        if (kcell_now <= 10) write(nflog,'(a,i4,2f8.3,e12.3)') 'kcell,kmit,totDSB,Psurvive: ',kcell_now,kmit,totDSB,cp%Psurvive
-        if (single_cell) write(nfres,'(a,2f8.3,6e12.3)') '(2) totDSB,Pmit,Nmis,Paber: ',totDSB,Pmit,Nmis,Paber  
+    !!else
+    !    Paber = 1
+    !    cp%Psurvive = exp(-kmit*sum(totDSB))
+    !    if (kcell_now <= 10) write(nflog,'(a,i4,2f8.3,e12.3)') 'kcell,kmit,totDSB,Psurvive: ',kcell_now,kmit,totDSB,cp%Psurvive
+    !    if (single_cell) write(nfres,'(a,2f8.3,6e12.3)') '(2) totDSB,Pmit,Nmis,Paber: ',totDSB,Pmit,Nmis,Paber  
 !    endif
 endif
 tIR = (tnow - t_irradiation)/3600

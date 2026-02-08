@@ -172,7 +172,7 @@ counts = 0
 !	    else
 !	        cp%rad_state = 3
 !	    endif
-		cp%rad_state = cp%phase		! cell phase at IR
+		cp%rad_state = cp%phase		! cell phase at IR (dividing)
         ityp = cp%celltype
 	    ccp => cc_parameters(ityp)
 	    call getO2conc(cp,C_O2)
@@ -846,7 +846,7 @@ do kcell = 1,nlist0
 ! if use_SF (i.e. we are computing SF_ave) then only cells not satisfying (is_radiation .and. cp%Psurvive < 0) need to divide
 ! if allow_second_mitosis = true, need to account for cells with phase0 = M_phase.
 !			write(*,'(a,2L4,f8.3)') 'use_SF, is_radiation, cp%Psurvive: ',use_SF, is_radiation, cp%Psurvive
-
+!			if (cp%phase0 == M_phase) write(nflog,*) 'Cell with IR in M: ',kcell
 ! New method (14/02/25)
 			if (allow_second_mitosis .and. (cp%phase0 == M_phase)) then		! mitotic cell
 				if (cp%t_divide_last < 0) then
@@ -857,10 +857,12 @@ do kcell = 1,nlist0
 !						cp%state = DYING
 !						cp%Psurvive = 0
 !						divide (1 new cell) and set state = DYING for both daughters
+!						write(nflog,*) 'cell with IR at M has dying daughters: ',kcell, cp%phase0, cp%rad_state
 						call divider(kcell, 1, DYING, ok)
 !						write(nflog,*) 'M-cell divides, dies: ',kcell
 					else
 !						divide (1 new cell) and set state = ALIVE for both daughters
+!						write(nflog,*) 'divide cell with IR at M: ',kcell, cp%phase0, cp%rad_state
 						call divider(kcell, 1, ALIVE, ok)
 !						write(nflog,*) 'M-cell divides, survives: ',kcell
 					endif
@@ -1040,7 +1042,7 @@ if (.not.is_radiation .and. f_CP < 1.0) then
     stop
 endif
 cp%fp = metab*f_CP/cp%fg(cp%phase)
-!if (kcell_now == 9) write(nflog,'(a,i6,4e13.4)') 'growcell: ',kcell_now,metab,f_CP,cp%fg(cp%phase),cp%fp
+!if (single_cell) write(nflog,'(a,3e13.4)') 'growcell: f_CP,fg,fp',f_CP,cp%fg(cp%phase),cp%fp
 cp%dVdt = cp%fp*max_growthrate(ityp)
 Cdrug(:) = cp%Cin(DRUG_A:DRUG_A+1)
 Vin_0 = cp%V
@@ -1265,7 +1267,6 @@ cp1%DSB(TMEJ,:) = 0
 	nlist = nlist + 1
 	kcell2 = nlist
 !endif
-!write(nflog,*) 'Second cell: nlist = ',nlist
 Nsecond = Nsecond + 1
 if (colony_simulation .and. kcell2 > nColonyMax) then
 	ok = .false.
@@ -1273,6 +1274,7 @@ if (colony_simulation .and. kcell2 > nColonyMax) then
 	return
 endif
 ncells = ncells + 1
+!write(*,*) 'Second cell: nlist, ncells = ',nlist,ncells
 ityp = cp1%celltype
 ccp => cc_parameters(ityp)
 ncells_type(ityp) = ncells_type(ityp) + 1

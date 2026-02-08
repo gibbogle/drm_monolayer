@@ -978,6 +978,7 @@ character*(1) :: fullstr
 real(REAL_KIND) :: t, dt, vol, conc, O2conc, O2flush, dose, O2medium, glumedium
 type(event_type) :: E, Eflush
 logical :: flushing
+type(cycle_parameters_type),pointer :: ccp
 
 write(logmsg,*) 'ReadProtocol'
 call logger(logmsg)
@@ -1057,7 +1058,7 @@ do itime = 1,ntimes
             !CA_time_h = dt
 
 ! test fix, using dt < 0 to flag CDTD Cho2.  (Previously signified a Cho1 case.)
-! In all other cases C_time_h = flush_time_h
+! In all other cases CA_time_h = flush_time_h
 ! Requires all .tpl files to be recreated with sfall.exe
             if (dt < 0) then    ! this is CDTD Cho2 case, with CA_time = 24
                 dt = -dt
@@ -1192,6 +1193,7 @@ do kevent = 1,Nevents-1
 		stop
 	endif
 enddo
+
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -2096,7 +2098,7 @@ endif
 
 cp => cell_list(1)
 tIR = (istep-1)*DELTA_T/3600.0
-if (single_cell) write(nflog,'(a,f6.2,i4,5f8.3)') 'tIR,phase,progress,CC, ATR, ATM_act,fDNAPK: ',tIR,cp%phase,cp%progress,cp%CC_act,cp%ATR_act,cp%ATM_act,fDNAPK
+if (single_cell .and. (cp%phase < G2_phase)) write(nflog,'(a,f6.2,i4,5f8.3)') 'tIR,phase,progress,CC, ATR, ATM_act,fp: ',tIR,cp%phase,cp%progress,cp%CC_act,cp%ATR_act,cp%ATM_act,cp%fp
 !if (mod(istep,10) == 0) write(nflog,'(a,2i4,f8.2,3e12.3)') 'kcell,istep,tIR,ATM_act,ATR_act,CC_act: ', kcell_now,istep,tIR,cp%ATM_act,cp%ATR_act,cp%CC_act
 !write(nfres,'(a,3i6,2f6.2,e12.3)') 'istep,kcell,phase,f_S,tIR,ATM_act: ',istep,1,cp%phase,cp%progress,tIR,cp%ATM_act
 !write(nfres,'(2i6,2f12.2,3e12.3)') istep,cp%phase,cp%progress,tIR,cp%ATR_act,cp%ATM_act,cp%CC_act
@@ -2489,6 +2491,7 @@ if (SFdone) then
         Pptot = Pptot + cp%Psurvive
 !        if (cp%state == EVALUATED) then    ! now all cells at M are EVALUATED, Psurvive = 0 identifies cells initially DYING
         if (Pp > 0) then
+!    write(nflog,'(i6,2f10.4)') kcell, Pp,cp%mitosis_time/3600 - DELTA_T/3600   ! make time line up with radri
             if (cp%mitosis_time < CA_time_h*3600) then  ! adjust for 2 daughters
                 Pd = 1 - sqrt(1.0 - Pp)
                 Ntot = Ntot + 2
@@ -2498,7 +2501,7 @@ if (SFdone) then
                 else
                     Ncont(1) = Ncont(1) + 2
                 endif
-!                write(nflog,'(i4,a,e12.3,a,e12.3)') kcell,' Pp ',Pp,' 2*Pd ',2*Pd
+!                write(nflog,'(a,i4,a,e12.3,a,e12.3)') 'daughter cell correction: ',kcell,' Pp ',Pp,' 2*Pd ',2*Pd
             else                                        ! no daughter adjustment
                 Ntot = Ntot + 1
                 SFtot = SFtot + Pp
@@ -3104,6 +3107,7 @@ write(*,*) 'infile: ',trim(infile)
 write(*,*) 'logfile: ',trim(logfile)
 !open(nflog,file='drm_monolayer.log',status='replace')
 open(nflog,file=logfile,status='replace')
+open(nfrun,file='eta.out',status='replace')
 
 write(nflog,*) 'irun: ',res
 if (phase_log) then
