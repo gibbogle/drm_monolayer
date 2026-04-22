@@ -278,7 +278,7 @@ read(nfin,*) reprate3_max
 read(nfin,*) Kclus
 read(nfin,*) G2_D_ATM_max       ! cap on D_ATM in G2
 read(nfin,*) t_switch_ATM       ! time after IR when ATM_act production goes to 0
-read(nfin,*) kCPdelay
+read(nfin,*) kCPdelay			! Z
 read(nfin,*) CPdelay0
 eta_Z = kCPdelay
 fDNAPKmin = CPdelay0  !0.05     ! temporarily fixed - moved here
@@ -308,6 +308,16 @@ fDNAPKmin = CPdelay0  !0.05     ! temporarily fixed - moved here
     read(nfin,*) Kmrd
     read(nfin,*) Kmmp
     read(nfin,*) Kmmd
+	
+! Change_1	To make a single km10 value like Jaiswal.
+	kmccrd = kmrd
+	kmrp = kmrd
+	kmccp = kmrd
+!
+! Change_2 To make a single km1 value like Jaiswal
+	kmmp = kmmd
+!
+
 !    read(nfin,*) CC_tot
     CC_tot = 10
     read(nfin,*) ATR_tot
