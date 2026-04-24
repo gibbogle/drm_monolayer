@@ -208,7 +208,7 @@ CA_time_h = 18  ! default time, overridden by CDTD input data
 baseRate = 0
 read(nfin,*) mitRate(1)
 read(nfin,*) mitRate(2)
-if (mitRate(1) <= 0) mitRate(1) = mitRate(2)
+if (mitRate(1) <= 0) mitRate(1) = mitRate(2)    !Change_3
 write(*,*) 'mitrate: ',mitrate
 !read(nfin,*) Msurvival
 !Msurvival = 0.1  ! not used
@@ -309,14 +309,14 @@ fDNAPKmin = CPdelay0  !0.05     ! temporarily fixed - moved here
     read(nfin,*) Kmmp
     read(nfin,*) Kmmd
 	
-! Change_1	To make a single km10 value like Jaiswal.
-	kmccrd = kmrd
-	kmrp = kmrd
-	kmccp = kmrd
-!
-! Change_2 To make a single km1 value like Jaiswal
-	kmmp = kmmd
-!
+!! Change_1	To make a single km10 value like Jaiswal.
+!	kmccrd = kmrd
+!	kmrp = kmrd
+!	kmccp = kmrd
+!!
+!! Change_2 To make a single km1 value like Jaiswal
+!	kmmp = kmmd
+!!
 
 !    read(nfin,*) CC_tot
     CC_tot = 10
