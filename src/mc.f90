@@ -206,6 +206,8 @@ write(*,*) 'expt_ID: ',expt_ID
 CA_time_h = 18  ! default time, overridden by CDTD input data
 !read(nfin,*) baseRate
 baseRate = 0
+read(nfin,*) repRate(NHEJfast)
+read(nfin,*) repRate(NHEJslow)
 read(nfin,*) mitRate(1)
 read(nfin,*) mitRate(2)
 if (mitRate(1) <= 0) mitRate(1) = mitRate(2)    !Change_3
