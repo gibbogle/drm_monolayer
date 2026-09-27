@@ -1825,9 +1825,9 @@ do kevent = 1,Nevents
 			idrug = E%idrug
 			C(ichemo) = E%conc
 			V = E%volume
-			write(nflog,'(a,i4,2f8.3)') 'DRUG_EVENT: ichemo, volume, conc: ',ichemo,E%volume,E%conc
+!			write(nflog,'(a,i4,2f8.3)') 'DRUG_EVENT: ichemo, volume, conc: ',ichemo,E%volume,E%conc
             ! DNA-PK
-!            call check_logistic
+            call check_logistic
 !            stop
 !            C_SN39536 = E%conc
             drug_conc0 = E%conc

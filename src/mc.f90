@@ -247,8 +247,8 @@ write(nflog,'(a,2f8.4)') 'KATM1G1D, KATM2G1D: ',KATM1G1D, KATM2G1D
 !read(nfin,*) pComplex
 !read(nfin,*) Kcoh  !pJeggo was fsmin
 ! these values are copied from a recent input file
-repRate(NHEJfast) = 2.081
-repRate(NHEJslow) = 0.2604
+!repRate(NHEJfast) = 2.081
+!repRate(NHEJslow) = 0.2604
 repRate(TMEJ) = 0.025
 Pcomplex = 0.43
 Kcoh = 1.0
@@ -1710,6 +1710,7 @@ if (dth >= 0) then
     do it = 1,Nt
         N = N*exp(-repRate(path)*dt*repRateFactor(path))
 !        if (tIR > 24.0 .and. tIR < 30.0) write(nflog,'(a,i4,4e12.3)') 'path, k, N0, N, N/N0: ',path,repRate(path)*repRateFactor(path),N0,N,N/N0
+!        if (kcell_now == 1) write(nflog,'(i2,5e12.3)') path, N0, N, repRate(path), repRateFactor(path), repRate(path)*repRateFactor(path)
     enddo
 else
     N = 0
@@ -1976,6 +1977,7 @@ do jpp = 1,2
     call pathwayRepair(k, dth, DSB0(k,jpp), DSB(k,jpp))
     if (DSB(k,jpp) < DSB_min) DSB(k,jpp) = 0
 !    if (dbug .and.k == 1 .and. jpp == 1) write(nfres,'(a,3f8.3)') 'DSB0,DSB,repratefactor: ',DSB0(k,jpp),DSB(k,jpp),repratefactor(1)
+!    if (kcell_now == 1) write(nfres,'(a,2i4,3f8.3)') 'k,jpp,DSB0,DSB,repratefactor: ',k,jpp,DSB0(k,jpp),DSB(k,jpp),repratefactor(1)
 enddo
 endif
 enddo
@@ -2264,6 +2266,7 @@ if (cp%state == ALIVE) then
     Paber(2) = exp(-Klethal*Nmis(2))
     cp%Psurvive = Pmit(1)*Pmit(2)*Paber(1)*Paber(2)*fCPdelay  
     cp%Psurvive_nodouble = Pmit(1)*Pmit(2)*Paber1_nodouble*Paber(2)*fCPdelay
+    if (kcell_now == 1) write(nflog,'(a,6f8.1,5e12.3)') 'DSB,Paber,Pmit,Psurvive: ',cp%DSB(1:3,:),Paber(:),Pmit(:),cp%Psurvive
     !if (kcell_now <= 100) then
     !    write(nflog,'(a,i4,6f8.1,5e12.3)') 'kcell,DSB,Paber,Pmit,Psurvive: ', &
     !        kcell_now,cp%DSB(1:3,:),Paber(:),Pmit(:),cp%Psurvive
