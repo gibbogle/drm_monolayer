@@ -62,7 +62,7 @@ real(8) :: baseRate = 0.000739  ! (McMahon: baseRate)
 real(8) :: mitRate(2)   !  = 0.0141    ! (McMahon: mitoticRate)
 real(8) :: Msurvival = 1.0
 real(8) :: Kaber = 1.0          ! now fixed, McMahon has 1.  
-real(8) :: Klethal = 0.4
+real(8) :: Klethal(2)
 real(8) :: K_ATM(3,4) ! = [0.076, 0.3, 1.0, 1.0]    ! now (1) and (2) are the parameters of CP slowdown, (3) and (4) are unused
 real(8) :: K_ATR(3,4) ! = [0.005, 0.3, 1.0, 1.0]
 real(8) :: KATM1G1D, KATM2G1D   ! KATM parameters for post-mitosis G1 CP slowdown
@@ -183,7 +183,7 @@ logical :: use_EQ  ! this is to use katm1g1,2g1 for katm1g1d,2g1d
 logical :: use_Kmd_S = .false.      ! This is to define a separate Kmd value for S phase by piggy-backing on krp_min
 
 
-!DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, apopRate, baseRate, mitRate, Msurvival, Kaber, Klethal, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
+!!DEC$ ATTRIBUTES DLLEXPORT :: Pcomplex, apopRate, baseRate, mitRate, Msurvival, Kaber, K_ATM, K_ATR !, KmaxInhibitRate, b_exp, b_hill
 
 contains
 
@@ -214,8 +214,9 @@ if (mitRate(1) <= 0) mitRate(1) = mitRate(2)    !Change_3
 write(*,*) 'mitrate: ',mitrate
 !read(nfin,*) Msurvival
 !Msurvival = 0.1  ! not used
-read(nfin,*) Klethal
-write(*,*) 'klethal: ',klethal
+read(nfin,*) Klethal(1)
+write(*,*) 'klethal(1): ',klethal(1)
+Klethal(2) = Klethal(1)     ! Unless replaced by -Reffmin when Reffmin < 0
     write(nflog,*) 'K_ATM'
 !    do j = 3,4
     do j = 1,2
@@ -275,6 +276,11 @@ Preass = 0
 read(nfin,*) dsigma_dt
 read(nfin,*) sigma_NHEJ
 read(nfin,*) Reffmin
+if (Reffmin < 0) then   ! Use this to input klethal(2)
+    klethal(2) = -Reffmin
+    write(*,*) 'klethal(2): ',klethal(2)
+    Reffmin = 1
+endif
 !read(nfin,*) reprate(HR)
 read(nfin,*) reprate3_max
 read(nfin,*) Kclus
@@ -2224,7 +2230,7 @@ end function
 ! cp%phase0 is the cell's phase at IR
 ! Note that this assumes that cells died of apoptosis in G1 at baseRate
 ! (see cellIrradiation())
-! Now pre-rep and post-rep Nlethal, Nmisjoins, Paber
+! Now pre-rep and post-rep Nlethal, Nmisjoins, Paber (now using klethal(2))
 !------------------------------------------------------------------------
 subroutine survivalProbability(cp)
 type(cell_type), pointer :: cp
@@ -2261,9 +2267,9 @@ if (cp%state == ALIVE) then
     !    fCPdelay = exp(-kCPdelay*(CPdelay - CPdelay0))
     !endif
 !    if (kcell_now <= 100) write(nflog,'(a,i4,2f8.3)') 'kcell, CPdelay, fCPdelay: ',kcell_now,CPdelay,fCPdelay
-    Paber(1) = exp(-2*Klethal*Nmis(1))
-    Paber1_nodouble = exp(-Klethal*Nmis(1))
-    Paber(2) = exp(-Klethal*Nmis(2))
+    Paber(1) = exp(-2*Klethal(1)*Nmis(1))
+    Paber1_nodouble = exp(-Klethal(1)*Nmis(1))
+    Paber(2) = exp(-Klethal(2)*Nmis(2))
     cp%Psurvive = Pmit(1)*Pmit(2)*Paber(1)*Paber(2)*fCPdelay  
     cp%Psurvive_nodouble = Pmit(1)*Pmit(2)*Paber1_nodouble*Paber(2)*fCPdelay
     if (kcell_now == 1) write(nflog,'(a,6f8.1,5e12.3)') 'DSB,Paber,Pmit,Psurvive: ',cp%DSB(1:3,:),Paber(:),Pmit(:),cp%Psurvive
@@ -2324,7 +2330,7 @@ totPaber = totPaber + Paber
 tottotDSB = tottotDSB + sum(totDSB)
 !totNlethal = totNlethal + Nlethal
 
-Nlethal_sum = Klethal*(2*Nmis(1) + Nmis(2))
+Nlethal_sum = Klethal(1)*2*Nmis(1) + Klethal(2)*Nmis(2)
 #if 0
 if (Nlethal_sum > NMDIST*ddist_Nlethal) then
     count_Nlethal(NMDIST) = count_Nlethal(NMDIST) + 1
@@ -2378,8 +2384,8 @@ do icell = 1,Ncells
     do k = 1,2
         Pmit(k) = exp(-mitRate(k)*totDSB(k))
     enddo
-    Paber(1) = exp(-2*Klethal*Nmis(1))
-    Paber(2) = exp(-Klethal*Nmis(2))
+    Paber(1) = exp(-2*Klethal(1)*Nmis(1))
+    Paber(2) = exp(-Klethal(2)*Nmis(2))
     Psurvive = Pmit(1)*Pmit(2)*Paber(1)*Paber(2)
     SFwave = SFwave + Psurvive
 enddo

@@ -704,8 +704,8 @@ if (cp%phase0 < M_phase) then   ! G1, S, G2
     else
         fCPdelay = exp(-kCPdelay*(CPdelay - CPdelay0))
     endif
-    Paber(1) = exp(-2*Klethal*Nmis(1))
-    Paber(2) = exp(-Klethal*Nmis(2))
+    Paber(1) = exp(-2*Klethal(1)*Nmis(1))
+    Paber(2) = exp(-Klethal(2)*Nmis(2))
     P = Pmit(1)*Pmit(2)*Paber(1)*Paber(2)*fCPdelay 
 else
 	P = -1	! this is M-phase
