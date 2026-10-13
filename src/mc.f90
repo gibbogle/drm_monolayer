@@ -1733,7 +1733,7 @@ logical :: first = .true.
 
 !etamod = etafac*eta
 repairedBreaks = initialBreaks-finalBreaks
-if (repairedBreaks < 1E-10) then
+if (repairedBreaks < 1E-10 .or. eta == 0) then
     Pmis = 0
     return
 endif
@@ -1743,6 +1743,13 @@ term1 = 2 * atan(atanNum/atanDen)
 term2 = (repairedBreaks*sqrt(3.0)*eta)
 !Pmis = 1 - 2 * atan(atanNum/atanDen) / (repairedBreaks*sqrt(3.0)*eta)
 Pmis = 1 - term1/term2
+if (isNaN(Pmis)) then
+    write(nflog,*) 'Pmis is NaN in misrepairRate, kcell_now: ',kcell_now
+    write(nflog,*) 'term1, term2: ',term1,term2
+    write(nflog,*) 'atanNum, atanDen: ',atanNum,atanDen
+    write(nflog,*) 'initialBreaks, finalBreaks, eta: ',initialBreaks, finalBreaks, eta
+    stop
+endif
 N0 = initialBreaks
 N1 = finalBreaks
 Nr = repairedBreaks

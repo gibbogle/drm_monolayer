@@ -32,6 +32,12 @@ termTwo = -exp(-d2/(2*S2))*(d2*d2 + 4*d2*(S2 - 3*R2) + 16*d*R3 + 8*S2*(S2 - 3*R2
 termThree = 8*S2*S2 - 24*R2*S2
 scaling = pi*S2/(4*R3)
 thetaVal = (termOne + termTwo + termThree)*scaling
+if (thetaVal == 0) then
+    write(nflog,*) 'thetaM: thetaVal = 0, R,S: ',R,S
+    write(nflog,*) 'termOne,termTwo,termThree: ',termOne,termTwo,termThree
+    write(nflog,*) 'scaling: ',scaling
+!    stop
+endif
 end function
 
 !--------------------------------------------------------------------------
@@ -59,6 +65,7 @@ termTwo   = -exp(-4*R2/(2*S2))*(S2 -R2*S2)
 termThree = S2 - 3*R2*S2
 scaling   = 2*pi*S2/(R*R2)
 thetaVal = (termOne + termTwo + termThree)*scaling
+
 end function	
 
 !--------------------------------------------------------------------------
