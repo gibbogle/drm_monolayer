@@ -210,7 +210,7 @@ read(nfin,*) repRate(NHEJfast)
 read(nfin,*) repRate(NHEJslow)
 read(nfin,*) mitRate(1)
 read(nfin,*) mitRate(2)
-if (mitRate(1) <= 0) mitRate(1) = mitRate(2)    !Change_3
+if (mitRate(2) <= 0) mitRate(2) = mitRate(1)    !Change_3
 write(*,*) 'mitrate: ',mitrate
 !read(nfin,*) Msurvival
 !Msurvival = 0.1  ! not used
