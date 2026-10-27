@@ -1390,12 +1390,10 @@ cp%G2_time = 0
 !        if (kcell <= 100) write(nflog,'(a,5f10.4)') 'Kcc R: ',R,kfactor,cp%kcc
 !    endif
 
-!!!    call SetInitialCellCycleStatus(kcell,cp)
-!   added
     cp%phase = G1_phase
     cp%progress = 0
-!!!--------------------------------------------------------    
-    
+    cp%sigma = sigma_NHEJ
+
     if (cp%phase == M_phase) then
         write(*,'(a,i8,f6.3)') 'M_phase, mitosis_duration: ',kcell,cp%mitosis_duration/3600
         stop
@@ -2060,7 +2058,7 @@ subroutine simulate_step(res) BIND(C)
 use, intrinsic :: iso_c_binding
 integer(c_int) :: res
 integer :: kcell, site(3), hour, nthour, kpar=0
-real(REAL_KIND) :: r(3), rmax, tstart, dt, dts, radiation_dose, diam_um, framp, area, diam
+real(REAL_KIND) :: r(3), rmax, tstart, dt, dth, dts, radiation_dose, diam_um, framp, area, diam
 !integer, parameter :: NT_CONC = 6
 integer :: i, ic, ichemo, ndt, iz, idrug, ityp, idiv, ndiv, Nmetabolisingcells, NpreCA, Nd, Nnew
 integer :: nvars, ns, nphaseh(8), ph
@@ -2098,7 +2096,7 @@ endif
 
 cp => cell_list(1)
 tIR = (istep-1)*DELTA_T/3600.0
-if (single_cell .and. (cp%phase < G2_phase)) write(nflog,'(a,f6.2,i4,5f8.3)') 'tIR,phase,progress,CC, ATR, ATM_act,fp: ',tIR,cp%phase,cp%progress,cp%CC_act,cp%ATR_act,cp%ATM_act,cp%fp
+!if (single_cell .and. (cp%phase < G2_phase)) write(nflog,'(a,f6.2,i4,5f8.3)') 'tIR,phase,progress,CC, ATR, ATM_act,fp: ',tIR,cp%phase,cp%progress,cp%CC_act,cp%ATR_act,cp%ATM_act,cp%fp
 !if (mod(istep,10) == 0) write(nflog,'(a,2i4,f8.2,3e12.3)') 'kcell,istep,tIR,ATM_act,ATR_act,CC_act: ', kcell_now,istep,tIR,cp%ATM_act,cp%ATR_act,cp%CC_act
 !write(nfres,'(a,3i6,2f6.2,e12.3)') 'istep,kcell,phase,f_S,tIR,ATM_act: ',istep,1,cp%phase,cp%progress,tIR,cp%ATM_act
 !write(nfres,'(2i6,2f12.2,3e12.3)') istep,cp%phase,cp%progress,tIR,cp%ATR_act,cp%ATM_act,cp%CC_act
@@ -2211,7 +2209,6 @@ do idiv = 0,ndiv-1
 enddo	! end idiv loop
 DELTA_T = DELTA_T_save
 #endif
-
 medium_change_step = .false.
 
 radiation_dose = 0
@@ -2221,12 +2218,13 @@ endif
 if (use_events) then
 	call ProcessEvent(radiation_dose)
 endif
-if (radiation_dose >= 0) then
+if (radiation_dose >= 0) then  ! radiation_dose set to -1 in Process_Event if this is not the initial radiation step
 	write(logmsg,'(a,f6.1)') 'Radiation dose: ',radiation_dose
 	call logger(logmsg)
 ! could make calls to set_divide_volume and SetInitialCellCycleStatus here
 ! before Irradiation
 !    write(nflog,*) 'before npar_uni, npar_rnor = ',npar_uni,npar_rnor
+    write(nflog,*) 'calling SetInitialCellCycleStatus: radiation_dose: ',radiation_dose
     do kcell = 1,Ncells
         cp => cell_list(kcell)
         V0 = Vdivide0/2
@@ -2249,6 +2247,16 @@ tottotDSB = 0
 do kcell = 1,nlist
     cp => cell_list(kcell)
     tottotDSB = tottotDSB + sum(cp%DSB)
+    ! increment cp%sigma    27/10/2026
+    tIR = (t_simulation - t_irradiation)/3600.0
+    if (eta_Z == 0) then
+        cp%sigma = sigma_NHEJ + dsigma_dt*tIR
+    else
+        dth = DELTA_T/3600  ! time step in hours
+        cp%sigma = cp%sigma + dsigma_dt*dth*(1 - cp%progress/eta_Z)
+    endif
+    cp%sigma = cp%sigma*(1 - (1 - kcoh)*cp%progress)    ! note: kcoh is currently hard-coded = 1, so this does nothing
+    if (single_cell) write(nflog,'(a,i4,2f8.0,3f8.3)') 'istep, t_simulation, t_irradiation, tIR, cp%progress, sigma: ',istep, t_simulation, t_irradiation, tIR, cp%progress, cp%sigma
 enddo
 tottotDSB = 0
     
@@ -3107,7 +3115,7 @@ write(*,*) 'infile: ',trim(infile)
 write(*,*) 'logfile: ',trim(logfile)
 !open(nflog,file='drm_monolayer.log',status='replace')
 open(nflog,file=logfile,status='replace')
-open(nfrun,file='eta.out',status='replace')
+!open(nfrun,file='eta.out',status='replace')
 
 write(nflog,*) 'irun: ',res
 if (phase_log) then

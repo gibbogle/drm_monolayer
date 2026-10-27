@@ -193,6 +193,7 @@ type cell_type
 	real(REAL_KIND) :: G2_time
 	real(REAL_KIND) :: mitosis
 	real(REAL_KIND) :: CP_delay
+	real(REAL_KIND) :: sigma
 !	logical :: growth_delay
 !	real(REAL_KIND) :: dt_delay
 !	real(REAL_KIND) :: t_growth_delay_end	! this is for suppression of growth before first division

@@ -1622,7 +1622,7 @@ do it = 1,Nt
     !if (kcell_now == 9) write(nflog,'(a,i6,6f8.3,e12.3)') 'it,D_NHEJ,D_HR,,ATM_inact,ATM_act,dATM_plus,dATM_minus,ATM_act: ',it,D_NHEJ,D_HR,ATM_inact,ATM_act,dATM_plus,dATM_minus,ATM_act
 
 enddo
-if (single_cell .and. (iph == G2_phase)) write(nflog,'(a,7e12.4)') 'd, Kccmd,ATM,Kmccmd,dCC_act_dt, CC_act: ',d(1:2),cp%Kccmd,ATM_act,Kmccmd,dCC_act_dt, CC_act
+!if (single_cell .and. (iph == G2_phase)) write(nflog,'(a,7e12.4)') 'd, Kccmd,ATM,Kmccmd,dCC_act_dt, CC_act: ',d(1:2),cp%Kccmd,ATM_act,Kmccmd,dCC_act_dt, CC_act
 endif
 
 !write(nfres,'(a,i3,10f9.4,2e12.3)') 'iph,tIR,ATM_act,DSB(NHEJslow),DSB(HR): ',iph,tIR,ATM_act,DSB(NHEJslow),DSB(HR)    !,ATM_inact,Kmp1,Kmp2,Kmmp,Kmd,Kmmd,ATM_act,dATM_plus,dATM_minus
@@ -2063,13 +2063,14 @@ elseif (phase >= G2_phase) then
     f_S = 1.0
 endif
 tIR = (t_simulation - t_irradiation)/3600   ! time since IR, in hours
-tIR = max(tIR,0.0)
+!tIR = max(tIR,0.0)
 if (use_constant_V) then
     sigma = sigma_NHEJ + tIR*dsigma_dt
     eta_NHEJ = etafun(1.d0,sigma)
 else
     if (use_Arnould) then
-        eta_NHEJ = eta_Arnould(phase, f_S, tIR, sigma_NHEJ, Kcoh)
+!        eta_NHEJ = eta_Arnould(phase, f_S, tIR, sigma_NHEJ, Kcoh)  ! 27/10/2026
+        eta_NHEJ = eta_Arnould(phase, f_S, tIR, cp%sigma)
     !    eta_NHEJ = etafun(1.d0,sigma_NHEJ)
     else
         eta_NHEJ = eta_lookup(phase, NHEJfast, f_S, tIR) 

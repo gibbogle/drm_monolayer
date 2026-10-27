@@ -111,10 +111,11 @@ end function
 ! fsmin is Kcoh
 ! Note that the new expression for Reff covers the whole cycle - phase not used.
 !--------------------------------------------------------------------------
-function eta_Arnould(phase,f_S, tIR, S_NHEJ, fsmin) result(eta)
+!function eta_Arnould(phase,f_S, tIR, S_NHEJ, fsmin) result(eta)
+function eta_Arnould(phase,f_S, tIR, sigma) result(eta)
 integer :: phase
-real(8) :: f_S, tIR, S_NHEJ, fsmin, eta
-real(8) :: Reff, sigma, fsigma, Z
+real(8) :: f_S, tIR, Reff, sigma, eta
+real(8) :: fsigma, Z, S_NHEJ, fsmin
 logical, parameter :: use_old_method = .false.   ! results the same as new method
 
 !Z = -1   ! signals constant dsigma_dt
@@ -130,6 +131,9 @@ if (use_old_method) then
 else
     Reff = (1 - f_S)*((1 - Reffmin)*exp(-Kclus*tIR) + Reffmin) + f_S*1.26
 endif
+
+! removed 27/10/2026
+#if 0   
 fsigma = 1 - (1 - fsmin)*f_S
 if (Z > 0) then
     sigma = S_NHEJ + tIR*dsigma_dt*(1 - f_S/Z)    ! added (1 - f_S) 6/6/25, Bill's suggestion
@@ -137,13 +141,11 @@ else
     sigma = S_NHEJ + tIR*dsigma_dt
 endif
 sigma = fsigma*sigma
-! Testing
-!Reff = (1 - f_S) + f_S*1.26
-!sigma = S_NHEJ
+#endif
 
 eta = etafun(Reff,sigma)
 if (single_cell) then
-    write(nfrun,'(a,i4,5f8.4)') 'phase,f_S,tIR,Reff,sigma,eta: ',cell_list(1)%phase,f_S,tIR,Reff,sigma,eta
+    write(nfrun,'(a,2i4,5f8.4)') 'istep,phase,f_S,tIR,Reff,sigma,eta: ',istep,cell_list(1)%phase,f_S,tIR,Reff,sigma,eta
 endif
 !if (tIR > 9 .and. tIR < 10) write(*,'(a,4f8.3,e12.3)') 'tIR, f_S, Reff, sigma, eta: ', tIR, f_S, Reff, sigma, eta
 !write(*,'(a,2f8.2,2e12.3)') 'f_S, Reff, sigma, eta: ',f_S,Reff,sigma, eta
