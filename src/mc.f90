@@ -42,8 +42,8 @@ integer, parameter :: TMEJ = 4   ! this is really alt-EJ (was MDR)
 real(8) :: Pcomplex = 0.4337    ! fraction of created DSBs that are complex (McMahon: complexFrac)
 real(8) :: pJeggo = 0.9         ! fraction of post-replication DSBs that are fast. (NOT USED)
 real(8) :: Kcoh                ! cohesin effect (read in input file)
-real(8) :: pHR_max, f_S_decay
-logical :: use_sigmoid = .true.
+real(8) :: pHR_max, f_S_decay 
+logical :: use_sigmoid = .false.
 real(8) :: rmin, kdecay, cdecay    ! decay function parameters
 character*(2) :: phaseName(4) = ['G1','S ','G2','M ']
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.008462]   ! by pathway
@@ -1870,7 +1870,7 @@ if (.not. use_Jaiswal) return  !!!!!!!!!!!!!!!!!!!!!! testing no repair
 if (first .and. single_cell) then
     write(nfres,'(a,3f8.2,i4,2f8.2)') 'flush_time_h, D, C, phase0, f_S0, Z: ', &
             flush_time_h,rad_dose,drug_conc0,cp%phase0,cp%f_s_at_IR,eta_Z
-    write(nfres,'(a)') '     tIR       sigma     DSB1      DSB2      Pmis      dmis      Nmis      ATR_act   ATM_act   CC_act   fp'
+    write(nfres,'(a)') '     f_S       tIR       sigma     eta_NHEJ  DSB1      DSB2      Pmis      dmis      Nmis      ATR_act   ATM_act   CC_act'
     first = .false.
 endif
 dbug = (kcell_now == 9)
@@ -2146,11 +2146,11 @@ endif
 cp%DSB = DSB
 cp%Nmis = cp%Nmis + Nmis
 if (single_cell) then
-    sigma = sigma_NHEJ + tIR*dsigma_dt
+!    sigma = sigma_NHEJ + tIR*dsigma_dt
     DSB1 = sum(DSB(1:2,1))
     DSB2 = sum(DSB(1:2,2))
     totNmis = 2*cp%Nmis(1)+cp%Nmis(2)
-    write(nfres,'(11f10.3)') tIR,sigma,DSB1,DSB2,Pmis,dmis,totNmis,cp%ATR_act,cp%ATM_act,cp%CC_act,cp%fp
+    write(nfres,'(12f10.3)') f_S,tIR,cp%sigma,eta_NHEJ,DSB1,DSB2,Pmis,dmis,totNmis,cp%ATR_act,cp%ATM_act,cp%CC_act
 !    write(nflog,'(a,i4,2f8.1,2e12.3,f10.3)') 'phase,totDSB0,totDSB,eta,Pmis,Nmis: ',cp%phase,totDSB0,totDSB,eta_NHEJ,Pmis,totNmis
 endif
 ! record signalling for single-cell

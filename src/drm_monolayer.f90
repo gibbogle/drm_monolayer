@@ -2063,7 +2063,7 @@ real(REAL_KIND) :: r(3), rmax, tstart, dt, dth, dts, radiation_dose, diam_um, fr
 integer :: i, ic, ichemo, ndt, iz, idrug, ityp, idiv, ndiv, Nmetabolisingcells, NpreCA, Nd, Nnew
 integer :: nvars, ns, nphaseh(8), ph
 real(REAL_KIND) :: dxc, ex_conc(120*CYCLE_PHASE+1)		! just for testing
-real(REAL_KIND) :: DELTA_T_save, t_sim_0, SFlive
+real(REAL_KIND) :: DELTA_T_save, t_sim_0, SFlive, f_S
 real(REAL_KIND) :: C_O2, HIF1, PDK1
 type(metabolism_type), pointer :: mp
 type(cell_type), pointer :: cp
@@ -2241,7 +2241,7 @@ if (radiation_dose >= 0) then  ! radiation_dose set to -1 in Process_Event if th
     endif
 endif
 
-if (t_irradiation >= 0) call GrowCells(DELTA_T,t_simulation,ok)     ! advance a time step
+if (t_irradiation >= 0) call GrowCells(DELTA_T,t_simulation,ok)     ! advance through cell cycle one time step
 
 tottotDSB = 0
 do kcell = 1,nlist
@@ -2252,11 +2252,16 @@ do kcell = 1,nlist
     if (eta_Z == 0) then
         cp%sigma = sigma_NHEJ + dsigma_dt*tIR
     else
+        if (cp%phase == G2_phase) then
+            f_S = 1.0
+        else
+            f_S = cp%progress
+        endif
         dth = DELTA_T/3600  ! time step in hours
-        cp%sigma = cp%sigma + dsigma_dt*dth*(1 - cp%progress/eta_Z)
+        cp%sigma = cp%sigma + dsigma_dt*dth*(1 - f_S/eta_Z)
     endif
-    cp%sigma = cp%sigma*(1 - (1 - kcoh)*cp%progress)    ! note: kcoh is currently hard-coded = 1, so this does nothing
-    if (single_cell) write(nflog,'(a,i4,2f8.0,3f8.3)') 'istep, t_simulation, t_irradiation, tIR, cp%progress, sigma: ',istep, t_simulation, t_irradiation, tIR, cp%progress, cp%sigma
+    cp%sigma = cp%sigma*(1 - (1 - kcoh)*f_S)    ! note: kcoh is currently hard-coded = 1, so this does nothing
+    if (single_cell) write(nflog,'(a,i4,2f8.0,4f8.3)') 'istep, t_simulation, t_irradiation, tIR, f_S, sigma: ',istep, t_simulation, t_irradiation, tIR, f_S, cp%sigma
 enddo
 tottotDSB = 0
     

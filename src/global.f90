@@ -193,7 +193,6 @@ type cell_type
 	real(REAL_KIND) :: G2_time
 	real(REAL_KIND) :: mitosis
 	real(REAL_KIND) :: CP_delay
-	real(REAL_KIND) :: sigma
 !	logical :: growth_delay
 !	real(REAL_KIND) :: dt_delay
 !	real(REAL_KIND) :: t_growth_delay_end	! this is for suppression of growth before first division
@@ -207,6 +206,7 @@ type cell_type
 !	logical :: exists
 !	integer :: cnr(3,8)
 !	real(REAL_KIND) :: wt(8)
+	real(REAL_KIND) :: sigma            ! added 27/10/2026 to change calculation of cell's sigma for computing eta
 
 	! Cell cycle 
     integer :: phase
