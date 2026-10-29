@@ -261,6 +261,12 @@ read(nfin,*) f_S_decay
 !read(nfin,*) rmin
 rmin = 0
 read(nfin,*) kdecay
+if (kdecay < 0) then
+    use_sigmoid = .false.
+    kdecay = -kdecay
+else
+    use_sigmoid = .true.
+endif
 read(nfin,*) cdecay
 !read(nfin,*) nIliakis
 nIliakis = 1
