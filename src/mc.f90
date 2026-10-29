@@ -43,7 +43,7 @@ real(8) :: Pcomplex = 0.4337    ! fraction of created DSBs that are complex (McM
 real(8) :: pJeggo = 0.9         ! fraction of post-replication DSBs that are fast. (NOT USED)
 real(8) :: Kcoh                ! cohesin effect (read in input file)
 real(8) :: pHR_max, f_S_decay 
-logical :: use_sigmoid = .false.
+logical :: use_sigmoid = .true.
 real(8) :: rmin, kdecay, cdecay    ! decay function parameters
 character*(2) :: phaseName(4) = ['G1','S ','G2','M ']
 !real(8) :: repRate(NP) = [2.081, 0.2604, 2.081, 0.2604, 0.008462]   ! by pathway
