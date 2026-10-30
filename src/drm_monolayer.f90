@@ -409,11 +409,12 @@ endif
 read(nfcell,*) dll_run_version				! DLL run version number 
 write(*,*) dll_run_version
 !read(nfcell,*) NX							! size of grid
-read(nfcell,*) initial_count				! initial number of tumour cells
+read(nfcell,*) initial_count				! initial number of tumour cells 
 if (greens) then
     initial_count = NgreenCells
 endif
 write(*,*) 'initial_count: ',initial_count
+write(nflog,*) 'initial_count: ',initial_count
 read(nfcell,*) iuse_lognormal
 use_exponential_cycletime = (iuse_lognormal /= 1)
 read(nfcell,*) divide_time_median(1)
@@ -2254,6 +2255,8 @@ do kcell = 1,nlist
     else
         if (cp%phase == G2_phase) then
             f_S = 1.0
+        elseif (cp%phase == G1_phase) then
+            f_S = 0
         else
             f_S = cp%progress
         endif
@@ -2261,7 +2264,7 @@ do kcell = 1,nlist
         cp%sigma = cp%sigma + dsigma_dt*dth*(1 - f_S/eta_Z)
     endif
     cp%sigma = cp%sigma*(1 - (1 - kcoh)*f_S)    ! note: kcoh is currently hard-coded = 1, so this does nothing
-    if (single_cell) write(nflog,'(a,i4,2f8.0,4f8.3)') 'istep, t_simulation, t_irradiation, tIR, f_S, sigma: ',istep, t_simulation, t_irradiation, tIR, f_S, cp%sigma
+!    if (single_cell) write(nflog,'(a,i4,2f8.0,4f8.3)') 'istep, t_simulation, t_irradiation, tIR, f_S, sigma: ',istep, t_simulation, t_irradiation, tIR, f_S, cp%sigma
 enddo
 tottotDSB = 0
     

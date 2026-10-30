@@ -2094,7 +2094,7 @@ totDSB0 = sum(DSB0(NHEJfast,:)) + sum(DSB0(NHEJslow,:))
 totDSB = sum(DSB(NHEJfast,:)) + sum(DSB(NHEJslow,:))
 Pmis = misrepairRate(totDSB0, totDSB, eta_NHEJ)
 dmis = Pmis*(totDSB0 - totDSB)
-!if (dbug) write(nflog,'(a,2i4,3f8.3,e12.3,f6.3)') 'DSB0,DSB,Pmis,dmis: ',istep,cp%phase,cp%progress,totDSB0,totDSB,Pmis,dmis
+if (single_cell) write(nflog,'(a,2i4,3f8.3,2e12.3,2f8.3)') 'progress,DSB0,DSB,eta,Pmis,dmis,totNmis: ',istep,cp%phase,cp%progress,totDSB0,totDSB,eta_NHEJ,Pmis,dmis,sum(cp%Nmis)+dmis
 !if (kcell_now == 1) then
 !    write(nflog,'(a,i4,2f8.1,2e12.3)') 'after misrepairRate: kcell, totDSB0, totDSB, eta_NHEJ, Pmis: ', &
 !                kcell_now,totDSB0, totDSB, eta_NHEJ, Pmis
