@@ -10,12 +10,12 @@
 module drm_monolayer_mod
 use global
 use chemokine
-use ode_diffuse
+!use ode_diffuse
 use cellstate
 !use winsock  
 use colony
-use transfer
-use metabolism
+!use transfer
+!use metabolism
 !use Tcp_mod
 
 IMPLICIT NONE
@@ -84,6 +84,8 @@ call logger('did ArrayInitialisation')
 
 
 use_cell_cycle = .true.
+
+#if 0
 !if (use_metabolism) then
 	chemo(OXYGEN)%controls_growth = .false.     
 	chemo(OXYGEN)%controls_death = .false.
@@ -97,6 +99,7 @@ use_cell_cycle = .true.
 !endif
 
 call SetupChemo
+# endif
 
 ! New cell cycle formulation - need a value for max (unconstrained) growth rate
 !use_volume_method = .not.use_cell_cycle
@@ -112,7 +115,7 @@ do ityp = 1,2
 enddo
 
 mp => phase_metabolic(1)
-call SetupMetabolism(mp,ok)
+!call SetupMetabolism(mp,ok)
 if (.not.ok) stop
 
 ! Cell synchronisation
@@ -141,8 +144,8 @@ do ichemo = 1,NUTS
 		call SetupMedium(ichemo)
 	endif
 enddo
-call UpdateChemomap
-call AdjustMM
+!call UpdateChemomap
+!call AdjustMM
 !call SetInitialGrowthRate
 NATP_tag = 0
 NGLN_tag = 0
@@ -1438,9 +1441,9 @@ cp%p_rad_death = 0
 cp%Cin(OXYGEN) = chemo(OXYGEN)%bdry_conc
 cp%Cin(GLUCOSE) = chemo(GLUCOSE)%bdry_conc
 #if 0
-cp%Cin(LACTATE) = chemo(LACTATE)%bdry_conc
+cp%Cin(LACTATE) = chemo(LACTATE) 
 cp%Cin(GLUTAMINE) = chemo(GLUTAMINE)%bdry_conc
-cp%Cin(OTHERNUTRIENT) = chemo(OTHERNUTRIENT)%bdry_conc
+cp%Cin(OTHERNUTRIENT) = chemo(OTHERNUTRIENT) 
 cp%CFSE = generate_CFSE(1.d0)
 #endif
 
@@ -1846,7 +1849,7 @@ do kevent = 1,Nevents
 			enddo
 			full = E%full
 			call MediumChange(V,C,full)
-			call UpdateChemomap
+!			call UpdateChemomap
 !			call UpdateCbnd(0.0d0)
             is_event = .true.
             drug_time = t_simulation
@@ -2005,7 +2008,7 @@ real(REAL_KIND) :: tol = 1.0e-6
 do ichemo = 1,2
 	if (chemo(ichemo)%constant .or. fully_mixed) then
 		Cex = chemo(ichemo)%bdry_conc
-		Cin = getCin(ichemo,Cex)
+!		Cin = getCin(ichemo,Cex)
 	else
 		Kin = chemo(ichemo)%membrane_diff_in
 		Kout = chemo(ichemo)%membrane_diff_out
@@ -3004,8 +3007,8 @@ enddo
 write(nflog,'(a,3e12.3)') 'averages: V,dVdt,fg: ',ave_V/n,ave_dVdt/n
 end subroutine
 
+#if 0
 !-----------------------------------------------------------------------------------------
-! 
 !-----------------------------------------------------------------------------------------
 subroutine show_metabolism(kcell)
 integer :: kcell
@@ -3032,6 +3035,7 @@ if (mp%A_rate < r_Ag) then
 endif
 write(*,*)
 end subroutine
+#endif
 
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------

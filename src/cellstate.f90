@@ -2,8 +2,8 @@
 
 module cellstate
 use global
-use chemokine
-use metabolism
+!use chemokine
+!use metabolism
 use cycle_mod
 implicit none
 
@@ -178,7 +178,7 @@ counts = 0
 	    call getO2conc(cp,C_O2)
         ! Compute sensitisation SER
         if (Ndrugs_used > 0 .and. .not.use_inhibiter) then      ! Ask Bill - do we need SER??
-            SER = getSER(cp,C_O2)
+!            SER = getSER(cp,C_O2)
         else
 	        SER = 1.0
 	    endif
@@ -299,7 +299,6 @@ write(nflog,'(a,f9.3)') 'aveIRL: ',aveIRL/n
 write(nflog,'(a,f9.3)') 'avePL: ',avePL/n
 
 end subroutine
-#endif
 
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
@@ -331,6 +330,7 @@ do idrug = 1,Ndrugs_used
     enddo
 enddo
 end function
+#endif
 
 !-----------------------------------------------------------------------------------------
 ! A cell that receives a dose of radiation either recovers completely before reaching 
@@ -384,8 +384,6 @@ ok = .true.
 !endif
 
 !tnow = istep*DELTA_T	! seconds
-anoxia_death = chemo(OXYGEN)%controls_death
-aglucosia_death = chemo(GLUCOSE)%controls_death
 nlist0 = nlist
 first = .true.
 do kcell = 1,nlist
@@ -433,6 +431,8 @@ do kcell = 1,nlist
 	
 #if 0			
 	else
+		anoxia_death = chemo(OXYGEN)%controls_death
+		aglucosia_death = chemo(GLUCOSE)%controls_death
 		if (cp%anoxia_tag) then
 			if (tnow >= cp%t_anoxia_die) then
 				call celldies(cp,.false.)
@@ -639,6 +639,7 @@ delay = (min_delay + R)*3600   ! convert h -> s
 !write(*,'(a,4f8.3)') 'delay: ',median,shape,R,delay/3600
 end function
 
+#if 0
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
 subroutine AddToMedium(cp,site)
@@ -668,7 +669,7 @@ do ichemo = 1,MAX_CHEMO
 	chemo(ichemo)%medium_M = chemo(ichemo)%medium_M - Vsite_cm3*chemo(ichemo)%medium_Cbnd
 enddo
 end subroutine
-
+#endif
 
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
@@ -756,7 +757,7 @@ if (use_drug_halflife) then
 ! Try this !!!!
     Cdrug = drug_conc0*exp(-Khalflife*(t_simulation - drug_time)/3600)
 !	write(*,'(a,3e12.3)') 'grower: ',drug_time/3600, t_simulation/3600,Cdrug
-    Caverage(MAX_CHEMO + DRUG_A) = Cdrug
+!    Caverage(MAX_CHEMO + DRUG_A) = Cdrug
 endif
 
 tIR = (tnow - t_irradiation)/3600
@@ -977,13 +978,15 @@ if (cp%phase >= M_phase) then
     cp%dVdt = 0
 	return
 endif
+metab = 1
+ityp = cp%celltype
+
+#if 0
 !if (use_metabolism .and. cp%metab%A_rate < r_Ag) then
 !	cp%dVdt = 0
 !!	if (kcell_now == 1) write(nflog,'(a,i8,2e12.3)') 'A_rate < ATPg: ', kcell_now, cp%metab%A_rate, r_Ag
 !	return
 !endif
-ityp = cp%celltype
-metab = 1
 if (colony_simulation) then
 	if (use_metabolism) then
 !		cp%metab%Itotal = cp%metab%Itotal + dt*cp%metab%I_rate
@@ -1026,6 +1029,7 @@ else
 !		endif
 	endif
 endif
+#endif
 
 ! Here compute the progress factor %fp, used in cycle.f90
 ! This is definitive
@@ -1057,6 +1061,7 @@ endif
 
 end subroutine
 
+#if 0
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
 subroutine SetInitialGrowthRate
@@ -1087,6 +1092,7 @@ do kcell = 1,nlist
 	cp%dVdt = dVdt
 enddo
 end subroutine
+#endif
 
 !-----------------------------------------------------------------------------------------
 ! Need to account for time spent in mitosis.  Because there is no growth during mitosis,
@@ -1209,7 +1215,9 @@ cp1%mitosis = 0
 cfse0 = cp1%CFSE
 !cp1%CFSE = generate_CFSE(cfse0/2)
 cfse2 = cfse0 - cp1%CFSE
-!
+
+
+#if 0
 ! Halve drug levels - OK for normal drugs?
 ! Is this the right thing to do??  Concentration in each cell after mitosis should equal conc at mitosis!!
 ! This raises the question: do IC concentrations reflect changing cell volume??
@@ -1228,6 +1236,7 @@ do ipdd = 0,0
 		enddo
 	endif
 enddo
+#endif
 
 cp1%drug_tag = .false.
 cp1%G2_M = .false.
@@ -1334,6 +1343,7 @@ else
 endif
 end subroutine
 
+#if 0
 !----------------------------------------------------------------------------------
 ! Makes a slight modification to the Michaelis-Menten function to create a
 ! "soft landing" as C -> 0
@@ -1369,7 +1379,7 @@ endif
 !write(logmsg,'(a,4e12.4)') 'AdjustMM: C0, deltaC, C1, k: ',C0, ODEdiff%deltaC_soft, ODEdiff%C1_soft, ODEdiff%k_soft
 !call logger(logmsg)
 end subroutine
-
+#endif
 
 !----------------------------------------------------------------------------------
 ! This is used to adjust a cell's growth rate to introduce some random variability

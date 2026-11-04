@@ -6,18 +6,6 @@ use global
 
 implicit none
 
-!type receptor_type
-!	character(8) :: name
-!	logical :: used
-!	integer :: chemokine
-!	integer :: sign
-!	real(REAL_KIND) :: strength
-!	real(REAL_KIND) :: level(5)
-!	real(REAL_KIND) :: saturation_threshold
-!	real(REAL_KIND) :: refractory_time
-!end type
-!type(receptor_type), target :: receptor(MAX_RECEPTOR) 
-
 integer, parameter :: N1D = 20
 
 type chemokine_type
@@ -61,12 +49,12 @@ type chemokine_type
 end type
 type(chemokine_type), target :: chemo(MAX_CHEMO)
 
-type ODEdiff_type
-	real(REAL_KIND) :: deltaC_soft
-	real(REAL_KIND) :: k_soft
-	real(REAL_KIND) :: C1_soft
-end type
-type(ODEdiff_type) :: ODEdiff
+!type ODEdiff_type
+!	real(REAL_KIND) :: deltaC_soft
+!	real(REAL_KIND) :: k_soft
+!	real(REAL_KIND) :: C1_soft
+!end type
+!type(ODEdiff_type) :: ODEdiff
 
 integer :: nchemo, chemomap(MAX_CHEMO)
 ! 1=OXYGEN, 2=GLUCOSE, 3=LACTATE, 4=GLUTAMINE, 5=OTHERNUTRIENT
@@ -92,6 +80,7 @@ else
 endif
 end function
 
+#if 0
 !----------------------------------------------------------------------------------------
 ! Note units:
 ! distance		cm
@@ -352,5 +341,6 @@ do kcell = 1,nlist
 	enddo
 enddo
 end subroutine
+#endif
 
 end module

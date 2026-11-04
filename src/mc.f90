@@ -2,7 +2,7 @@ module mc
 use real_kind_mod
 use global
 
-use chemokine   ! is this OK? Needed for Caverage
+!use chemokine   ! is this OK? Needed for Caverage 
 use eta_module
 use km10_mod
 use omp_rkf45
