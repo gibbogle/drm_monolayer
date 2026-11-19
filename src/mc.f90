@@ -1484,12 +1484,12 @@ elseif (iph == G2_phase) then
     ATR_act = cp%ATR_act
     ATM_act = cp%ATM_act
     t_G2 = (tnow - cp%t_start_G2)/3600
-    if (t_G2 > 40) then     ! force ATR_act to taper to 0 after 30h in G2
-        ATR_act = 0
-    elseif (t_G2 > 30) then
-        ATR_act = ATR_act*(40 - t_G2)/(40 - 30) ! fixed (was (t_G2 - 30)/(40 - 30))
-!        write(nflog,'(a,f8.3,e12.3)') 't_G2, ATR_act: ',t_G2,ATR_act
-    endif
+!    if (t_G2 > 40) then     ! force ATR_act to taper to 0 after 30h in G2
+!        ATR_act = 0
+!    elseif (t_G2 > 30) then
+!        ATR_act = ATR_act*(40 - t_G2)/(40 - 30) ! fixed (was (t_G2 - 30)/(40 - 30))
+!!        write(nflog,'(a,f8.3,e12.3)') 't_G2, ATR_act: ',t_G2,ATR_act
+!    endif
 !    if (single_cell) write(nfres,'(a,i6,6f8.2,2f8.3)') 'istep,t, N_NHEJ, N_HR,D_ATR, D_ATM, ATR_act, ATM_act, CC_act: ', istep,t_G2,DSB(NHEJslow),DSB(HR),D_ATR,D_ATM,cp%ATR_act,cp%ATM_act,cp%CC_act
     D_NHEJ = DSB(NHEJslow)
     D_HR = DSB(HR)
